@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './__root'
 import { Route as IndexRouteImport } from './index'
+import { Route as RulesetIndexRouteImport } from './ruleset/index'
 import { Route as LogIndexRouteImport } from './log/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RulesetIndexRoute = RulesetIndexRouteImport.update({
+  id: '/ruleset/',
+  path: '/ruleset/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LogIndexRoute = LogIndexRouteImport.update({
@@ -26,27 +32,31 @@ const LogIndexRoute = LogIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/log': typeof LogIndexRoute
+  '/ruleset': typeof RulesetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/log': typeof LogIndexRoute
+  '/ruleset': typeof RulesetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/log/': typeof LogIndexRoute
+  '/ruleset/': typeof RulesetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/log'
+  fullPaths: '/' | '/log' | '/ruleset'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/log'
-  id: '__root__' | '/' | '/log/'
+  to: '/' | '/log' | '/ruleset'
+  id: '__root__' | '/' | '/log/' | '/ruleset/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LogIndexRoute: typeof LogIndexRoute
+  RulesetIndexRoute: typeof RulesetIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ruleset/': {
+      id: '/ruleset/'
+      path: '/ruleset'
+      fullPath: '/ruleset'
+      preLoaderRoute: typeof RulesetIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/log/': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LogIndexRoute: LogIndexRoute,
+  RulesetIndexRoute: RulesetIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

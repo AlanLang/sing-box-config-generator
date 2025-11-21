@@ -119,6 +119,8 @@ out
 
 .nuxt
 dist
+web
+data
 
 # Gatsby files
 

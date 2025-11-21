@@ -12,7 +12,7 @@ function RouteComponent() {
     <AppPage
       title="Config"
       actions={
-        <Button className="size-8" variant="outline">
+        <Button className="size-8">
           <IconPlus />
         </Button>
       }
