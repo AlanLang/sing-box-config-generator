@@ -1,0 +1,27 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.6/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!dist",
+      "!!src/frontend/components/**/*.tsx",
+      "!!src/frontend/index.css"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "formatWithErrors": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "correctness": {
+        "noUnusedImports": "error"
+      }
+    }
+  },
+  "assist": {
+    "enabled": false
+  }
+}
