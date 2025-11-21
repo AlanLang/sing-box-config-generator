@@ -1,33 +1,34 @@
-import { Button } from "@/components/ui/button";
-import React from "react";
-import ReactDOM from "react-dom/client";
+import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { routeTree } from "./routes/routeTree.gen";
+
 import "./index.css";
 
-export function ButtonDemo() {
-  return (
-    <div className="flex flex-wrap items-center gap-2 md:flex-row">
-      <Button variant="outline">Button</Button>
-    </div>
-  );
+// Create a new router instance
+const router = createRouter({
+  routeTree,
+  defaultPreload: "intent",
+  // Disable dev tools in production
+});
+
+// Register the router instance for type safety
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
 }
 
-function App() {
-  return (
-    <div>
-      <h1 className="text-red-400 text-3xl font-bold underline hover:text-blue-500">
-        Hello world!
-      </h1>
-      <ButtonDemo />
-    </div>
-  );
+// Render the app
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Root element not found");
 }
-
-const rootEl = document.getElementById("root");
-if (rootEl) {
-  const root = ReactDOM.createRoot(rootEl);
+if (!rootElement.innerHTML) {
+  const root = createRoot(rootElement);
   root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>,
+    <StrictMode>
+      <RouterProvider router={router} />
+    </StrictMode>,
   );
 }

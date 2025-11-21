@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "DOM",
-      "ES2020"
-    ],
+    "lib": ["DOM", "ES2020"],
     "jsx": "react-jsx",
     "target": "ES2020",
     "noEmit": true,
@@ -20,13 +17,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "paths": {
-      "@/*": [
-        "./src/frontend/*"
-      ]
+      "@/*": ["./src/frontend/*"]
     }
   },
-  "include": [
-    "src",
-    "lib"
-  ]
+  "include": ["src", "lib"]
 }

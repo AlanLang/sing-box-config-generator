@@ -4,8 +4,9 @@
     "includes": [
       "**",
       "!!dist",
-      "!!src/frontend/components/**/*.tsx",
-      "!!src/frontend/index.css"
+      "!!src/frontend/components/**/*.{ts,tsx}",
+      "!!src/frontend/index.css",
+      "!!src/frontend/routes/routeTree.gen.ts"
     ]
   },
   "formatter": {
