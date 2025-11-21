@@ -12,7 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar"
-import { IconCloudDown, IconCloudUp, IconFlaskFilled, IconLogs, IconRouter, IconWorldCog, IconWorldSearch } from "@tabler/icons-react"
+import { IconBrandMinecraft, IconCloudDown, IconCloudUp, IconFlaskFilled, IconLogs, IconRouter, IconWorldCog, IconWorldSearch } from "@tabler/icons-react"
 import { ThemeSwitch } from "./ui/theme-switch-button"
 
 const data = [
@@ -74,6 +74,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data} />
       </SidebarContent>
       <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <a href="https://sing-box.sagernet.org/zh/configuration/" target="_blank">
+                <IconBrandMinecraft />
+                <span>SingBox</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )

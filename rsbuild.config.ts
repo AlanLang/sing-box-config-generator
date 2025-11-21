@@ -10,6 +10,14 @@ export default defineConfig({
     },
   },
   plugins: [pluginReact()],
+  output: {
+    distPath: {
+      root: "web",
+    },
+  },
+  html: {
+    title: "SingBoxConfigGenerator",
+  },
   tools: {
     rspack: {
       plugins: [
