@@ -110,8 +110,9 @@ function RouteComponent() {
       // Validate
       const validation = outboundGroupCreateSchema.safeParse(data);
       if (!validation.success) {
-        const firstError = validation.error.errors[0];
-        toast.error(firstError.message);
+        const firstError = validation.error.errors?.[0];
+        toast.error(firstError?.message || "Validation failed");
+        console.error("Validation errors:", validation.error.errors);
         return;
       }
 

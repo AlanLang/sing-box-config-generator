@@ -15,16 +15,29 @@ export const outboundGroupCreateSchema = z
     group_type: z.enum(["selector", "urltest"]),
     outbounds: z.array(z.string()),
     default: z.string().optional(),
-    url: z.string().url().optional(),
+    url: z
+      .string()
+      .transform((val) => (val === "" ? undefined : val))
+      .pipe(z.string().url().optional()),
     interval: z
       .string()
-      .regex(/^\d+[smh]$/, "Interval must be in format like 3m, 30s, 1h")
-      .optional(),
+      .transform((val) => (val === "" ? undefined : val))
+      .pipe(
+        z
+          .string()
+          .regex(/^\d+[smh]$/, "Interval must be in format like 3m, 30s, 1h")
+          .optional(),
+      ),
     tolerance: z.number().min(0).max(10000).optional(),
     idle_timeout: z
       .string()
-      .regex(/^\d+[smh]$/, "Idle timeout must be in format like 30m, 1h")
-      .optional(),
+      .transform((val) => (val === "" ? undefined : val))
+      .pipe(
+        z
+          .string()
+          .regex(/^\d+[smh]$/, "Idle timeout must be in format like 30m, 1h")
+          .optional(),
+      ),
     interrupt_exist_connections: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
