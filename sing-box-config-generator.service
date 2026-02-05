@@ -1,0 +1,26 @@
+[Unit]
+Description=SingBox Config Generator
+After=network.target
+
+[Service]
+Type=simple
+User=alan
+WorkingDirectory=/home/alan/code/sing-box-config-generator
+Environment="PATH=/home/alan/.cargo/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="RUST_LOG=info"
+Environment="PORT=3006"
+ExecStart=/home/alan/code/sing-box-config-generator/target/release/sing-box-config-generator
+Restart=always
+RestartSec=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sing-box-config-generator
+
+[Install]
+WantedBy=multi-user.target
