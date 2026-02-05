@@ -57,6 +57,13 @@ async fn main() -> anyhow::Result<()> {
       "/api/subscribe/refresh",
       axum::routing::post(backend::api::subscribe::refresh_subscribe),
     )
+    .route(
+      "/api/dns",
+      axum::routing::post(backend::api::dns::create_dns)
+        .get(backend::api::dns::list_dns)
+        .put(backend::api::dns::update_dns)
+        .delete(backend::api::dns::delete_dns),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005
