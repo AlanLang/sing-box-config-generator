@@ -1,4 +1,3 @@
-import { JsonEditor } from "@/components/json-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -253,19 +252,6 @@ export function SubscribeEditor({
                     />
                   </div>
                 </div>
-
-                {/* Content Viewer */}
-                <div className="space-y-2">
-                  <Label>Subscription Content (Read-only)</Label>
-                  <div className="h-[400px] border rounded-md overflow-hidden">
-                    <JsonEditor
-                      className="h-full"
-                      value={content}
-                      onChange={() => {}}
-                      readOnly={true}
-                    />
-                  </div>
-                </div>
               </div>
             </motion.div>
 
@@ -283,12 +269,8 @@ export function SubscribeEditor({
               </div>
               <div className="flex items-center gap-4">
                 {lastUpdated && (
-                  <>
-                    <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
-                    <span>•</span>
-                  </>
+                  <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
                 )}
-                <span>{content?.split("\n").length || 0} lines</span>
               </div>
             </motion.div>
           </motion.div>
