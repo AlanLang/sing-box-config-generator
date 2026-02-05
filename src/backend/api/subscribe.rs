@@ -160,6 +160,8 @@ pub async fn refresh_subscribe(
 
   let response = client
     .get(&metadata.subscription_url)
+    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    .header("Accept", "*/*")
     .send()
     .await
     .map_err(|e| AppError::from(anyhow::anyhow!("Failed to fetch subscription: {}", e)))?;
