@@ -9,7 +9,11 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { SubscribeEditor } from "@/components/subscribe-editor";
 import { Button } from "@/components/ui/button";
-import { IconCubePlus, IconRefresh } from "@tabler/icons-react";
+import {
+  IconCubePlus,
+  IconExternalLink,
+  IconRefresh,
+} from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -268,17 +272,34 @@ function RouteComponent() {
                     index={index}
                     uuid={subscribe.uuid}
                     actions={
-                      <button
-                        type="button"
-                        onClick={() => handleRefresh(subscribe.uuid)}
-                        disabled={refreshSubscribeMutation.isPending}
-                        className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Refresh subscription"
-                      >
-                        <IconRefresh
-                          className={`size-4 ${refreshSubscribeMutation.isPending ? "animate-spin" : ""}`}
-                        />
-                      </button>
+                      <>
+                        {metadata.website_url && (
+                          <a
+                            href={metadata.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
+                            title="Visit website"
+                          >
+                            <IconExternalLink className="size-4" />
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRefresh(subscribe.uuid);
+                          }}
+                          disabled={refreshSubscribeMutation.isPending}
+                          className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Refresh subscription"
+                        >
+                          <IconRefresh
+                            className={`size-4 ${refreshSubscribeMutation.isPending ? "animate-spin" : ""}`}
+                          />
+                        </button>
+                      </>
                     }
                   />
                 );
