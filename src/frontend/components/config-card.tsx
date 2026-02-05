@@ -55,7 +55,7 @@ export function ConfigCard({
 
         {/* Card Header */}
         <div className="relative p-4 border-b border-border/50">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {/* Icon indicator */}
               <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-150">
@@ -65,21 +65,23 @@ export function ConfigCard({
                 {name}
               </h3>
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Action buttons */}
               {actions && (
                 <div
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-150"
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
                 >
                   {actions}
                 </div>
               )}
-              {/* Arrow indicator */}
-              <div className="opacity-0 group-hover:opacity-100 transition-all duration-150">
-                <IconChevronRight className="size-5 text-primary" />
-              </div>
+              {/* Arrow indicator - only show when no actions or on hover */}
+              {!actions && (
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-150">
+                  <IconChevronRight className="size-5 text-primary" />
+                </div>
+              )}
             </div>
           </div>
         </div>
