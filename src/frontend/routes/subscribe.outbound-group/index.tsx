@@ -173,14 +173,28 @@ function RouteComponent() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {groups?.map((group) => (
-            <ConfigCard
-              key={group.uuid}
-              title={group.name}
-              description={`${group.group_type === "selector" ? "Selector" : "URL Test"} Group`}
-              onClick={() => handleEdit(group)}
-            />
-          ))}
+          {groups?.map((group, index) => {
+            // Create a preview object for the card
+            const preview = JSON.stringify(
+              {
+                type: group.group_type,
+                outbounds: group.name,
+                tag: group.name,
+              },
+              null,
+              2,
+            );
+            return (
+              <ConfigCard
+                key={group.uuid}
+                name={group.name}
+                jsonPreview={preview}
+                onClick={() => handleEdit(group)}
+                index={index}
+                uuid={group.uuid}
+              />
+            );
+          })}
         </div>
       )}
 
