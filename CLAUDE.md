@@ -99,6 +99,36 @@ npm run build        # Production build
 
 - **`/add-config-module`** - Add new config management modules (log/ruleset/inbound pattern)
 - **`/commit`** - Create git commits with proper formatting and conventions
+- **`/notify-telegram`** - Send task completion summaries to Telegram (requires configuration)
+
+## Telegram Notifications
+
+**IMPORTANT**: After completing any non-trivial task, send a summary notification via Telegram.
+
+**Setup Required**: Follow `.claude/telegram-config.md` to configure:
+- Telegram Bot Token
+- Chat ID
+
+**When to Notify**:
+- ✅ Feature implementation completed
+- ✅ Bug fix completed
+- ✅ Refactoring completed
+- ✅ Configuration changes
+- ❌ Skip for trivial operations (reading files, searching)
+
+**Notification Pattern**:
+```bash
+./.claude/scripts/telegram-notify.sh "✅ Task Completed
+
+📋 Task: {brief description}
+
+🔧 Changes:
+- {key changes}
+
+✨ Results: {outcomes}"
+```
+
+See `/notify-telegram` skill for detailed guidelines.
 
 ## Git Workflow
 
