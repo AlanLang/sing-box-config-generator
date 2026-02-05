@@ -1,7 +1,5 @@
 "use client"
 
-import { type Icon, IconCloudPlus, IconMoodHeart } from "@tabler/icons-react"
-
 import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
@@ -11,16 +9,58 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { IconCloudDown, IconCloudPlus, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconLocationDown, IconLogs, IconMoodHeart, IconRouter, IconWorldSearch } from "@tabler/icons-react"
 import { Link, useLocation } from "@tanstack/react-router"
 
+const resources = [
+  {
+    title: "Subscribe",
+    url: "/subscribe",
+    icon: IconLocationDown,
+  },
+]
+
+const singBoxConfigs = [
+  {
+    title: "RuleSet",
+    url: "/ruleset",
+    icon: IconCubeUnfolded,
+  },
+  {
+    title: "LOG",
+    url: "/log",
+    icon: IconLogs,
+  },
+  {
+    title: "DNS",
+    url: "#",
+    icon: IconWorldSearch,
+  },
+  {
+    title: "Inbounds",
+    url: "/inbound",
+    icon: IconCloudUp,
+  },
+  {
+    title: "Outbounds",
+    url: "#",
+    icon: IconCloudDown,
+  },
+  {
+    title: "Route",
+    url: "#",
+    icon: IconRouter,
+  },
+  {
+    title: "Experimental",
+    url: "/experimental",
+    icon: IconFlaskFilled,
+  }
+]
+
+
+
 export function NavMain({
-  items,
-}: {
-  items: {
-    title: string
-    url: string
-    icon?: Icon
-  }[]
 }) {
 
   const location = useLocation();
@@ -49,9 +89,22 @@ export function NavMain({
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarGroupLabel>Documents</SidebarGroupLabel>
+        <SidebarGroupLabel>Resources</SidebarGroupLabel>
         <SidebarMenu>
-          {items.map((item) => (
+          {resources.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton tooltip={item.title} asChild isActive={location.pathname === item.url}>
+                <Link to={item.url} className="w-full">
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+        <SidebarGroupLabel>SingBox Configs</SidebarGroupLabel>
+        <SidebarMenu>
+          {singBoxConfigs.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} asChild isActive={location.pathname === item.url}>
                 <Link to={item.url} className="w-full">

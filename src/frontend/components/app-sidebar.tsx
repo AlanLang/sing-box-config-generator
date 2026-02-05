@@ -12,47 +12,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem
 } from "@/components/ui/sidebar"
-import { IconBrandMinecraft, IconCloudDown, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconLogs, IconRouter, IconWorldCog, IconWorldSearch } from "@tabler/icons-react"
+import { IconBrandMinecraft, IconWorldCog } from "@tabler/icons-react"
 import { ThemeSwitch } from "./ui/theme-switch-button"
-
-const data = [
-  {
-    title: "RuleSet",
-    url: "/ruleset",
-    icon: IconCubeUnfolded,
-  },
-  {
-    title: "LOG",
-    url: "/log",
-    icon: IconLogs,
-  },
-  {
-    title: "DNS",
-    url: "#",
-    icon: IconWorldSearch,
-  },
-  {
-    title: "Inbounds",
-    url: "/inbound",
-    icon: IconCloudUp,
-  },
-  {
-    title: "Outbounds",
-    url: "#",
-    icon: IconCloudDown,
-  },
-  {
-    title: "Route",
-    url: "#",
-    icon: IconRouter,
-  },
-  {
-    title: "Experimental",
-    url: "/experimental",
-    icon: IconFlaskFilled,
-  }
-
-]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -76,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data} />
+        <NavMain />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
