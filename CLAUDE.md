@@ -95,17 +95,18 @@ npm run build        # Production build
 - **Error Handling**: Backend uses `AppError`, frontend shows toast notifications
 - **Type Safety**: TypeScript (strict) + Rust (serde JSON)
 
-## Adding New Config Modules
+## Skills
 
-Use the `/add-config-module` skill for step-by-step guidance to add new config management modules following the log/ruleset/inbound pattern.
+- **`/add-config-module`** - Add new config management modules (log/ruleset/inbound pattern)
+- **`/commit`** - Create git commits with proper formatting and conventions
 
-## Git Commit Guidelines
+## Git Workflow
 
-**IMPORTANT**: Always create a git commit after completing tasks (unless no files changed).
+**IMPORTANT**: Always commit changes after completing tasks (unless no files changed).
 
-### Commit Message Format
+Use the `/commit` skill for detailed guidelines and automation, or follow this quick format:
 
-```
+```bash
 <type>(<scope>): <subject>
 
 <body>
@@ -113,46 +114,4 @@ Use the `/add-config-module` skill for step-by-step guidance to add new config m
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
-### Types (使用中文主题)
-- **feat**: 新增功能
-- **fix**: 修复 bug
-- **docs**: 文档更新
-- **style**: 代码格式调整（不影响功能）
-- **refactor**: 代码重构
-- **perf**: 性能优化
-- **test**: 测试相关
-- **build**: 构建系统或依赖变更
-- **chore**: 其他杂项
-
-### Scope (可选)
-- `backend` - 后端
-- `frontend` - 前端
-- `api` - API 接口
-- `ui` - UI 组件
-- 或具体模块名（log, ruleset, inbound 等）
-
-### Examples
-
-```bash
-feat(frontend): 实现 inbound 配置管理功能
-
-- 添加后端 CRUD API 端点
-- 实现前端页面和 API 客户端
-- 集成到侧边栏导航
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-```
-
-```bash
-fix: 修复空状态下无法创建配置的问题
-
-将 FocusEditor 移到条件判断外部
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-```
-
-### Rules
-1. 主题使用中文，简洁清晰（≤50 字符）
-2. Body 可选，用于详细说明
-3. 必须保留 Co-Authored-By 署名
-4. 使用 HEREDOC 传递 commit message 以确保格式正确
+**Quick Reference**: `feat`(新增) | `fix`(修复) | `docs`(文档) | `refactor`(重构) | `style`(格式) | `perf`(优化) | `test`(测试) | `build`(构建) | `chore`(杂项)
