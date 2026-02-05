@@ -16,12 +16,12 @@ export const outboundGroupCreateSchema = z
     outbounds: z.array(z.string()),
     default: z.string().optional(),
     url: z
-      .string()
-      .transform((val) => (val === "" ? undefined : val))
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val === "" || val === undefined ? undefined : val))
       .pipe(z.string().url().optional()),
     interval: z
-      .string()
-      .transform((val) => (val === "" ? undefined : val))
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val === "" || val === undefined ? undefined : val))
       .pipe(
         z
           .string()
@@ -30,8 +30,8 @@ export const outboundGroupCreateSchema = z
       ),
     tolerance: z.number().min(0).max(10000).optional(),
     idle_timeout: z
-      .string()
-      .transform((val) => (val === "" ? undefined : val))
+      .union([z.string(), z.undefined()])
+      .transform((val) => (val === "" || val === undefined ? undefined : val))
       .pipe(
         z
           .string()
