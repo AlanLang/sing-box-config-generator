@@ -1,0 +1,202 @@
+use axum::{http::StatusCode, response::IntoResponse, Json};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+
+const OUTBOUND_GROUP_DIR: &str = "./data/outbound_groups";
+const OUTBOUND_DIR: &str = "./data/outbound";
+const FILTER_DIR: &str = "./data/filter";
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OutboundGroupCreateDto {
+    pub uuid: String,
+    pub name: String,
+    pub group_type: String,
+    pub outbounds: Vec<String>,
+    pub default: Option<String>,
+    pub url: Option<String>,
+    pub interval: Option<String>,
+    pub tolerance: Option<u32>,
+    pub idle_timeout: Option<String>,
+    pub interrupt_exist_connections: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OutboundGroupListDto {
+    pub uuid: String,
+    pub name: String,
+    pub group_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateQuery {
+    pub uuid: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteQuery {
+    pub uuid: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OutboundOptionDto {
+    pub value: String,
+    pub label: String,
+    pub source: String,
+    #[serde(rename = "type")]
+    pub option_type: Option<String>,
+}
+
+pub async fn create_outbound_group(
+    Json(payload): Json<OutboundGroupCreateDto>,
+) -> impl IntoResponse {
+    let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", payload.uuid));
+
+    if file_path.exists() {
+        return (
+            StatusCode::CONFLICT,
+            "Outbound group with this UUID already exists",
+        )
+            .into_response();
+    }
+
+    if let Err(e) = fs::write(&file_path, serde_json::to_string_pretty(&payload).unwrap()) {
+        eprintln!("Failed to write outbound group file: {}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to save outbound group",
+        )
+            .into_response();
+    }
+
+    (StatusCode::CREATED, Json(payload)).into_response()
+}
+
+pub async fn list_outbound_groups() -> impl IntoResponse {
+    let mut groups = Vec::new();
+
+    let entries = match fs::read_dir(OUTBOUND_GROUP_DIR) {
+        Ok(entries) => entries,
+        Err(_) => {
+            return (StatusCode::OK, Json(groups)).into_response();
+        }
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) == Some("json") {
+            if let Ok(content) = fs::read_to_string(&path) {
+                if let Ok(group) = serde_json::from_str::<OutboundGroupCreateDto>(&content) {
+                    groups.push(OutboundGroupListDto {
+                        uuid: group.uuid,
+                        name: group.name,
+                        group_type: group.group_type,
+                    });
+                }
+            }
+        }
+    }
+
+    (StatusCode::OK, Json(groups)).into_response()
+}
+
+pub async fn update_outbound_group(
+    axum::extract::Query(query): axum::extract::Query<UpdateQuery>,
+    Json(payload): Json<OutboundGroupCreateDto>,
+) -> impl IntoResponse {
+    let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", query.uuid));
+
+    if !file_path.exists() {
+        return (StatusCode::NOT_FOUND, "Outbound group not found").into_response();
+    }
+
+    if let Err(e) = fs::write(&file_path, serde_json::to_string_pretty(&payload).unwrap()) {
+        eprintln!("Failed to update outbound group file: {}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to update outbound group",
+        )
+            .into_response();
+    }
+
+    (StatusCode::OK, Json(payload)).into_response()
+}
+
+pub async fn delete_outbound_group(
+    axum::extract::Query(query): axum::extract::Query<DeleteQuery>,
+) -> impl IntoResponse {
+    let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", query.uuid));
+
+    if !file_path.exists() {
+        return (StatusCode::NOT_FOUND, "Outbound group not found").into_response();
+    }
+
+    if let Err(e) = fs::remove_file(&file_path) {
+        eprintln!("Failed to delete outbound group file: {}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to delete outbound group",
+        )
+            .into_response();
+    }
+
+    (StatusCode::OK, "Outbound group deleted successfully").into_response()
+}
+
+pub async fn get_available_options() -> impl IntoResponse {
+    let mut options = Vec::new();
+
+    // Read outbound options
+    if let Ok(entries) = fs::read_dir(OUTBOUND_DIR) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    if let Ok(outbound) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if let Some(tag) = outbound.get("tag").and_then(|t| t.as_str()) {
+                            let outbound_type = outbound
+                                .get("type")
+                                .and_then(|t| t.as_str())
+                                .map(|s| s.to_string());
+
+                            options.push(OutboundOptionDto {
+                                value: tag.to_string(),
+                                label: tag.to_string(),
+                                source: "outbound".to_string(),
+                                option_type: outbound_type,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Read filter options
+    if let Ok(entries) = fs::read_dir(FILTER_DIR) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    if let Ok(filter) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if let Some(name) = filter.get("name").and_then(|n| n.as_str()) {
+                            let filter_type = filter
+                                .get("filter_type")
+                                .and_then(|t| t.as_str())
+                                .map(|s| s.to_string());
+
+                            options.push(OutboundOptionDto {
+                                value: name.to_string(),
+                                label: name.to_string(),
+                                source: "filter".to_string(),
+                                option_type: filter_type,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    (StatusCode::OK, Json(options)).into_response()
+}

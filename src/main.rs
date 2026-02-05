@@ -99,6 +99,17 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::filter::update_filter)
         .delete(backend::api::filter::delete_filter),
     )
+    .route(
+      "/api/outbound-group",
+      axum::routing::post(backend::api::outbound_group::create_outbound_group)
+        .get(backend::api::outbound_group::list_outbound_groups)
+        .put(backend::api::outbound_group::update_outbound_group)
+        .delete(backend::api::outbound_group::delete_outbound_group),
+    )
+    .route(
+      "/api/outbound-group/options",
+      axum::routing::get(backend::api::outbound_group::get_available_options),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005
