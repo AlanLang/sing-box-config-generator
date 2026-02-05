@@ -205,7 +205,22 @@ fi
 ### 7. 发送完成通知
 
 ```bash
-/home/alan/code/start/.claude/scripts/telegram-notify.sh "✅ 任务完成
+# 获取 commit 信息和 GitHub URL
+COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "N/A")
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+
+# 从 git remote URL 提取 owner/repo
+# 支持格式: git@github.com:owner/repo.git 或 https://github.com/owner/repo.git
+if [ -n "$REMOTE_URL" ]; then
+    # 先移除 .git 后缀，再提取 owner/repo
+    REPO_PATH=$(echo "$REMOTE_URL" | sed -E 's/\.git$//' | sed -E 's/.*[:/]([^/]+\/[^/]+)$/\1/')
+    COMMIT_URL="https://github.com/${REPO_PATH}/commit/${COMMIT_HASH}"
+else
+    COMMIT_URL=""
+fi
+
+# 构建完成通知消息
+FINAL_MESSAGE="✅ 任务完成
 
 📋 任务: ${ARGUMENTS}
 
@@ -218,10 +233,42 @@ fi
 ${outcomes}
 
 📝 Commit:
-${COMMIT_MSG}
+${COMMIT_MSG}"
+
+# 添加 GitHub 链接（如果可用）
+if [ -n "$COMMIT_URL" ]; then
+    FINAL_MESSAGE="${FINAL_MESSAGE}
+
+🔗 查看更改: ${COMMIT_URL}"
+fi
+
+# 添加状态信息
+FINAL_MESSAGE="${FINAL_MESSAGE}
 
 🚀 部署状态: 成功
 📤 推送状态: 完成"
+
+# Telegram 消息长度限制：4096 字符
+# 如果超过限制，截断详细信息部分
+MAX_LENGTH=4000  # 留一些安全余地
+if [ ${#FINAL_MESSAGE} -gt $MAX_LENGTH ]; then
+    # 构建简化版消息
+    FINAL_MESSAGE="✅ 任务完成
+
+📋 任务: ${ARGUMENTS}
+
+🔧 主要改动: (内容较长，详见 GitHub)
+
+📝 Commit: $(echo "$COMMIT_MSG" | head -n 1)
+
+🔗 查看更改: ${COMMIT_URL}
+
+🚀 部署状态: 成功
+📤 推送状态: 完成"
+fi
+
+# 发送通知
+/home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "$FINAL_MESSAGE"
 ```
 
 ## 自主决策指南
@@ -301,7 +348,8 @@ ${error_message}
 部署失败时不提交代码:
 
 ```bash
-/home/alan/code/start/.claude/scripts/telegram-notify.sh "⚠️ 部署失败，代码未提交
+# 构建错误消息
+ERROR_MESSAGE="⚠️ 部署失败，代码未提交
 
 📋 任务: ${ARGUMENTS}
 
@@ -314,6 +362,24 @@ ${deploy_error}
 💡 建议:
 检查日志: sudo journalctl -u sing-box-config-generator -n 50
 代码改动已保留但未提交"
+
+# Telegram 消息长度限制检查
+MAX_LENGTH=4000
+if [ ${#ERROR_MESSAGE} -gt $MAX_LENGTH ]; then
+    ERROR_MESSAGE="⚠️ 部署失败，代码未提交
+
+📋 任务: ${ARGUMENTS}
+
+✅ 代码改动已完成（详见本地文件）
+
+❌ 部署失败: (错误信息过长，详见本地日志)
+
+💡 建议:
+检查日志: sudo journalctl -u sing-box-config-generator -n 50
+代码改动已保留但未提交"
+fi
+
+/home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "$ERROR_MESSAGE"
 ```
 
 ## 最佳实践
@@ -359,7 +425,7 @@ ${deploy_error}
 11. 🚀 执行 deploy.sh
 12. 📨 通知: "部署成功，提交代码"
 13. ✅ Commit + Push
-14. 📨 通知: "任务完成"
+14. 📨 通知: "任务完成（包含 GitHub commit 链接）"
 ```
 
 ### 场景 2: Bug 修复
@@ -376,7 +442,7 @@ ${deploy_error}
 6. 🚀 执行 deploy.sh
 7. 📨 通知: "部署成功，提交代码"
 8. ✅ Commit + Push
-9. 📨 通知: "Bug 修复完成"
+9. 📨 通知: "Bug 修复完成（包含 GitHub commit 链接）"
 ```
 
 ### 场景 3: 性能优化
@@ -393,7 +459,7 @@ ${deploy_error}
 6. 🚀 执行 deploy.sh
 7. 📨 通知: "部署成功，提交代码"
 8. ✅ Commit + Push
-9. 📨 通知: "性能优化完成"
+9. 📨 通知: "性能优化完成（包含 GitHub commit 链接）"
 ```
 
 ## 注意事项
