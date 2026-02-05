@@ -40,6 +40,13 @@ async fn main() -> anyhow::Result<()> {
         .delete(backend::api::rule::delete_rule),
     )
     .route(
+      "/api/route",
+      axum::routing::post(backend::api::route::create_route)
+        .get(backend::api::route::list_routes)
+        .put(backend::api::route::update_route)
+        .delete(backend::api::route::delete_route),
+    )
+    .route(
       "/api/inbound",
       axum::routing::post(backend::api::inbound::create_inbound)
         .get(backend::api::inbound::list_inbounds)

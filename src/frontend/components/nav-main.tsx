@@ -58,7 +58,7 @@ const singBoxConfigs = [
   },
   {
     title: "Route",
-    url: "#",
+    url: "/route",
     icon: IconRouter,
   },
   {
