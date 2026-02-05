@@ -20,6 +20,7 @@ export interface OutboundGroupListDto {
 }
 
 export interface OutboundOption {
+  uuid: string;
   value: string;
   label: string;
   source: "outbound" | "filter";

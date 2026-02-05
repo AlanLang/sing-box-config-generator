@@ -40,6 +40,7 @@ pub struct DeleteQuery {
 
 #[derive(Debug, Serialize)]
 pub struct OutboundOptionDto {
+    pub uuid: String,
     pub value: String,
     pub label: String,
     pub source: String,
@@ -87,11 +88,8 @@ pub async fn list_outbound_groups() -> impl IntoResponse {
         if path.extension().and_then(|s| s.to_str()) == Some("json") {
             if let Ok(content) = fs::read_to_string(&path) {
                 if let Ok(group) = serde_json::from_str::<OutboundGroupCreateDto>(&content) {
-                    groups.push(OutboundGroupListDto {
-                        uuid: group.uuid,
-                        name: group.name,
-                        group_type: group.group_type,
-                    });
+                    // Return full data instead of summary
+                    groups.push(group);
                 }
             }
         }
@@ -155,6 +153,13 @@ pub async fn get_available_options() -> impl IntoResponse {
                     if let Ok(outbound_wrapper) =
                         serde_json::from_str::<serde_json::Value>(&content)
                     {
+                        // Get UUID from wrapper
+                        let uuid = outbound_wrapper
+                            .get("uuid")
+                            .and_then(|u| u.as_str())
+                            .unwrap_or("")
+                            .to_string();
+
                         // Outbound data is stored with a "json" field containing the actual config as a string
                         if let Some(json_str) = outbound_wrapper.get("json").and_then(|j| j.as_str())
                         {
@@ -171,6 +176,7 @@ pub async fn get_available_options() -> impl IntoResponse {
                                         .map(|s| s.to_string());
 
                                     options.push(OutboundOptionDto {
+                                        uuid,
                                         value: tag.to_string(),
                                         label: tag.to_string(),
                                         source: "outbound".to_string(),
@@ -192,6 +198,12 @@ pub async fn get_available_options() -> impl IntoResponse {
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 if let Ok(content) = fs::read_to_string(&path) {
                     if let Ok(filter) = serde_json::from_str::<serde_json::Value>(&content) {
+                        let uuid = filter
+                            .get("uuid")
+                            .and_then(|u| u.as_str())
+                            .unwrap_or("")
+                            .to_string();
+
                         if let Some(name) = filter.get("name").and_then(|n| n.as_str()) {
                             let filter_type = filter
                                 .get("filter_type")
@@ -199,6 +211,7 @@ pub async fn get_available_options() -> impl IntoResponse {
                                 .map(|s| s.to_string());
 
                             options.push(OutboundOptionDto {
+                                uuid,
                                 value: name.to_string(),
                                 label: name.to_string(),
                                 source: "filter".to_string(),

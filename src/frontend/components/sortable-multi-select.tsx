@@ -71,21 +71,21 @@ export function SortableMultiSelect({
     }
   };
 
-  const handleRemove = (value: string) => {
-    onSelectedChange(selected.filter((v) => v !== value));
+  const handleRemove = (uuid: string) => {
+    onSelectedChange(selected.filter((v) => v !== uuid));
   };
 
-  const handleAdd = (value: string) => {
-    if (!selected.includes(value)) {
-      onSelectedChange([...selected, value]);
+  const handleAdd = (uuid: string) => {
+    if (!selected.includes(uuid)) {
+      onSelectedChange([...selected, uuid]);
     }
   };
 
   const selectedOptions = selected
-    .map((value) => options.find((opt) => opt.value === value))
+    .map((uuid) => options.find((opt) => opt.uuid === uuid))
     .filter(Boolean) as OutboundOption[];
 
-  const availableOptions = options.filter((opt) => !selected.includes(opt.value));
+  const availableOptions = options.filter((opt) => !selected.includes(opt.uuid));
 
   return (
     <div className="space-y-3">
@@ -103,8 +103,8 @@ export function SortableMultiSelect({
             <div className="space-y-2">
               {selectedOptions.map((option) => (
                 <SortableItem
-                  key={option.value}
-                  id={option.value}
+                  key={option.uuid}
+                  id={option.uuid}
                   option={option}
                   onRemove={handleRemove}
                   disabled={disabled}
@@ -193,7 +193,7 @@ function SortableItem({ id, option, onRemove, disabled }: SortableItemProps) {
 
 interface AddItemDropdownProps {
   options: OutboundOption[];
-  onAdd: (value: string) => void;
+  onAdd: (uuid: string) => void;
   disabled?: boolean;
 }
 
@@ -219,8 +219,8 @@ function AddItemDropdown({ options, onAdd, disabled }: AddItemDropdownProps) {
             <DropdownMenuLabel>Outbounds</DropdownMenuLabel>
             {outboundOptions.map((option) => (
               <DropdownMenuItem
-                key={option.value}
-                onClick={() => onAdd(option.value)}
+                key={option.uuid}
+                onClick={() => onAdd(option.uuid)}
                 className="flex items-center gap-2"
               >
                 <IconNetwork className="h-4 w-4" />
@@ -242,8 +242,8 @@ function AddItemDropdown({ options, onAdd, disabled }: AddItemDropdownProps) {
             <DropdownMenuLabel>Filters</DropdownMenuLabel>
             {filterOptions.map((option) => (
               <DropdownMenuItem
-                key={option.value}
-                onClick={() => onAdd(option.value)}
+                key={option.uuid}
+                onClick={() => onAdd(option.uuid)}
                 className="flex items-center gap-2"
               >
                 <IconFilter className="h-4 w-4" />

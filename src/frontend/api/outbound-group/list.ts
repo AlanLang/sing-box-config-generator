@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import ky from "ky";
-import type { OutboundGroupListDto } from "./types";
+import type { OutboundGroupDto } from "./types";
 
 export function useOutboundGroupList() {
   return useQuery({
@@ -8,7 +8,7 @@ export function useOutboundGroupList() {
     queryFn: async () => {
       const response = await ky
         .get("/api/outbound-group")
-        .json<OutboundGroupListDto[]>();
+        .json<OutboundGroupDto[]>();
       return response;
     },
   });

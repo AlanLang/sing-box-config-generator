@@ -15,10 +15,7 @@ import {
   createOutboundGroup,
   outboundGroupCreateSchema,
 } from "@/api/outbound-group/create";
-import type {
-  GroupType,
-  OutboundGroupListDto,
-} from "@/api/outbound-group/types";
+import type { GroupType, OutboundGroupDto } from "@/api/outbound-group/types";
 
 export const Route = createFileRoute("/subscribe/outbound-group/")({
   component: RouteComponent,
@@ -62,25 +59,18 @@ function RouteComponent() {
     setFocusMode(true);
   };
 
-  const handleEdit = (group: OutboundGroupListDto) => {
-    // Fetch full data from file
-    const groupFile = groups?.find((g) => g.uuid === group.uuid);
-    if (!groupFile) return;
-
+  const handleEdit = (group: OutboundGroupDto) => {
     setIsCreating(false);
     setSelectedUuid(group.uuid);
     setEditName(group.name);
     setEditGroupType(group.group_type);
-
-    // We need to read the full data - for now just set defaults
-    // In production, we'd need a get endpoint
-    setEditOutbounds([]);
-    setEditDefault("");
-    setEditUrl("https://www.gstatic.com/generate_204");
-    setEditInterval("3m");
-    setEditTolerance(50);
-    setEditIdleTimeout("30m");
-    setEditInterrupt(false);
+    setEditOutbounds(group.outbounds || []);
+    setEditDefault(group.default || "");
+    setEditUrl(group.url || "https://www.gstatic.com/generate_204");
+    setEditInterval(group.interval || "3m");
+    setEditTolerance(group.tolerance || 50);
+    setEditIdleTimeout(group.idle_timeout || "30m");
+    setEditInterrupt(group.interrupt_exist_connections || false);
     setFocusMode(true);
   };
 
