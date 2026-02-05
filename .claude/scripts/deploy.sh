@@ -5,6 +5,9 @@
 
 set -euo pipefail
 
+# 添加 bun 到 PATH
+export PATH="$HOME/.bun/bin:$PATH"
+
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -53,9 +56,9 @@ echo ""
 
 # ==================== Step 1: 构建前端 ====================
 log_step "1/6 构建前端..."
-log_info "运行: npm run build"
+log_info "运行: bun run build"
 
-if npm run build; then
+if bun run build; then
     log_info "✅ 前端构建成功"
 else
     log_error "❌ 前端构建失败"

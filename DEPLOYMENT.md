@@ -14,7 +14,7 @@ SingBox Config Generator 使用 systemd 进行生产部署。本指南介绍完�
 ```
 
 部署脚本会自动完成：
-1. 构建前端（npm run build）
+1. 构建前端（bun run build）
 2. 构建后端（cargo build --release）
 3. 安装/更新 systemd service
 4. 重启服务
@@ -41,8 +41,8 @@ SingBox Config Generator 使用 systemd 进行生产部署。本指南介绍完�
 ### 软件依赖
 
 - **Node.js** >= 18
+- **Bun** >= 1.0 (包管理器，不使用 npm/pnpm)
 - **Rust** >= 1.70
-- **npm** 或 **pnpm**
 - **systemd**（Linux 系统自带）
 
 ### 权限要求
@@ -55,7 +55,7 @@ SingBox Config Generator 使用 systemd 进行生产部署。本指南介绍完�
 ### Step 1: 构建前端
 
 ```bash
-npm run build
+bun run build
 ```
 
 输出目录：`./web/`（由 rsbuild 生成）
@@ -254,8 +254,8 @@ ps aux | grep sing-box-config-generator
 ```bash
 # 清理缓存
 rm -rf node_modules web
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 **后端构建失败**：

@@ -13,6 +13,7 @@ A full-stack SingBox configuration generator with React frontend and Rust (Axum)
 - Frontend: React + Rsbuild + TanStack Router + TanStack Query
 - UI: Radix UI + Tailwind CSS
 - Storage: File-based JSON (./data/{module}/)
+- Package Manager: **Bun** (not npm/pnpm)
 
 **Key Paths**:
 ```
@@ -73,17 +74,20 @@ All endpoints under `/api/{module}`:
 
 **Quick Start**:
 ```bash
+# Install dependencies (first time)
+bun install
+
 # Backend (port 3005)
 cargo run
 
 # Frontend (port 3000)
-npm run dev
+bun run dev
 ```
 
 **Production Build**:
 ```bash
 # Frontend
-npm run build
+bun run build
 
 # Backend
 cargo build --release
@@ -91,8 +95,8 @@ cargo build --release
 
 **Code Quality**:
 ```bash
-npm run check        # Biome lint + format
-npm run build        # Production build
+bun run check        # Biome lint + format
+bun run build        # Production build
 ```
 
 **Deployment**:
@@ -101,6 +105,8 @@ npm run build        # Production build
 ```
 
 **Git**: Husky runs `biome check --write` on staged files before commit.
+
+**IMPORTANT**: Always use `bun` for package management, not `npm` or `pnpm`. Lock file: `bun.lock`
 
 ## Deployment
 
@@ -114,7 +120,7 @@ The application runs as a systemd service in production. Complete deployment wor
 ```
 
 This script will:
-1. ✅ Build frontend (`npm run build`)
+1. ✅ Build frontend (`bun run build`)
 2. ✅ Build backend (`cargo build --release`)
 3. ✅ Update systemd service if needed
 4. ✅ Restart service (`systemctl restart sing-box-config-generator`)
