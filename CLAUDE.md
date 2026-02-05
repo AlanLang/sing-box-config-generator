@@ -28,6 +28,24 @@ src/
 
 **Path Alias**: `@/*` → `src/frontend/*`
 
+## Code Modification Rules
+
+### components/ui Directory Protection
+
+**CRITICAL RULE**: The `src/frontend/components/ui/` directory contains shadcn components and MUST NOT be modified manually.
+
+- ❌ **NEVER** directly edit files in `components/ui/`
+- ✅ **ONLY** modify these components through shadcn CLI updates
+- ✅ Use `bunx shadcn@latest add <component>` to update components
+- ✅ For style customization, use className props or wrapper components
+
+**Rationale**: These are vendor-managed components that should maintain compatibility with shadcn updates. Manual modifications will be lost on updates and may cause inconsistencies.
+
+**If you need to customize shadcn components**:
+1. Create a wrapper component in `components/` (not `components/ui/`)
+2. Use the wrapper to apply custom styles and behavior
+3. Never modify the original shadcn component
+
 ## Core Patterns
 
 ### Data Model (All Config Modules)
