@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { AppPage } from "@/components/app-page";
@@ -16,6 +16,8 @@ import {
   outboundGroupCreateSchema,
 } from "@/api/outbound-group/create";
 import type { GroupType, OutboundGroupDto } from "@/api/outbound-group/types";
+import { useOutboundList } from "@/api/outbound/list";
+import { useFilterList } from "@/api/filter/list";
 
 export const Route = createFileRoute("/subscribe/outbound-group/")({
   component: RouteComponent,
@@ -23,8 +25,22 @@ export const Route = createFileRoute("/subscribe/outbound-group/")({
 
 function RouteComponent() {
   const { data: groups, refetch, isLoading } = useOutboundGroupList();
+  const { data: outbounds } = useOutboundList();
+  const { data: filters } = useFilterList();
   const updateMutation = useOutboundGroupUpdate();
   const deleteMutation = useOutboundGroupDelete();
+
+  // Create a UUID to name mapping for outbounds and filters
+  const uuidToNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    outbounds?.forEach((item) => {
+      map.set(item.uuid, item.name);
+    });
+    filters?.forEach((item) => {
+      map.set(item.uuid, item.name);
+    });
+    return map;
+  }, [outbounds, filters]);
 
   const [focusMode, setFocusMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -164,11 +180,16 @@ function RouteComponent() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {groups?.map((group, index) => {
-            // Create a preview object for the card - only show type and outbounds
+            // Map UUIDs to names, filter out not found ones
+            const outboundNames = group.outbounds
+              .map((uuid) => uuidToNameMap.get(uuid))
+              .filter((name): name is string => name !== undefined);
+
+            // Create a preview object for the card - show type and outbound names
             const preview = JSON.stringify(
               {
                 type: group.group_type,
-                outbounds: group.outbounds,
+                outbounds: outboundNames,
               },
               null,
               2,
