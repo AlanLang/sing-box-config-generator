@@ -48,7 +48,7 @@ const singBoxConfigs = [
   },
   {
     title: "Outbounds",
-    url: "#",
+    url: "/outbound",
     icon: IconCloudDown,
   },
   {

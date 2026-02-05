@@ -40,6 +40,13 @@ async fn main() -> anyhow::Result<()> {
         .delete(backend::api::inbound::delete_inbound),
     )
     .route(
+      "/api/outbound",
+      axum::routing::post(backend::api::outbound::create_outbound)
+        .get(backend::api::outbound::list_outbounds)
+        .put(backend::api::outbound::update_outbound)
+        .delete(backend::api::outbound::delete_outbound),
+    )
+    .route(
       "/api/experimental",
       axum::routing::post(backend::api::experimental::create_experimental)
         .get(backend::api::experimental::list_experimentals)
