@@ -20,6 +20,7 @@ import { Route as InboundIndexRouteImport } from './inbound/index'
 import { Route as ExperimentalIndexRouteImport } from './experimental/index'
 import { Route as DnsServerIndexRouteImport } from './dns-server/index'
 import { Route as DnsConfigIndexRouteImport } from './dns-config/index'
+import { Route as SubscribeFilterIndexRouteImport } from './subscribe.filter/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const DnsConfigIndexRoute = DnsConfigIndexRouteImport.update({
   path: '/dns-config/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubscribeFilterIndexRoute = SubscribeFilterIndexRouteImport.update({
+  id: '/subscribe/filter/',
+  path: '/subscribe/filter/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/rule': typeof RuleIndexRoute
   '/ruleset': typeof RulesetIndexRoute
   '/subscribe': typeof SubscribeIndexRoute
+  '/subscribe/filter': typeof SubscribeFilterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/rule': typeof RuleIndexRoute
   '/ruleset': typeof RulesetIndexRoute
   '/subscribe': typeof SubscribeIndexRoute
+  '/subscribe/filter': typeof SubscribeFilterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/rule/': typeof RuleIndexRoute
   '/ruleset/': typeof RulesetIndexRoute
   '/subscribe/': typeof SubscribeIndexRoute
+  '/subscribe/filter/': typeof SubscribeFilterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/rule'
     | '/ruleset'
     | '/subscribe'
+    | '/subscribe/filter'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/rule'
     | '/ruleset'
     | '/subscribe'
+    | '/subscribe/filter'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/rule/'
     | '/ruleset/'
     | '/subscribe/'
+    | '/subscribe/filter/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   RuleIndexRoute: typeof RuleIndexRoute
   RulesetIndexRoute: typeof RulesetIndexRoute
   SubscribeIndexRoute: typeof SubscribeIndexRoute
+  SubscribeFilterIndexRoute: typeof SubscribeFilterIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DnsConfigIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/subscribe/filter/': {
+      id: '/subscribe/filter/'
+      path: '/subscribe/filter'
+      fullPath: '/subscribe/filter'
+      preLoaderRoute: typeof SubscribeFilterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   RuleIndexRoute: RuleIndexRoute,
   RulesetIndexRoute: RulesetIndexRoute,
   SubscribeIndexRoute: SubscribeIndexRoute,
+  SubscribeFilterIndexRoute: SubscribeFilterIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

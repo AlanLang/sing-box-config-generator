@@ -9,7 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconCloudDown, IconCloudPlus, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconListCheck, IconLocationDown, IconLogs, IconMoodHeart, IconRouter, IconWorldSearch, IconWorldCog } from "@tabler/icons-react"
+import { IconCloudDown, IconCloudPlus, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconListCheck, IconLocationDown, IconLogs, IconMoodHeart, IconRouter, IconWorldSearch, IconWorldCog, IconFilter } from "@tabler/icons-react"
 import { Link, useLocation } from "@tanstack/react-router"
 
 const resources = [
@@ -17,6 +17,11 @@ const resources = [
     title: "Subscribe",
     url: "/subscribe",
     icon: IconLocationDown,
+  },
+  {
+    title: "Filter",
+    url: "/subscribe/filter",
+    icon: IconFilter,
   },
 ]
 

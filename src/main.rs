@@ -92,6 +92,13 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::dns_config::update_dns_config)
         .delete(backend::api::dns_config::delete_dns_config),
     )
+    .route(
+      "/api/filter",
+      axum::routing::post(backend::api::filter::create_filter)
+        .get(backend::api::filter::list_filters)
+        .put(backend::api::filter::update_filter)
+        .delete(backend::api::filter::delete_filter),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005
