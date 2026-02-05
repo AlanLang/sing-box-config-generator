@@ -4,8 +4,8 @@ use std::fs;
 use std::path::PathBuf;
 
 const OUTBOUND_GROUP_DIR: &str = "./data/outbound_groups";
-const OUTBOUND_DIR: &str = "./data/outbound";
-const FILTER_DIR: &str = "./data/filter";
+const OUTBOUND_DIR: &str = "./data/outbounds";
+const FILTER_DIR: &str = "./data/filters";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OutboundGroupCreateDto {
@@ -152,19 +152,32 @@ pub async fn get_available_options() -> impl IntoResponse {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 if let Ok(content) = fs::read_to_string(&path) {
-                    if let Ok(outbound) = serde_json::from_str::<serde_json::Value>(&content) {
-                        if let Some(tag) = outbound.get("tag").and_then(|t| t.as_str()) {
-                            let outbound_type = outbound
-                                .get("type")
-                                .and_then(|t| t.as_str())
-                                .map(|s| s.to_string());
+                    if let Ok(outbound_wrapper) =
+                        serde_json::from_str::<serde_json::Value>(&content)
+                    {
+                        // Outbound data is stored with a "json" field containing the actual config as a string
+                        if let Some(json_str) = outbound_wrapper.get("json").and_then(|j| j.as_str())
+                        {
+                            // Parse the inner JSON string
+                            if let Ok(outbound_config) =
+                                serde_json::from_str::<serde_json::Value>(json_str)
+                            {
+                                if let Some(tag) =
+                                    outbound_config.get("tag").and_then(|t| t.as_str())
+                                {
+                                    let outbound_type = outbound_config
+                                        .get("type")
+                                        .and_then(|t| t.as_str())
+                                        .map(|s| s.to_string());
 
-                            options.push(OutboundOptionDto {
-                                value: tag.to_string(),
-                                label: tag.to_string(),
-                                source: "outbound".to_string(),
-                                option_type: outbound_type,
-                            });
+                                    options.push(OutboundOptionDto {
+                                        value: tag.to_string(),
+                                        label: tag.to_string(),
+                                        source: "outbound".to_string(),
+                                        option_type: outbound_type,
+                                    });
+                                }
+                            }
                         }
                     }
                 }
