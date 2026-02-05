@@ -105,6 +105,8 @@ npm run build        # Production build
 
 **IMPORTANT**: After completing any non-trivial task, send a summary notification via Telegram.
 
+**Notification Timing**: Send notification AFTER git push completes successfully.
+
 **Setup Required**: Follow `.claude/telegram-config.md` to configure:
 - Telegram Bot Token
 - Chat ID
@@ -116,6 +118,12 @@ npm run build        # Production build
 - ✅ Configuration changes
 - ❌ Skip for trivial operations (reading files, searching)
 
+**Complete Task Flow**:
+1. Complete the task
+2. Git commit changes
+3. Git push to remote
+4. Send Telegram notification with results
+
 **Notification Pattern**:
 ```bash
 ./.claude/scripts/telegram-notify.sh "✅ Task Completed
@@ -125,23 +133,39 @@ npm run build        # Production build
 🔧 Changes:
 - {key changes}
 
-✨ Results: {outcomes}"
+✨ Results: {outcomes}
+
+Commit: {commit message}"
 ```
 
 See `/notify-telegram` skill for detailed guidelines.
 
 ## Git Workflow
 
-**IMPORTANT**: Always commit changes after completing tasks (unless no files changed).
+**IMPORTANT**: Always commit AND push changes after completing tasks (unless no files changed).
+
+**Standard Workflow**:
+1. **Commit** changes with proper message format
+2. **Push** to remote repository immediately after commit
+3. **Notify** via Telegram with results
 
 Use the `/commit` skill for detailed guidelines and automation, or follow this quick format:
 
 ```bash
+# 1. Commit
+git commit -m "$(cat <<'EOF'
 <type>(<scope>): <subject>
 
 <body>
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+
+# 2. Push immediately
+git push
 ```
 
 **Quick Reference**: `feat`(新增) | `fix`(修复) | `docs`(文档) | `refactor`(重构) | `style`(格式) | `perf`(优化) | `test`(测试) | `build`(构建) | `chore`(杂项)
+
+**Push Policy**: Always push after successful commit unless explicitly asked not to.

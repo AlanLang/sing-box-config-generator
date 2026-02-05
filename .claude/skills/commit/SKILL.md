@@ -2,11 +2,21 @@
 
 Automates git commit creation with proper commit message formatting for this project.
 
+**IMPORTANT**: This skill now includes automatic push to remote after successful commit.
+
 ## When to Use
 
 - After completing a task that modified files
 - When user explicitly asks to commit changes
 - When multiple related changes are ready to be committed together
+
+## Workflow Overview
+
+1. Review changes (git status, git diff)
+2. Stage relevant files
+3. Create commit with proper message
+4. **Push to remote immediately**
+5. Verify success
 
 ## Commit Message Format
 
@@ -104,10 +114,24 @@ EOF
 )"
 ```
 
-### Step 5: Verify
+### Step 5: Push to Remote
+
+**IMPORTANT**: Always push immediately after successful commit (unless explicitly told not to).
 
 ```bash
-git status           # Should show clean working tree
+git push
+```
+
+If push fails (e.g., branch not tracking remote), set upstream:
+
+```bash
+git push -u origin $(git branch --show-current)
+```
+
+### Step 6: Verify
+
+```bash
+git status           # Should show "up to date with origin"
 git log -1 --stat    # Review the commit
 ```
 
