@@ -5,31 +5,10 @@ import { useLogUpdate } from "@/api/log/update";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
-import { JsonEditor } from "@/components/json-editor";
+import { FocusEditor } from "@/components/focus-editor";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  IconCubePlus,
-  IconDeviceFloppy,
-  IconTrash,
-  IconX,
-} from "@tabler/icons-react";
+import { IconCubePlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
@@ -216,183 +195,23 @@ function RouteComponent() {
       )}
 
       {/* Focus Mode Editor - Outside conditional so it works even when no logs */}
-      <AnimatePresence>
-        {focusMode && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={isCreating ? { scale: 0.9, opacity: 0 } : false}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                opacity: { duration: 0.2 },
-              }}
-              className="h-full flex flex-col bg-background rounded-xl overflow-hidden shadow-2xl"
-            >
-              {/* Header Bar */}
-              <motion.div
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                className="border-b bg-background/50 backdrop-blur-xl"
-              >
-                <div className="px-6 py-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleExitFocus}
-                          className="gap-2"
-                        >
-                          <IconX className="size-4" />
-                          <span className="hidden sm:inline">
-                            {isCreating ? "Cancel" : "Exit Focus"}
-                          </span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {isCreating
-                          ? "Cancel creation (Esc)"
-                          : "Exit focus mode (Esc)"}
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <div className="h-6 w-px bg-border" />
-
-                    <div className="flex items-center gap-3">
-                      {isCreating && (
-                        <motion.span
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 25,
-                          }}
-                          className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20"
-                        >
-                          New
-                        </motion.span>
-                      )}
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="max-w-md text-lg font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
-                        placeholder="Log name..."
-                      />
-                    </div>
-                  </div>
-
-                  <motion.div
-                    initial={{ x: 20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.15 }}
-                    className="flex items-center gap-2"
-                  >
-                    {!isCreating && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Dialog
-                            open={deleteDialogOpen}
-                            onOpenChange={setDeleteDialogOpen}
-                          >
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <IconTrash className="size-4 text-destructive" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Delete Log</DialogTitle>
-                                <DialogDescription>
-                                  Are you sure you want to delete "{editName}
-                                  "? This action cannot be undone.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button
-                                  variant="destructive"
-                                  onClick={handleDelete}
-                                  disabled={deleteLogMutation.isPending}
-                                >
-                                  {deleteLogMutation.isPending
-                                    ? "Deleting..."
-                                    : "Delete"}
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete log</TooltipContent>
-                      </Tooltip>
-                    )}
-
-                    <Button
-                      onClick={handleSave}
-                      disabled={updateLogMutation.isPending || !editName.trim()}
-                      size="sm"
-                      className="gap-2"
-                    >
-                      <IconDeviceFloppy className="size-4" />
-                      {isCreating
-                        ? "Create Log"
-                        : updateLogMutation.isPending
-                          ? "Saving..."
-                          : "Save Changes"}
-                    </Button>
-                  </motion.div>
-                </div>
-              </motion.div>
-
-              {/* Editor Area */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex-1 relative"
-              >
-                <JsonEditor
-                  className="h-full"
-                  value={editJson}
-                  onChange={(value) => setEditJson(value)}
-                />
-              </motion.div>
-
-              {/* Footer Info */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.15 }}
-                className="border-t bg-background/50 backdrop-blur-xl px-6 py-3 flex items-center justify-between text-xs text-muted-foreground"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="font-mono">
-                    {isCreating ? editUuid : selectedLog?.uuid}
-                  </span>
-                  <span>•</span>
-                  <span>JSON Configuration</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span>{editJson?.split("\n").length || 0} lines</span>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FocusEditor
+        isOpen={focusMode}
+        isCreating={isCreating}
+        name={editName}
+        onNameChange={setEditName}
+        json={editJson}
+        onJsonChange={setEditJson}
+        uuid={isCreating ? editUuid : selectedLog?.uuid || ""}
+        onClose={handleExitFocus}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        isSaving={updateLogMutation.isPending}
+        isDeleting={deleteLogMutation.isPending}
+        entityType="Log"
+        deleteDialogOpen={deleteDialogOpen}
+        onDeleteDialogChange={setDeleteDialogOpen}
+      />
     </AppPage>
   );
 }
