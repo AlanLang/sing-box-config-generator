@@ -71,20 +71,6 @@ export function EditorHeader({
             <div className="h-6 w-px bg-border" />
 
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              {isCreating && (
-                <motion.span
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 500,
-                    damping: 25,
-                  }}
-                  className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0"
-                >
-                  New
-                </motion.span>
-              )}
               <Input
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
@@ -118,20 +104,6 @@ export function EditorHeader({
           </Button>
 
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            {isCreating && (
-              <motion.span
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 25,
-                }}
-                className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0"
-              >
-                New
-              </motion.span>
-            )}
             <Input
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
