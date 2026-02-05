@@ -10,13 +10,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { IconDeviceFloppy, IconTrash, IconX } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconTrash, IconX, IconDotsVertical } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface FocusEditorProps {
@@ -76,7 +82,7 @@ export function FocusEditor({
             }}
             className="h-full flex flex-col bg-background rounded-xl overflow-hidden shadow-2xl"
           >
-            {/* Header Bar - Mobile Optimized Two-Row Layout */}
+            {/* Header Bar - Desktop: Actions in Header | Mobile: Simple Header */}
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -84,10 +90,9 @@ export function FocusEditor({
               className="border-b bg-background/50 backdrop-blur-xl"
             >
               <div className="px-4 sm:px-6 py-3 sm:py-4">
-                {/* Desktop: Single Row | Mobile: Two Rows */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-                  {/* Row 1: Back Button + Name Input */}
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                {/* Desktop: Full Header with Actions */}
+                <div className="hidden sm:flex sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -97,9 +102,7 @@ export function FocusEditor({
                           className="gap-2 shrink-0"
                         >
                           <IconX className="size-4" />
-                          <span className="hidden sm:inline">
-                            {isCreating ? "Cancel" : "Exit Focus"}
-                          </span>
+                          <span>{isCreating ? "Cancel" : "Exit Focus"}</span>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -109,9 +112,9 @@ export function FocusEditor({
                       </TooltipContent>
                     </Tooltip>
 
-                    <div className="hidden sm:block h-6 w-px bg-border" />
+                    <div className="h-6 w-px bg-border" />
 
-                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       {isCreating && (
                         <motion.span
                           initial={{ scale: 0, opacity: 0 }}
@@ -129,18 +132,17 @@ export function FocusEditor({
                       <Input
                         value={name}
                         onChange={(e) => onNameChange(e.target.value)}
-                        className="flex-1 sm:max-w-md text-base sm:text-lg font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
+                        className="flex-1 max-w-md text-lg font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
                         placeholder={`${entityType} name...`}
                       />
                     </div>
                   </div>
 
-                  {/* Row 2: Action Buttons (Delete + Save) */}
                   <motion.div
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.15 }}
-                    className="flex items-center gap-2 justify-end sm:justify-start"
+                    className="flex items-center gap-2"
                   >
                     {!isCreating && onDelete && (
                       <Tooltip>
@@ -156,7 +158,6 @@ export function FocusEditor({
                                 className="shrink-0"
                               >
                                 <IconTrash className="size-4 text-destructive" />
-                                <span className="ml-2 sm:hidden">Delete</span>
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -193,22 +194,50 @@ export function FocusEditor({
                       className="gap-2 shrink-0"
                     >
                       <IconDeviceFloppy className="size-4" />
-                      <span className="hidden xs:inline">
+                      <span>
                         {isCreating
                           ? `Create ${entityType}`
                           : isSaving
                             ? "Saving..."
                             : "Save Changes"}
                       </span>
-                      <span className="xs:hidden">
-                        {isCreating
-                          ? "Create"
-                          : isSaving
-                            ? "Saving..."
-                            : "Save"}
-                      </span>
                     </Button>
                   </motion.div>
+                </div>
+
+                {/* Mobile: Simple Header with Back + Name */}
+                <div className="flex sm:hidden items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClose}
+                    className="shrink-0"
+                  >
+                    <IconX className="size-4" />
+                  </Button>
+
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {isCreating && (
+                      <motion.span
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 25,
+                        }}
+                        className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20 shrink-0"
+                      >
+                        New
+                      </motion.span>
+                    )}
+                    <Input
+                      value={name}
+                      onChange={(e) => onNameChange(e.target.value)}
+                      className="flex-1 text-base font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
+                      placeholder={`${entityType} name...`}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -218,7 +247,7 @@ export function FocusEditor({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex-1 relative"
+              className="flex-1 relative pb-0 sm:pb-0"
             >
               <JsonEditor
                 className="h-full"
@@ -227,12 +256,87 @@ export function FocusEditor({
               />
             </motion.div>
 
-            {/* Footer Info */}
+            {/* Mobile Bottom Action Bar */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.15 }}
-              className="border-t bg-background/50 backdrop-blur-xl px-6 py-3 flex items-center justify-between text-xs text-muted-foreground"
+              className="sm:hidden border-t bg-background/95 backdrop-blur-xl px-4 py-3 safe-area-inset-bottom"
+            >
+              <div className="flex items-center gap-2">
+                {/* Large Save Button */}
+                <Button
+                  onClick={onSave}
+                  disabled={isSaving || !name.trim()}
+                  size="lg"
+                  className="flex-1 gap-2 h-12 text-base font-semibold"
+                >
+                  <IconDeviceFloppy className="size-5" />
+                  <span>
+                    {isCreating
+                      ? `创建 ${entityType}`
+                      : isSaving
+                        ? "保存中..."
+                        : "保存更改"}
+                  </span>
+                </Button>
+
+                {/* More Menu */}
+                {!isCreating && onDelete && (
+                  <Dialog
+                    open={deleteDialogOpen}
+                    onOpenChange={onDeleteDialogChange}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="shrink-0 h-12 w-12 p-0"
+                        >
+                          <IconDotsVertical className="size-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DialogTrigger asChild>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive gap-2">
+                            <IconTrash className="size-4" />
+                            <span>删除配置</span>
+                          </DropdownMenuItem>
+                        </DialogTrigger>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>删除 {entityType}</DialogTitle>
+                        <DialogDescription>
+                          确定要删除 "{name}" 吗？此操作无法撤销。
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline">取消</Button>
+                        </DialogClose>
+                        <Button
+                          variant="destructive"
+                          onClick={onDelete}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "删除中..." : "确认删除"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Desktop Footer Info */}
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="hidden sm:flex border-t bg-background/50 backdrop-blur-xl px-6 py-3 items-center justify-between text-xs text-muted-foreground"
             >
               <div className="flex items-center gap-4">
                 <span className="font-mono">{uuid}</span>
