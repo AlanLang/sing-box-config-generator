@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './__root'
 import { Route as IndexRouteImport } from './index'
 import { Route as RulesetIndexRouteImport } from './ruleset/index'
 import { Route as LogIndexRouteImport } from './log/index'
+import { Route as InboundIndexRouteImport } from './inbound/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +29,42 @@ const LogIndexRoute = LogIndexRouteImport.update({
   path: '/log/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InboundIndexRoute = InboundIndexRouteImport.update({
+  id: '/inbound/',
+  path: '/inbound/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/inbound/': typeof InboundIndexRoute
   '/log/': typeof LogIndexRoute
   '/ruleset/': typeof RulesetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/log' | '/ruleset'
+  fullPaths: '/' | '/inbound' | '/log' | '/ruleset'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/log' | '/ruleset'
-  id: '__root__' | '/' | '/log/' | '/ruleset/'
+  to: '/' | '/inbound' | '/log' | '/ruleset'
+  id: '__root__' | '/' | '/inbound/' | '/log/' | '/ruleset/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InboundIndexRoute: typeof InboundIndexRoute
   LogIndexRoute: typeof LogIndexRoute
   RulesetIndexRoute: typeof RulesetIndexRoute
 }
@@ -82,11 +92,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inbound/': {
+      id: '/inbound/'
+      path: '/inbound'
+      fullPath: '/inbound'
+      preLoaderRoute: typeof InboundIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InboundIndexRoute: InboundIndexRoute,
   LogIndexRoute: LogIndexRoute,
   RulesetIndexRoute: RulesetIndexRoute,
 }

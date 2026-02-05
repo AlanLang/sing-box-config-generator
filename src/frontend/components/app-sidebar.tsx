@@ -33,7 +33,7 @@ const data = [
   },
   {
     title: "Inbounds",
-    url: "#",
+    url: "/inbound",
     icon: IconCloudUp,
   },
   {

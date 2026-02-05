@@ -32,6 +32,13 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::ruleset::update_ruleset)
         .delete(backend::api::ruleset::delete_ruleset),
     )
+    .route(
+      "/api/inbound",
+      axum::routing::post(backend::api::inbound::create_inbound)
+        .get(backend::api::inbound::list_inbounds)
+        .put(backend::api::inbound::update_inbound)
+        .delete(backend::api::inbound::delete_inbound),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005
