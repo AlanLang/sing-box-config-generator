@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './__root'
 import { Route as IndexRouteImport } from './index'
+import { Route as SubscribeIndexRouteImport } from './subscribe/index'
 import { Route as RulesetIndexRouteImport } from './ruleset/index'
 import { Route as LogIndexRouteImport } from './log/index'
 import { Route as InboundIndexRouteImport } from './inbound/index'
@@ -18,6 +19,11 @@ import { Route as ExperimentalIndexRouteImport } from './experimental/index'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscribeIndexRoute = SubscribeIndexRouteImport.update({
+  id: '/subscribe/',
+  path: '/subscribe/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RulesetIndexRoute = RulesetIndexRouteImport.update({
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
+  '/subscribe': typeof SubscribeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
+  '/subscribe': typeof SubscribeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,27 @@ export interface FileRoutesById {
   '/inbound/': typeof InboundIndexRoute
   '/log/': typeof LogIndexRoute
   '/ruleset/': typeof RulesetIndexRoute
+  '/subscribe/': typeof SubscribeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/experimental' | '/inbound' | '/log' | '/ruleset'
+  fullPaths:
+    | '/'
+    | '/experimental'
+    | '/inbound'
+    | '/log'
+    | '/ruleset'
+    | '/subscribe'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/experimental' | '/inbound' | '/log' | '/ruleset'
-  id: '__root__' | '/' | '/experimental/' | '/inbound/' | '/log/' | '/ruleset/'
+  to: '/' | '/experimental' | '/inbound' | '/log' | '/ruleset' | '/subscribe'
+  id:
+    | '__root__'
+    | '/'
+    | '/experimental/'
+    | '/inbound/'
+    | '/log/'
+    | '/ruleset/'
+    | '/subscribe/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +99,7 @@ export interface RootRouteChildren {
   InboundIndexRoute: typeof InboundIndexRoute
   LogIndexRoute: typeof LogIndexRoute
   RulesetIndexRoute: typeof RulesetIndexRoute
+  SubscribeIndexRoute: typeof SubscribeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -86,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscribe/': {
+      id: '/subscribe/'
+      path: '/subscribe'
+      fullPath: '/subscribe'
+      preLoaderRoute: typeof SubscribeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ruleset/': {
@@ -125,6 +155,7 @@ const rootRouteChildren: RootRouteChildren = {
   InboundIndexRoute: InboundIndexRoute,
   LogIndexRoute: LogIndexRoute,
   RulesetIndexRoute: RulesetIndexRoute,
+  SubscribeIndexRoute: SubscribeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

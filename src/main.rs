@@ -46,6 +46,17 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::experimental::update_experimental)
         .delete(backend::api::experimental::delete_experimental),
     )
+    .route(
+      "/api/subscribe",
+      axum::routing::post(backend::api::subscribe::create_subscribe)
+        .get(backend::api::subscribe::list_subscribes)
+        .put(backend::api::subscribe::update_subscribe)
+        .delete(backend::api::subscribe::delete_subscribe),
+    )
+    .route(
+      "/api/subscribe/refresh",
+      axum::routing::post(backend::api::subscribe::refresh_subscribe),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005
