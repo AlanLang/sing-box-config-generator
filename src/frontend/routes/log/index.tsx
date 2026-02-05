@@ -176,16 +176,11 @@ function RouteComponent() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
             >
               {logs.map((log, index) => {
-                const formatted = formatJson(log.json);
-                const preview =
-                  formatted.length > 150
-                    ? `${formatted.substring(0, 150)}...`
-                    : formatted;
                 return (
                   <ConfigCard
                     key={log.uuid}
                     name={log.name}
-                    jsonPreview={preview}
+                    jsonPreview={log.json}
                     onClick={() => {
                       setSelectedUuid(log.uuid);
                       setIsCreating(false);
@@ -221,12 +216,4 @@ function RouteComponent() {
       />
     </AppPage>
   );
-}
-
-function formatJson(jsonStr: string) {
-  try {
-    return JSON.stringify(JSON.parse(jsonStr), null, 2);
-  } catch (_) {
-    return jsonStr;
-  }
 }

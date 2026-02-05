@@ -11,6 +11,21 @@ interface ConfigCardProps {
   actions?: ReactNode;
 }
 
+/**
+ * Format and truncate JSON string for preview
+ */
+function formatJsonPreview(jsonStr: string): string {
+  try {
+    const formatted = JSON.stringify(JSON.parse(jsonStr), null, 2);
+    return formatted.length > 150
+      ? `${formatted.substring(0, 150)}...`
+      : formatted;
+  } catch {
+    // If JSON parsing fails, show original string with truncation
+    return jsonStr.length > 150 ? `${jsonStr.substring(0, 150)}...` : jsonStr;
+  }
+}
+
 export function ConfigCard({
   name,
   jsonPreview,
@@ -18,6 +33,7 @@ export function ConfigCard({
   index,
   actions,
 }: ConfigCardProps) {
+  const formattedPreview = formatJsonPreview(jsonPreview);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -103,7 +119,7 @@ export function ConfigCard({
             {/* Code content */}
             <div className="relative flex-1 p-2.5 overflow-hidden">
               <pre className="text-[11px] font-mono text-muted-foreground/70 group-hover:text-muted-foreground/90 leading-relaxed transition-all duration-150">
-                {jsonPreview}
+                {formattedPreview}
               </pre>
               <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-muted/40 group-hover:from-muted/50 to-transparent pointer-events-none transition-colors duration-150" />
             </div>
