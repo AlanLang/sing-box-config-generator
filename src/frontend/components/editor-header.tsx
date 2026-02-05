@@ -74,7 +74,7 @@ export function EditorHeader({
               <Input
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
-                className="flex-1 max-w-md text-lg font-semibold border-0 border-b-2 border-transparent bg-transparent focus-visible:border-b-primary focus-visible:ring-0 rounded-none px-2 shadow-none transition-colors"
+                className="flex-1 max-w-md text-lg font-semibold border-0 border-b-2 border-transparent bg-transparent dark:bg-transparent focus-visible:border-b-primary focus-visible:ring-0 rounded-none px-2 shadow-none transition-colors"
                 placeholder={`${entityType} name...`}
               />
             </div>
@@ -107,7 +107,7 @@ export function EditorHeader({
             <Input
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
-              className="flex-1 text-base font-semibold border-0 border-b-2 border-transparent bg-transparent focus-visible:border-b-primary focus-visible:ring-0 rounded-none px-2 shadow-none transition-colors"
+              className="flex-1 text-base font-semibold border-0 border-b-2 border-transparent bg-transparent dark:bg-transparent focus-visible:border-b-primary focus-visible:ring-0 rounded-none px-2 shadow-none transition-colors"
               placeholder={`${entityType} name...`}
             />
           </div>

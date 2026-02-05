@@ -192,6 +192,7 @@ export function SubscribeEditor({
                       onChange={(e) => onSubscriptionUrlChange(e.target.value)}
                       placeholder="https://..."
                       type="url"
+                      className="dark:bg-background"
                     />
                   </div>
 
@@ -203,6 +204,7 @@ export function SubscribeEditor({
                       onChange={(e) => onWebsiteUrlChange(e.target.value)}
                       placeholder="https://..."
                       type="url"
+                      className="dark:bg-background"
                     />
                   </div>
                 </div>
