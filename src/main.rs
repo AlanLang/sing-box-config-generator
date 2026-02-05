@@ -64,6 +64,13 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::dns::update_dns)
         .delete(backend::api::dns::delete_dns),
     )
+    .route(
+      "/api/dns-config",
+      axum::routing::post(backend::api::dns_config::create_dns_config)
+        .get(backend::api::dns_config::list_dns_configs)
+        .put(backend::api::dns_config::update_dns_config)
+        .delete(backend::api::dns_config::delete_dns_config),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005

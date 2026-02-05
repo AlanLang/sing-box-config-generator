@@ -16,6 +16,7 @@ import { Route as LogIndexRouteImport } from './log/index'
 import { Route as InboundIndexRouteImport } from './inbound/index'
 import { Route as ExperimentalIndexRouteImport } from './experimental/index'
 import { Route as DnsServerIndexRouteImport } from './dns-server/index'
+import { Route as DnsConfigIndexRouteImport } from './dns-config/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,9 +53,15 @@ const DnsServerIndexRoute = DnsServerIndexRouteImport.update({
   path: '/dns-server/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DnsConfigIndexRoute = DnsConfigIndexRouteImport.update({
+  id: '/dns-config/',
+  path: '/dns-config/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dns-config': typeof DnsConfigIndexRoute
   '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dns-config': typeof DnsConfigIndexRoute
   '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dns-config/': typeof DnsConfigIndexRoute
   '/dns-server/': typeof DnsServerIndexRoute
   '/experimental/': typeof ExperimentalIndexRoute
   '/inbound/': typeof InboundIndexRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/dns-config'
     | '/dns-server'
     | '/experimental'
     | '/inbound'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/dns-config'
     | '/dns-server'
     | '/experimental'
     | '/inbound'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/dns-config/'
     | '/dns-server/'
     | '/experimental/'
     | '/inbound/'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DnsConfigIndexRoute: typeof DnsConfigIndexRoute
   DnsServerIndexRoute: typeof DnsServerIndexRoute
   ExperimentalIndexRoute: typeof ExperimentalIndexRoute
   InboundIndexRoute: typeof InboundIndexRoute
@@ -172,11 +185,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DnsServerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dns-config/': {
+      id: '/dns-config/'
+      path: '/dns-config'
+      fullPath: '/dns-config'
+      preLoaderRoute: typeof DnsConfigIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DnsConfigIndexRoute: DnsConfigIndexRoute,
   DnsServerIndexRoute: DnsServerIndexRoute,
   ExperimentalIndexRoute: ExperimentalIndexRoute,
   InboundIndexRoute: InboundIndexRoute,
