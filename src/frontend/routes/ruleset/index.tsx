@@ -172,55 +172,53 @@ function RouteComponent() {
           onAction={handleNewRuleset}
         />
       ) : (
-        <>
-          {/* Grid View */}
-          <AnimatePresence mode="wait">
-            {!focusMode && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
-              >
-                {rulesets.map((ruleset, index) => (
-                  <ConfigCard
-                    key={ruleset.uuid}
-                    name={ruleset.name}
-                    jsonPreview={`${formatJson(ruleset.json).substring(0, 150)}...`}
-                    onClick={() => {
-                      setSelectedUuid(ruleset.uuid);
-                      setIsCreating(false);
-                      setFocusMode(true);
-                    }}
-                    index={index}
-                    uuid={ruleset.uuid}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Focus Mode Editor */}
-          <FocusEditor
-            isOpen={focusMode}
-            isCreating={isCreating}
-            name={editName}
-            onNameChange={setEditName}
-            json={editJson}
-            onJsonChange={setEditJson}
-            uuid={isCreating ? editUuid : selectedRuleset?.uuid || ""}
-            onClose={handleExitFocus}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            isSaving={updateRulesetMutation.isPending}
-            isDeleting={deleteRulesetMutation.isPending}
-            entityType="Ruleset"
-            deleteDialogOpen={deleteDialogOpen}
-            onDeleteDialogChange={setDeleteDialogOpen}
-          />
-        </>
+        /* Grid View */
+        <AnimatePresence mode="wait">
+          {!focusMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
+            >
+              {rulesets.map((ruleset, index) => (
+                <ConfigCard
+                  key={ruleset.uuid}
+                  name={ruleset.name}
+                  jsonPreview={`${formatJson(ruleset.json).substring(0, 150)}...`}
+                  onClick={() => {
+                    setSelectedUuid(ruleset.uuid);
+                    setIsCreating(false);
+                    setFocusMode(true);
+                  }}
+                  index={index}
+                  uuid={ruleset.uuid}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
+
+      {/* Focus Mode Editor - Outside conditional so it works even when no rulesets */}
+      <FocusEditor
+        isOpen={focusMode}
+        isCreating={isCreating}
+        name={editName}
+        onNameChange={setEditName}
+        json={editJson}
+        onJsonChange={setEditJson}
+        uuid={isCreating ? editUuid : selectedRuleset?.uuid || ""}
+        onClose={handleExitFocus}
+        onSave={handleSave}
+        onDelete={handleDelete}
+        isSaving={updateRulesetMutation.isPending}
+        isDeleting={deleteRulesetMutation.isPending}
+        entityType="Ruleset"
+        deleteDialogOpen={deleteDialogOpen}
+        onDeleteDialogChange={setDeleteDialogOpen}
+      />
     </AppPage>
   );
 }
