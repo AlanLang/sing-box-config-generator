@@ -3,6 +3,9 @@ import { useRulesetList } from "@/api/ruleset/list";
 import { useRulesetUpdate } from "@/api/ruleset/update";
 import { createRuleset } from "@/api/ruleset/create";
 import { AppPage } from "@/components/app-page";
+import { ConfigCard } from "@/components/config-card";
+import { EmptyState } from "@/components/empty-state";
+import { SkeletonGrid } from "@/components/skeleton-grid";
 import { JsonEditor } from "@/components/json-editor";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +28,6 @@ import {
   IconCubePlus,
   IconDeviceFloppy,
   IconTrash,
-  IconChevronRight,
-  IconCode,
   IconX,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -182,61 +183,15 @@ function RouteComponent() {
     >
       {/* Loading State */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6">
-          {Array.from({ length: 4 }, (_, i) => i).map((id) => (
-            <div
-              key={id}
-              className="h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 animate-pulse overflow-hidden"
-            >
-              <div className="p-4 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-muted/50" />
-                  <div className="h-5 bg-muted/50 rounded flex-1 max-w-[150px]" />
-                </div>
-              </div>
-              <div className="p-3">
-                <div className="space-y-2">
-                  <div className="h-3 bg-muted/40 rounded w-full" />
-                  <div className="h-3 bg-muted/40 rounded w-5/6" />
-                  <div className="h-3 bg-muted/40 rounded w-4/6" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <SkeletonGrid />
       ) : /* Empty State */
       !rulesets || rulesets.length === 0 ? (
-        <div className="h-[calc(100vh-160px)] flex items-center justify-center">
-          <div className="text-center max-w-lg space-y-6">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 blur-3xl rounded-full" />
-              <div className="relative bg-gradient-to-br from-background to-muted border-2 border-border/50 rounded-3xl p-12">
-                <IconCode
-                  className="size-20 mx-auto text-muted-foreground opacity-40"
-                  strokeWidth={1.5}
-                />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-2xl font-bold tracking-tight">
-                No rulesets configured
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Start building your network configuration by creating your first
-                ruleset. Define routing rules, filters, and policies.
-              </p>
-            </div>
-            <Button
-              size="lg"
-              onClick={handleNewRuleset}
-              className="gap-2 relative overflow-hidden group mt-4"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <IconCubePlus className="size-5" />
-              Create Your First Ruleset
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          title="No rulesets configured"
+          description="Start building your network configuration by creating your first ruleset. Define routing rules, filters, and policies."
+          actionLabel="Create Your First Ruleset"
+          onAction={handleNewRuleset}
+        />
       ) : (
         <>
           {/* Grid View */}
@@ -250,94 +205,18 @@ function RouteComponent() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
               >
                 {rulesets.map((ruleset, index) => (
-                  <motion.div
+                  <ConfigCard
                     key={ruleset.uuid}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <motion.button
-                      layoutId={`card-${ruleset.uuid}`}
-                      type="button"
-                      className="relative h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group"
-                      onClick={() => {
-                        setSelectedUuid(ruleset.uuid);
-                        setIsCreating(false);
-                        setFocusMode(true);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setSelectedUuid(ruleset.uuid);
-                          setIsCreating(false);
-                          setFocusMode(true);
-                        }
-                      }}
-                      whileHover={{ scale: 1.02, y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      {/* Single gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-
-                      {/* Top corner accent */}
-                      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary/30 group-hover:bg-primary/60 transition-all duration-150 shadow-sm shadow-primary/20" />
-
-                      {/* Subtle pattern overlay */}
-                      <div
-                        className="absolute inset-0 opacity-[0.015] group-hover:opacity-[0.03] transition-opacity duration-150"
-                        style={{
-                          backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 1px)`,
-                          backgroundSize: "24px 24px",
-                        }}
-                      />
-
-                      {/* Card Header */}
-                      <div className="relative p-4 border-b border-border/50">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {/* Icon indicator */}
-                            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-150">
-                              <IconCode className="size-4 text-primary/60 group-hover:text-primary transition-all duration-150" />
-                            </div>
-                            <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-all duration-150">
-                              {ruleset.name}
-                            </h3>
-                          </div>
-                          <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-150">
-                            <IconChevronRight className="size-5 text-primary" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card Content Preview */}
-                      <div className="relative p-3 flex-1 overflow-hidden">
-                        {/* Code block container with editor styling */}
-                        <div className="h-full rounded-lg bg-muted/40 group-hover:bg-muted/50 transition-all duration-150 border border-border/30 overflow-hidden flex flex-col">
-                          {/* Editor header bar */}
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/30 bg-muted/30 flex-shrink-0">
-                            <div className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500/60" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500/60" />
-                            <span className="ml-1.5 text-[9px] text-muted-foreground/60 font-medium">
-                              config.json
-                            </span>
-                          </div>
-
-                          {/* Code content */}
-                          <div className="relative flex-1 p-2.5 overflow-hidden">
-                            <pre className="text-[11px] font-mono text-muted-foreground/70 group-hover:text-muted-foreground/90 leading-relaxed transition-all duration-150">
-                              {formatJson(ruleset.json).substring(0, 150)}...
-                            </pre>
-                            <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-muted/40 group-hover:from-muted/50 to-transparent pointer-events-none transition-colors duration-150" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bottom edge accent */}
-                      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/0 group-hover:via-primary/50 to-transparent transition-all duration-150" />
-                    </motion.button>
-                  </motion.div>
+                    name={ruleset.name}
+                    jsonPreview={`${formatJson(ruleset.json).substring(0, 150)}...`}
+                    onClick={() => {
+                      setSelectedUuid(ruleset.uuid);
+                      setIsCreating(false);
+                      setFocusMode(true);
+                    }}
+                    index={index}
+                    uuid={ruleset.uuid}
+                  />
                 ))}
               </motion.div>
             )}

@@ -1,11 +1,13 @@
 import { useLogDelete } from "@/api/log/delete";
 import { useLogList } from "@/api/log/list";
 import { useLogUpdate } from "@/api/log/update";
+import { createLog } from "@/api/log/create";
 import { AppPage } from "@/components/app-page";
+import { ConfigCard } from "@/components/config-card";
+import { EmptyState } from "@/components/empty-state";
+import { SkeletonGrid } from "@/components/skeleton-grid";
 import { JsonEditor } from "@/components/json-editor";
-import { SelectableItem } from "@/components/selectable-item";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Dialog,
   DialogClose,
@@ -16,67 +18,126 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
+  IconCubePlus,
   IconDeviceFloppy,
-  IconFolders,
-  IconPlus,
   IconTrash,
+  IconX,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { LogAdd } from "./components/log-add";
+import { v4 as uuidv4 } from "uuid";
+import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/log/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const [open, setOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const { data: logs, refetch: refetchList } = useLogList();
+  const { data: logs, refetch: refetchList, isLoading } = useLogList();
   const selectedLog = logs?.find((log) => log.uuid === selectedUuid);
   const updateLogMutation = useLogUpdate();
   const deleteLogMutation = useLogDelete();
 
   const [editName, setEditName] = useState("");
   const [editJson, setEditJson] = useState<string | undefined>(undefined);
+  const [editUuid, setEditUuid] = useState("");
 
   useEffect(() => {
-    if (selectedLog) {
+    if (selectedLog && !isCreating) {
       setEditName(selectedLog.name);
       setEditJson(selectedLog.json);
+      setEditUuid(selectedLog.uuid);
     }
-  }, [selectedLog]);
+  }, [selectedLog, isCreating]);
 
   useEffect(() => {
-    if (selectedUuid === null && logs && logs.length > 0) {
+    if (selectedUuid === null && logs && logs.length > 0 && !isCreating) {
       setSelectedUuid(logs[0].uuid);
     }
-  }, [logs, selectedUuid]);
+  }, [logs, selectedUuid, isCreating]);
+
+  // ESC to exit focus mode
+  const handleExitFocus = useCallback(() => {
+    setFocusMode(false);
+    if (isCreating) {
+      setIsCreating(false);
+      // Reset to first log if available
+      if (logs && logs.length > 0) {
+        setSelectedUuid(logs[0].uuid);
+      }
+    }
+  }, [isCreating, logs]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && focusMode) {
+        handleExitFocus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusMode, handleExitFocus]);
+
+  const handleNewLog = () => {
+    setIsCreating(true);
+    setSelectedUuid(null);
+    setEditName("");
+    setEditJson("{}");
+    setEditUuid(uuidv4());
+    setFocusMode(true);
+  };
 
   const handleSave = async () => {
-    if (!selectedUuid || !editJson) return;
+    if (!editJson) return;
+
     try {
-      await updateLogMutation.mutateAsync({
-        uuid: selectedUuid,
-        name: editName,
-        json: editJson,
-      });
-      toast.success("Log updated successfully");
-      refetchList();
+      JSON.parse(editJson);
+
+      if (isCreating) {
+        // Create new log
+        await createLog({
+          uuid: editUuid,
+          name: editName,
+          json: editJson,
+        });
+        toast.success("Log created successfully");
+        setIsCreating(false);
+        await refetchList();
+        // Switch to the newly created log
+        setSelectedUuid(editUuid);
+      } else {
+        // Update existing log
+        if (!selectedUuid) return;
+        await updateLogMutation.mutateAsync({
+          uuid: selectedUuid,
+          name: editName,
+          json: editJson,
+        });
+        toast.success("Log updated successfully");
+        await refetchList();
+      }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to update log");
+      if (error instanceof SyntaxError) {
+        toast.error("Invalid JSON format");
+      } else {
+        console.error(error);
+        toast.error(
+          isCreating ? "Failed to create log" : "Failed to update log",
+        );
+      }
     }
   };
 
@@ -89,6 +150,7 @@ function RouteComponent() {
       toast.success("Log deleted successfully");
       setDeleteDialogOpen(false);
       setSelectedUuid(null);
+      setFocusMode(false);
       refetchList();
     } catch (error) {
       console.error(error);
@@ -98,116 +160,244 @@ function RouteComponent() {
 
   return (
     <AppPage
-      title="Log"
+      title="Log Configuration"
+      description="Design and manage logging rules for your sing-box infrastructure"
       actions={
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerTrigger asChild>
-            <Button className="size-8">
-              <IconPlus />
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent className="h-full min-h-[90vh] max-h-[90vh]">
-            <LogAdd
-              onSuccess={() => {
-                setOpen(false);
-                refetchList();
-              }}
-            />
-          </DrawerContent>
-        </Drawer>
+        <Button
+          size="sm"
+          onClick={handleNewLog}
+          className="gap-2 relative overflow-hidden group"
+        >
+          <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <IconCubePlus className="size-4" />
+          New Log
+        </Button>
       }
     >
-      <div className="h-[calc(100vh-120px)] border rounded-lg overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={25} minSize={20}>
-            {logs?.map((log) => (
-              <SelectableItem
-                key={log.uuid}
-                isActive={selectedUuid === log.uuid}
-                onClick={() => setSelectedUuid(log.uuid)}
+      {/* Loading State */}
+      {isLoading ? (
+        <SkeletonGrid />
+      ) : /* Empty State */
+      !logs || logs.length === 0 ? (
+        <EmptyState
+          title="No logs configured"
+          description="Start building your network configuration by creating your first log. Define logging rules, filters, and policies."
+          actionLabel="Create Your First Log"
+          onAction={handleNewLog}
+        />
+      ) : (
+        <>
+          {/* Grid View */}
+          <AnimatePresence mode="wait">
+            {!focusMode && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
               >
-                <div className="flex flex-col gap-1">
-                  <div className="font-medium truncate">{log.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {log.uuid}
-                  </div>
-                </div>
-              </SelectableItem>
-            ))}
-          </ResizablePanel>
-          <ResizableHandle />
-          <ResizablePanel defaultSize={75}>
-            {selectedUuid ? (
-              <div className="h-full flex flex-col gap-2">
-                <div className="flex items-center p-4 gap-6">
-                  <Input
-                    id="name"
-                    placeholder="Please enter you dns name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                {logs.map((log, index) => (
+                  <ConfigCard
+                    key={log.uuid}
+                    name={log.name}
+                    jsonPreview={`${formatJson(log.json).substring(0, 150)}...`}
+                    onClick={() => {
+                      setSelectedUuid(log.uuid);
+                      setIsCreating(false);
+                      setFocusMode(true);
+                    }}
+                    index={index}
+                    uuid={log.uuid}
                   />
-                  <ButtonGroup>
-                    <Dialog
-                      open={deleteDialogOpen}
-                      onOpenChange={setDeleteDialogOpen}
-                    >
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <IconTrash className="" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Delete Log</DialogTitle>
-                          <DialogDescription>
-                            Are you sure you want to delete this log? This
-                            action cannot be undone.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                          </DialogClose>
-                          <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={deleteLogMutation.isPending}
-                          >
-                            Delete
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline" size="sm">
-                      <IconFolders />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={updateLogMutation.isPending}
-                    >
-                      <IconDeviceFloppy />
-                      Save
-                    </Button>
-                  </ButtonGroup>
-                </div>
-                <JsonEditor
-                  className="p-0 mb-2"
-                  value={formatJson(
-                    logs?.find((log) => log.uuid === selectedUuid)?.json ?? "",
-                  )}
-                  onChange={(value) => setEditJson(value)}
-                />
-              </div>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                Select a log to view details
-              </div>
+                ))}
+              </motion.div>
             )}
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+          </AnimatePresence>
+
+          {/* Focus Mode Editor */}
+          <AnimatePresence>
+            {focusMode && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm"
+              >
+                <motion.div
+                  initial={isCreating ? { scale: 0.9, opacity: 0 } : false}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                    opacity: { duration: 0.2 },
+                  }}
+                  className="h-full flex flex-col bg-background rounded-xl overflow-hidden shadow-2xl"
+                >
+                  {/* Header Bar */}
+                  <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="border-b bg-background/50 backdrop-blur-xl"
+                  >
+                    <div className="px-6 py-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleExitFocus}
+                              className="gap-2"
+                            >
+                              <IconX className="size-4" />
+                              <span className="hidden sm:inline">
+                                {isCreating ? "Cancel" : "Exit Focus"}
+                              </span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {isCreating
+                              ? "Cancel creation (Esc)"
+                              : "Exit focus mode (Esc)"}
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <div className="h-6 w-px bg-border" />
+
+                        <div className="flex items-center gap-3">
+                          {isCreating && (
+                            <motion.span
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 25,
+                              }}
+                              className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20"
+                            >
+                              New
+                            </motion.span>
+                          )}
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="max-w-md text-lg font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
+                            placeholder="Log name..."
+                          />
+                        </div>
+                      </div>
+
+                      <motion.div
+                        initial={{ x: 20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: 0.15 }}
+                        className="flex items-center gap-2"
+                      >
+                        {!isCreating && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Dialog
+                                open={deleteDialogOpen}
+                                onOpenChange={setDeleteDialogOpen}
+                              >
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <IconTrash className="size-4 text-destructive" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Delete Log</DialogTitle>
+                                    <DialogDescription>
+                                      Are you sure you want to delete "
+                                      {editName}
+                                      "? This action cannot be undone.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <DialogFooter>
+                                    <DialogClose asChild>
+                                      <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={handleDelete}
+                                      disabled={deleteLogMutation.isPending}
+                                    >
+                                      {deleteLogMutation.isPending
+                                        ? "Deleting..."
+                                        : "Delete"}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete log</TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        <Button
+                          onClick={handleSave}
+                          disabled={
+                            updateLogMutation.isPending || !editName.trim()
+                          }
+                          size="sm"
+                          className="gap-2"
+                        >
+                          <IconDeviceFloppy className="size-4" />
+                          {isCreating
+                            ? "Create Log"
+                            : updateLogMutation.isPending
+                              ? "Saving..."
+                              : "Save Changes"}
+                        </Button>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+
+                  {/* Editor Area */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex-1 relative"
+                  >
+                    <JsonEditor
+                      className="h-full"
+                      value={editJson}
+                      onChange={(value) => setEditJson(value)}
+                    />
+                  </motion.div>
+
+                  {/* Footer Info */}
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.15 }}
+                    className="border-t bg-background/50 backdrop-blur-xl px-6 py-3 flex items-center justify-between text-xs text-muted-foreground"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="font-mono">
+                        {isCreating ? editUuid : selectedLog?.uuid}
+                      </span>
+                      <span>•</span>
+                      <span>JSON Configuration</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span>{editJson?.split("\n").length || 0} lines</span>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </AppPage>
   );
 }
