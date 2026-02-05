@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { IconDeviceFloppy, IconTrash, IconX, IconRefresh } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatTimeAgo, formatDateTime } from "@/lib/time";
 
 interface SubscribeEditorProps {
   isOpen: boolean;
@@ -269,7 +270,16 @@ export function SubscribeEditor({
               </div>
               <div className="flex items-center gap-4">
                 {lastUpdated && (
-                  <span>Last updated: {new Date(lastUpdated).toLocaleString()}</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="cursor-help">
+                        Last updated: {formatTimeAgo(lastUpdated)}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {formatDateTime(lastUpdated)}
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             </motion.div>

@@ -20,6 +20,7 @@ import {
   stringifySubscriptionJson,
 } from "@/types/subscribe";
 import type { SubscriptionMetadata } from "@/types/subscribe";
+import { formatTimeAgo } from "@/lib/time";
 
 export const Route = createFileRoute("/subscribe/")({
   component: RouteComponent,
@@ -253,11 +254,12 @@ function RouteComponent() {
             >
               {subscribes.map((subscribe, index) => {
                 const metadata = parseSubscriptionJson(subscribe.json);
+                const timeAgo = formatTimeAgo(metadata.last_updated);
                 return (
                   <ConfigCard
                     key={subscribe.uuid}
                     name={subscribe.name}
-                    jsonPreview={`URL: ${metadata.subscription_url}\n${metadata.last_updated ? `Updated: ${new Date(metadata.last_updated).toLocaleDateString()}` : "Not fetched yet"}`}
+                    jsonPreview={`URL: ${metadata.subscription_url}\n${metadata.last_updated ? `Updated: ${timeAgo}` : "Not fetched yet"}`}
                     onClick={() => {
                       setSelectedUuid(subscribe.uuid);
                       setIsCreating(false);
