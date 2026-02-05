@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { SubscribeEditor } from "@/components/subscribe-editor";
 import { Button } from "@/components/ui/button";
-import { IconCubePlus } from "@tabler/icons-react";
+import { IconCubePlus, IconRefresh } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -187,25 +187,29 @@ function RouteComponent() {
     }
   };
 
-  const handleRefresh = async () => {
-    if (!selectedUuid) return;
+  const handleRefresh = async (uuid: string) => {
     try {
       await refreshSubscribeMutation.mutateAsync({
-        uuid: selectedUuid,
+        uuid: uuid,
       });
       toast.success("Subscribe refreshed successfully");
       await refetchList();
-      // Update local state with new data
-      if (selectedSubscribe) {
-        const updated = subscribes?.find((s) => s.uuid === selectedUuid);
-        if (updated) {
-          const metadata = parseSubscriptionJson(updated.json);
-          setEditMetadata(metadata);
-        }
-      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to refresh subscribe");
+    }
+  };
+
+  const handleRefreshInEditor = async () => {
+    if (!selectedUuid) return;
+    await handleRefresh(selectedUuid);
+    // Update local state with new data
+    if (selectedSubscribe) {
+      const updated = subscribes?.find((s) => s.uuid === selectedUuid);
+      if (updated) {
+        const metadata = parseSubscriptionJson(updated.json);
+        setEditMetadata(metadata);
+      }
     }
   };
 
@@ -261,6 +265,19 @@ function RouteComponent() {
                     }}
                     index={index}
                     uuid={subscribe.uuid}
+                    actions={
+                      <button
+                        type="button"
+                        onClick={() => handleRefresh(subscribe.uuid)}
+                        disabled={refreshSubscribeMutation.isPending}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh subscription"
+                      >
+                        <IconRefresh
+                          className={`size-4 ${refreshSubscribeMutation.isPending ? "animate-spin" : ""}`}
+                        />
+                      </button>
+                    }
                   />
                 );
               })}
@@ -289,7 +306,7 @@ function RouteComponent() {
         onClose={handleExitFocus}
         onSave={handleSave}
         onDelete={handleDelete}
-        onRefresh={handleRefresh}
+        onRefresh={handleRefreshInEditor}
         isSaving={updateSubscribeMutation.isPending}
         isDeleting={deleteSubscribeMutation.isPending}
         isRefreshing={refreshSubscribeMutation.isPending}

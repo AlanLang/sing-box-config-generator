@@ -1,5 +1,6 @@
 import { IconChevronRight, IconCode } from "@tabler/icons-react";
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 
 interface ConfigCardProps {
   name: string;
@@ -7,6 +8,7 @@ interface ConfigCardProps {
   onClick: () => void;
   index: number;
   uuid: string;
+  actions?: ReactNode;
 }
 
 export function ConfigCard({
@@ -14,6 +16,7 @@ export function ConfigCard({
   jsonPreview,
   onClick,
   index,
+  actions,
 }: ConfigCardProps) {
   return (
     <motion.div
@@ -62,8 +65,21 @@ export function ConfigCard({
                 {name}
               </h3>
             </div>
-            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-150">
-              <IconChevronRight className="size-5 text-primary" />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              {/* Action buttons */}
+              {actions && (
+                <div
+                  className="flex items-center gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  {actions}
+                </div>
+              )}
+              {/* Arrow indicator */}
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-150">
+                <IconChevronRight className="size-5 text-primary" />
+              </div>
             </div>
           </div>
         </div>
