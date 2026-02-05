@@ -1,3 +1,5 @@
+import { EditorBottomBar } from "@/components/editor-bottom-bar";
+import { EditorHeader } from "@/components/editor-header";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,6 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,7 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { IconDeviceFloppy, IconTrash, IconX, IconRefresh } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconTrash, IconRefresh } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTimeAgo, formatDateTime } from "@/lib/time";
 
@@ -88,67 +93,14 @@ export function SubscribeEditor({
             className="h-full flex flex-col bg-background rounded-xl overflow-hidden shadow-2xl"
           >
             {/* Header Bar */}
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="border-b bg-background/50 backdrop-blur-xl"
-            >
-              <div className="px-6 py-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClose}
-                        className="gap-2"
-                      >
-                        <IconX className="size-4" />
-                        <span className="hidden sm:inline">
-                          {isCreating ? "Cancel" : "Exit Focus"}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {isCreating
-                        ? "Cancel creation (Esc)"
-                        : "Exit focus mode (Esc)"}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <div className="h-6 w-px bg-border" />
-
-                  <div className="flex items-center gap-3">
-                    {isCreating && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 500,
-                          damping: 25,
-                        }}
-                        className="text-xs font-medium px-2 py-1 rounded-md bg-primary/10 text-primary border border-primary/20"
-                      >
-                        New
-                      </motion.span>
-                    )}
-                    <Input
-                      value={name}
-                      onChange={(e) => onNameChange(e.target.value)}
-                      className="max-w-md text-lg font-semibold border-0 bg-transparent focus-visible:ring-0 px-2"
-                      placeholder="Subscribe name..."
-                    />
-                  </div>
-                </div>
-
-                <motion.div
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.15 }}
-                  className="flex items-center gap-2"
-                >
+            <EditorHeader
+              onClose={onClose}
+              isCreating={isCreating}
+              entityType="Subscribe"
+              name={name}
+              onNameChange={onNameChange}
+              desktopActions={
+                <>
                   {!isCreating && onRefresh && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -157,6 +109,7 @@ export function SubscribeEditor({
                           size="sm"
                           onClick={onRefresh}
                           disabled={isRefreshing}
+                          className="shrink-0"
                         >
                           <IconRefresh className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
                         </Button>
@@ -173,7 +126,7 @@ export function SubscribeEditor({
                           onOpenChange={onDeleteDialogChange}
                         >
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="shrink-0">
                               <IconTrash className="size-4 text-destructive" />
                             </Button>
                           </DialogTrigger>
@@ -208,7 +161,7 @@ export function SubscribeEditor({
                     onClick={onSave}
                     disabled={isSaving || !name.trim()}
                     size="sm"
-                    className="gap-2"
+                    className="gap-2 shrink-0"
                   >
                     <IconDeviceFloppy className="size-4" />
                     {isCreating
@@ -217,9 +170,9 @@ export function SubscribeEditor({
                         ? "Saving..."
                         : "Save Changes"}
                   </Button>
-                </motion.div>
-              </div>
-            </motion.div>
+                </>
+              }
+            />
 
             {/* Editor Area */}
             <motion.div
@@ -256,12 +209,38 @@ export function SubscribeEditor({
               </div>
             </motion.div>
 
-            {/* Footer Info */}
+            {/* Mobile Bottom Action Bar */}
+            <EditorBottomBar
+              onSave={onSave}
+              isSaving={isSaving}
+              saveDisabled={!name.trim()}
+              entityType="Subscribe"
+              isCreating={isCreating}
+              onDelete={onDelete}
+              isDeleting={isDeleting}
+              deleteDialogOpen={deleteDialogOpen}
+              onDeleteDialogChange={onDeleteDialogChange}
+              itemName={name}
+              additionalMenuItems={
+                !isCreating && onRefresh ? (
+                  <DropdownMenuItem
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                    className="gap-2"
+                  >
+                    <IconRefresh className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <span>刷新订阅</span>
+                  </DropdownMenuItem>
+                ) : undefined
+              }
+            />
+
+            {/* Desktop Footer Info */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.15 }}
-              className="border-t bg-background/50 backdrop-blur-xl px-6 py-3 flex items-center justify-between text-xs text-muted-foreground"
+              className="hidden sm:flex border-t bg-background/50 backdrop-blur-xl px-6 py-3 items-center justify-between text-xs text-muted-foreground"
             >
               <div className="flex items-center gap-4">
                 <span className="font-mono">{uuid}</span>
