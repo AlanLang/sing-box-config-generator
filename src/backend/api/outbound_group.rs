@@ -13,19 +13,18 @@ pub struct OutboundGroupCreateDto {
     pub name: String,
     pub group_type: String,
     pub outbounds: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tolerance: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub idle_timeout: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub interrupt_exist_connections: Option<bool>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct OutboundGroupListDto {
-    pub uuid: String,
-    pub name: String,
-    pub group_type: String,
 }
 
 #[derive(Debug, Deserialize)]

@@ -10,3 +10,6 @@ pub mod dns;
 pub mod dns_config;
 pub mod filter;
 pub mod outbound_group;
+
+#[cfg(test)]
+mod outbound_group_test;
