@@ -139,8 +139,8 @@ function RouteComponent() {
 
   return (
     <AppPage
-      title="DNS Configuration"
-      description="Design and manage DNS rules for your sing-box infrastructure"
+      title="DNS Server"
+      description="Design and manage DNS server rules for your sing-box infrastructure"
       actions={
         <Button
           size="sm"
@@ -149,7 +149,7 @@ function RouteComponent() {
         >
           <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <IconCubePlus className="size-4" />
-          New DNS
+          New DNS Server
         </Button>
       }
     >
@@ -159,9 +159,9 @@ function RouteComponent() {
       ) : /* Empty State */
       !dnsList || dnsList.length === 0 ? (
         <EmptyState
-          title="No DNS configured"
-          description="Start building your network configuration by creating your first DNS. Define DNS rules, servers, and policies."
-          actionLabel="Create Your First DNS"
+          title="No DNS Server configured"
+          description="Start building your network configuration by creating your first DNS Server. Define DNS rules, servers, and policies."
+          actionLabel="Create Your First DNS Server"
           onAction={handleNewDns}
         />
       ) : (
@@ -208,7 +208,7 @@ function RouteComponent() {
         onDelete={handleDelete}
         isSaving={updateDnsMutation.isPending}
         isDeleting={deleteDnsMutation.isPending}
-        entityType="DNS"
+        entityType="DNS Server"
         deleteDialogOpen={deleteDialogOpen}
         onDeleteDialogChange={setDeleteDialogOpen}
       />

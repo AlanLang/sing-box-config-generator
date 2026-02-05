@@ -32,7 +32,7 @@ const singBoxConfigs = [
     icon: IconLogs,
   },
   {
-    title: "DNS",
+    title: "DNS Server",
     url: "/dns",
     icon: IconWorldSearch,
   },
