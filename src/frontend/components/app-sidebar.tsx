@@ -48,7 +48,7 @@ const data = [
   },
   {
     title: "Experimental",
-    url: "#",
+    url: "/experimental",
     icon: IconFlaskFilled,
   }
 

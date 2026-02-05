@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './index'
 import { Route as RulesetIndexRouteImport } from './ruleset/index'
 import { Route as LogIndexRouteImport } from './log/index'
 import { Route as InboundIndexRouteImport } from './inbound/index'
+import { Route as ExperimentalIndexRouteImport } from './experimental/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,15 +35,22 @@ const InboundIndexRoute = InboundIndexRouteImport.update({
   path: '/inbound/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExperimentalIndexRoute = ExperimentalIndexRouteImport.update({
+  id: '/experimental/',
+  path: '/experimental/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
   '/ruleset': typeof RulesetIndexRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/experimental/': typeof ExperimentalIndexRoute
   '/inbound/': typeof InboundIndexRoute
   '/log/': typeof LogIndexRoute
   '/ruleset/': typeof RulesetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inbound' | '/log' | '/ruleset'
+  fullPaths: '/' | '/experimental' | '/inbound' | '/log' | '/ruleset'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inbound' | '/log' | '/ruleset'
-  id: '__root__' | '/' | '/inbound/' | '/log/' | '/ruleset/'
+  to: '/' | '/experimental' | '/inbound' | '/log' | '/ruleset'
+  id: '__root__' | '/' | '/experimental/' | '/inbound/' | '/log/' | '/ruleset/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExperimentalIndexRoute: typeof ExperimentalIndexRoute
   InboundIndexRoute: typeof InboundIndexRoute
   LogIndexRoute: typeof LogIndexRoute
   RulesetIndexRoute: typeof RulesetIndexRoute
@@ -99,11 +109,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboundIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/experimental/': {
+      id: '/experimental/'
+      path: '/experimental'
+      fullPath: '/experimental'
+      preLoaderRoute: typeof ExperimentalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExperimentalIndexRoute: ExperimentalIndexRoute,
   InboundIndexRoute: InboundIndexRoute,
   LogIndexRoute: LogIndexRoute,
   RulesetIndexRoute: RulesetIndexRoute,
