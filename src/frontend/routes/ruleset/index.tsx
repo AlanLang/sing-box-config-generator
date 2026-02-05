@@ -182,20 +182,27 @@ function RouteComponent() {
               transition={{ duration: 0.2 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
             >
-              {rulesets.map((ruleset, index) => (
-                <ConfigCard
-                  key={ruleset.uuid}
-                  name={ruleset.name}
-                  jsonPreview={`${formatJson(ruleset.json).substring(0, 150)}...`}
-                  onClick={() => {
-                    setSelectedUuid(ruleset.uuid);
-                    setIsCreating(false);
-                    setFocusMode(true);
-                  }}
-                  index={index}
-                  uuid={ruleset.uuid}
-                />
-              ))}
+              {rulesets.map((ruleset, index) => {
+                const formatted = formatJson(ruleset.json);
+                const preview =
+                  formatted.length > 150
+                    ? `${formatted.substring(0, 150)}...`
+                    : formatted;
+                return (
+                  <ConfigCard
+                    key={ruleset.uuid}
+                    name={ruleset.name}
+                    jsonPreview={preview}
+                    onClick={() => {
+                      setSelectedUuid(ruleset.uuid);
+                      setIsCreating(false);
+                      setFocusMode(true);
+                    }}
+                    index={index}
+                    uuid={ruleset.uuid}
+                  />
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>

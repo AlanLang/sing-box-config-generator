@@ -175,20 +175,27 @@ function RouteComponent() {
               transition={{ duration: 0.2 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
             >
-              {dnsList.map((dns, index) => (
-                <ConfigCard
-                  key={dns.uuid}
-                  name={dns.name}
-                  jsonPreview={`${formatJson(dns.json).substring(0, 150)}...`}
-                  onClick={() => {
-                    setSelectedUuid(dns.uuid);
-                    setIsCreating(false);
-                    setFocusMode(true);
-                  }}
-                  index={index}
-                  uuid={dns.uuid}
-                />
-              ))}
+              {dnsList.map((dns, index) => {
+                const formatted = formatJson(dns.json);
+                const preview =
+                  formatted.length > 150
+                    ? `${formatted.substring(0, 150)}...`
+                    : formatted;
+                return (
+                  <ConfigCard
+                    key={dns.uuid}
+                    name={dns.name}
+                    jsonPreview={preview}
+                    onClick={() => {
+                      setSelectedUuid(dns.uuid);
+                      setIsCreating(false);
+                      setFocusMode(true);
+                    }}
+                    index={index}
+                    uuid={dns.uuid}
+                  />
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
