@@ -16,8 +16,7 @@ import {
   outboundGroupCreateSchema,
 } from "@/api/outbound-group/create";
 import type { GroupType, OutboundGroupDto } from "@/api/outbound-group/types";
-import { useOutboundList } from "@/api/outbound/list";
-import { useFilterList } from "@/api/filter/list";
+import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 
 export const Route = createFileRoute("/subscribe/outbound-group/")({
   component: RouteComponent,
@@ -25,22 +24,18 @@ export const Route = createFileRoute("/subscribe/outbound-group/")({
 
 function RouteComponent() {
   const { data: groups, refetch, isLoading } = useOutboundGroupList();
-  const { data: outbounds } = useOutboundList();
-  const { data: filters } = useFilterList();
+  const { data: options } = useOutboundGroupOptions();
   const updateMutation = useOutboundGroupUpdate();
   const deleteMutation = useOutboundGroupDelete();
 
-  // Create a UUID to name mapping for outbounds and filters
+  // Create a UUID to name mapping from options data
   const uuidToNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    outbounds?.forEach((item) => {
-      map.set(item.uuid, item.name);
-    });
-    filters?.forEach((item) => {
-      map.set(item.uuid, item.name);
+    options?.forEach((option) => {
+      map.set(option.uuid, option.label);
     });
     return map;
-  }, [outbounds, filters]);
+  }, [options]);
 
   const [focusMode, setFocusMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
