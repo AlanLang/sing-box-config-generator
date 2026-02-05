@@ -11,15 +11,17 @@ interface AppPageProps {
 
 export function AppPage({ children, className, title, description, actions }: AppPageProps) {
   return <div className={cn("flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-4", className)}>
-    <div className="flex justify-between items-center">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-3 md:gap-0">
+      {/* Top row: Sidebar trigger and actions */}
+      <div className="flex justify-between items-center">
         <SidebarTrigger />
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
-        </div>
+        {actions && <div className="flex justify-end">{actions}</div>}
       </div>
-      {actions && <div className="flex justify-end">{actions}</div>}
+      {/* Title row: Full width on mobile, inline with trigger on desktop */}
+      <div className="flex flex-col gap-1 md:ml-10">
+        <h1 className="text-2xl font-bold">{title}</h1>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      </div>
     </div>
     {children}
   </div>
