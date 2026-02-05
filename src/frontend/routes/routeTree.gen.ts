@@ -15,7 +15,7 @@ import { Route as RulesetIndexRouteImport } from './ruleset/index'
 import { Route as LogIndexRouteImport } from './log/index'
 import { Route as InboundIndexRouteImport } from './inbound/index'
 import { Route as ExperimentalIndexRouteImport } from './experimental/index'
-import { Route as DnsIndexRouteImport } from './dns/index'
+import { Route as DnsServerIndexRouteImport } from './dns-server/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,15 +47,15 @@ const ExperimentalIndexRoute = ExperimentalIndexRouteImport.update({
   path: '/experimental/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DnsIndexRoute = DnsIndexRouteImport.update({
-  id: '/dns/',
-  path: '/dns/',
+const DnsServerIndexRoute = DnsServerIndexRouteImport.update({
+  id: '/dns-server/',
+  path: '/dns-server/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dns': typeof DnsIndexRoute
+  '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
@@ -64,7 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dns': typeof DnsIndexRoute
+  '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
   '/inbound': typeof InboundIndexRoute
   '/log': typeof LogIndexRoute
@@ -74,7 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dns/': typeof DnsIndexRoute
+  '/dns-server/': typeof DnsServerIndexRoute
   '/experimental/': typeof ExperimentalIndexRoute
   '/inbound/': typeof InboundIndexRoute
   '/log/': typeof LogIndexRoute
@@ -85,7 +85,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dns'
+    | '/dns-server'
     | '/experimental'
     | '/inbound'
     | '/log'
@@ -94,7 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dns'
+    | '/dns-server'
     | '/experimental'
     | '/inbound'
     | '/log'
@@ -103,7 +103,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dns/'
+    | '/dns-server/'
     | '/experimental/'
     | '/inbound/'
     | '/log/'
@@ -113,7 +113,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DnsIndexRoute: typeof DnsIndexRoute
+  DnsServerIndexRoute: typeof DnsServerIndexRoute
   ExperimentalIndexRoute: typeof ExperimentalIndexRoute
   InboundIndexRoute: typeof InboundIndexRoute
   LogIndexRoute: typeof LogIndexRoute
@@ -165,11 +165,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExperimentalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dns/': {
-      id: '/dns/'
-      path: '/dns'
-      fullPath: '/dns'
-      preLoaderRoute: typeof DnsIndexRouteImport
+    '/dns-server/': {
+      id: '/dns-server/'
+      path: '/dns-server'
+      fullPath: '/dns-server'
+      preLoaderRoute: typeof DnsServerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -177,7 +177,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DnsIndexRoute: DnsIndexRoute,
+  DnsServerIndexRoute: DnsServerIndexRoute,
   ExperimentalIndexRoute: ExperimentalIndexRoute,
   InboundIndexRoute: InboundIndexRoute,
   LogIndexRoute: LogIndexRoute,

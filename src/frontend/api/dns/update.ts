@@ -12,10 +12,10 @@ export const useDnsUpdate = () => {
 
   return useMutation({
     mutationFn: async (data: DnsUpdateDto) => {
-      return await http.put("dns", { json: data }).text();
+      return await http.put("dns-server", { json: data }).text();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dns", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["dns-server", "list"] });
     },
   });
 };

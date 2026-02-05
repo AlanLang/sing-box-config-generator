@@ -15,7 +15,7 @@ pub struct DnsCreateDto {
 pub async fn create_dns(Json(payload): Json<DnsCreateDto>) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating dns: {}", file_name);
-  let dir_path = Path::new("./data/dns");
+  let dir_path = Path::new("./data/dns-server");
   let file_path = dir_path.join(&file_name);
 
   if !dir_path.exists() {
@@ -43,7 +43,7 @@ pub struct DnsListDto {
 }
 
 pub async fn list_dns() -> Result<impl IntoResponse, AppError> {
-  let dir_path = Path::new("./data/dns");
+  let dir_path = Path::new("./data/dns-server");
   if !dir_path.exists() {
     return Ok(Json(Vec::<DnsListDto>::new()));
   }
@@ -77,7 +77,7 @@ pub struct DnsUpdateDto {
 
 pub async fn update_dns(Json(payload): Json<DnsUpdateDto>) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
-  let dir_path = Path::new("./data/dns");
+  let dir_path = Path::new("./data/dns-server");
   let file_path = dir_path.join(&file_name);
 
   if !file_path.exists() {
@@ -109,7 +109,7 @@ pub async fn delete_dns(
   axum::extract::Query(payload): axum::extract::Query<DnsDeleteDto>,
 ) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
-  let dir_path = Path::new("./data/dns");
+  let dir_path = Path::new("./data/dns-server");
   let file_path = dir_path.join(&file_name);
 
   if !file_path.exists() {

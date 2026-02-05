@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
       axum::routing::post(backend::api::subscribe::refresh_subscribe),
     )
     .route(
-      "/api/dns",
+      "/api/dns-server",
       axum::routing::post(backend::api::dns::create_dns)
         .get(backend::api::dns::list_dns)
         .put(backend::api::dns::update_dns)

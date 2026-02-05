@@ -15,7 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
-export const Route = createFileRoute("/dns/")({
+export const Route = createFileRoute("/dns-server/")({
   component: RouteComponent,
 });
 

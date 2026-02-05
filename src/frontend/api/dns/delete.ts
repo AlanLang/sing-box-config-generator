@@ -6,7 +6,7 @@ export interface DnsDeleteDto {
 }
 
 export function deleteDns(data: DnsDeleteDto) {
-  return http.delete("dns", {
+  return http.delete("dns-server", {
     searchParams: {
       uuid: data.uuid,
     },

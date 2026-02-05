@@ -9,9 +9,9 @@ export interface DnsListDto {
 
 export const useDnsList = () => {
   return useQuery({
-    queryKey: ["dns", "list"],
+    queryKey: ["dns-server", "list"],
     queryFn: async () => {
-      return await http.get("dns").json<DnsListDto[]>();
+      return await http.get("dns-server").json<DnsListDto[]>();
     },
   });
 };
