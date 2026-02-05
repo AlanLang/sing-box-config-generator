@@ -1,5 +1,6 @@
 pub mod log;
 pub mod ruleset;
+pub mod rule;
 pub mod inbound;
 pub mod outbound;
 pub mod experimental;

@@ -27,6 +27,11 @@ const singBoxConfigs = [
     icon: IconCubeUnfolded,
   },
   {
+    title: "Rule",
+    url: "/rule",
+    icon: IconCubeUnfolded,
+  },
+  {
     title: "LOG",
     url: "/log",
     icon: IconLogs,
