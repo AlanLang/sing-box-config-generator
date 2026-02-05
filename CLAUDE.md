@@ -134,3 +134,86 @@ Create a new file in `src/frontend/routes/`. The route tree will be auto-generat
 ### UI Components
 
 Reusable UI components are in `src/frontend/components/ui/` (Radix UI wrappers) and `src/frontend/components/` (app-specific).
+
+## Claude Code Workflow Rules
+
+### 自动提交代码
+
+**IMPORTANT**: 每次完成任务后，你必须自动创建 git commit 提交代码。
+
+### Git Commit Message 规范
+
+提交信息必须使用中文，遵循以下格式：
+
+```
+<type>(<scope>): <subject>
+
+<body>（可选）
+
+<footer>（可选）
+```
+
+#### 提交类型（Type）
+
+- **feat**: 新增功能或特性
+- **fix**: 修复 bug 或异常
+- **docs**: 文档相关的修改
+- **style**: 代码风格调整（不影响代码含义，如格式化、缺少分号等）
+- **refactor**: 代码重构（既不是新增功能，也不是修复 bug）
+- **perf**: 性能优化
+- **test**: 测试相关（新增测试或修复测试）
+- **build**: 构建系统或外部依赖的变更（如 npm, cargo, webpack 等）
+- **ci**: CI/CD 配置文件和脚本的变更
+- **chore**: 其他不修改源代码或测试的变更
+
+#### 作用域（Scope）
+
+作用域表示影响范围，可选值：
+- `backend` - 后端相关
+- `frontend` - 前端相关
+- `api` - API 接口
+- `ui` - UI 组件
+- `router` - 路由
+- `config` - 配置文件
+- 或其他具体的模块名称
+
+如果影响范围广泛，可以省略 scope。
+
+#### 主题（Subject）
+
+- 使用中文简短描述（不超过 50 个字符）
+- 使用祈使语气（如：添加、修复、更新）
+- 不要以句号结尾
+- 清晰说明做了什么改动
+
+#### 提交示例
+
+```
+feat(frontend): 添加入站配置管理页面
+
+实现入站配置的 CRUD 功能，包括列表展示、新增、编辑和删除操作。
+使用 TanStack Query 进行数据管理，添加炫酷的动画效果。
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+```
+fix(backend): 修复日志文件读取时的路径错误
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+```
+refactor: 提取可复用的 JSON 编辑器组件
+
+将 FocusEditor 组件从日志页面中提取出来，使其可以在多个页面中复用。
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+#### 注意事项
+
+1. 每次完成任务后必须提交代码（除非没有任何文件变更）
+2. Commit message 必须使用中文
+3. 严格遵循上述格式规范
+4. 保留 `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>` 署名
