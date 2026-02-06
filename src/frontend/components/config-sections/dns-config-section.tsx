@@ -2,8 +2,10 @@ import { useDnsConfigList } from "@/api/dns-config/list";
 import { useDnsList } from "@/api/dns/list";
 import { useRulesetList } from "@/api/ruleset/list";
 import type { SingBoxConfig } from "@/components/config-form";
-import { SelectableCard } from "@/components/selectable-card";
-import { SelectorDrawer } from "@/components/selector-drawer";
+import {
+	MultiSelectorDrawer,
+	SelectorDrawer,
+} from "@/components/selector-drawer";
 import {
 	AccordionContent,
 	AccordionItem,
@@ -48,20 +50,18 @@ export function DnsConfigSection({
 	const { data: dnsServerList, isLoading: dnsServersLoading } = useDnsList();
 	const { data: rulesets, isLoading: rulesetsLoading } = useRulesetList();
 
-	const handleServerToggle = (serverUuid: string, checked: boolean) => {
-		if (checked) {
-			onServersChange([...servers, serverUuid]);
-		} else {
-			const newServers = servers.filter((s) => s !== serverUuid);
-			onServersChange(newServers);
+	const handleServersChange = (newServers: string[]) => {
+		const removed = servers.filter((s) => !newServers.includes(s));
+		onServersChange(newServers);
+		for (const serverUuid of removed) {
 			// 如果被取消的 server 是 final，清空 final
 			if (final === serverUuid) {
 				onFinalChange("");
 			}
-			// 清理 rules 中使用了该 server 的规则
-			if (rules) {
-				onRulesChange(rules.filter((rule) => rule.server !== serverUuid));
-			}
+		}
+		// 清理 rules 中使用了被移除 server 的规则
+		if (rules && removed.length > 0) {
+			onRulesChange(rules.filter((rule) => !removed.includes(rule.server)));
 		}
 	};
 
@@ -195,20 +195,18 @@ export function DnsConfigSection({
 								</p>
 							</div>
 						) : (
-							<div className="grid grid-cols-1 gap-2">
-								{dnsServerList.map((server) => (
-									<SelectableCard
-										key={server.uuid}
-										id={`dns-server-${server.uuid}`}
-										title={server.name}
-										description={server.json}
-										selected={servers.includes(server.uuid)}
-										onToggle={(selected) =>
-											handleServerToggle(server.uuid, selected)
-										}
-									/>
-								))}
-							</div>
+							<MultiSelectorDrawer
+								drawerTitle="Select DNS Servers"
+								drawerDescription="Select one or more DNS servers."
+								placeholder="Select DNS servers"
+								items={dnsServerList.map((s) => ({
+									value: s.uuid,
+									title: s.name,
+									description: s.json,
+								}))}
+								value={servers}
+								onChange={handleServersChange}
+							/>
 						)}
 						{servers.length === 0 &&
 							dnsServerList &&
@@ -301,35 +299,22 @@ export function DnsConfigSection({
 														No rulesets available
 													</div>
 												) : (
-													<div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-														{rulesets.map((ruleset) => {
-															const isSelected = rule.rule_set.includes(
-																ruleset.uuid,
-															);
-															const isUsedByOthers =
-																usedRulesets.includes(ruleset.uuid);
-
-															return (
-																<SelectableCard
-																	key={ruleset.uuid}
-																	id={`rule-${index}-ruleset-${ruleset.uuid}`}
-																	title={ruleset.name}
-																	description={ruleset.json}
-																	selected={isSelected}
-																	disabled={isUsedByOthers}
-																	disabledLabel="Used"
-																	onToggle={() => {
-																		const newRuleSet = isSelected
-																			? rule.rule_set.filter(
-																					(r) => r !== ruleset.uuid,
-																				)
-																			: [...rule.rule_set, ruleset.uuid];
-																		handleUpdateRule(index, "rule_set", newRuleSet);
-																	}}
-																/>
-															);
-														})}
-													</div>
+													<MultiSelectorDrawer
+														drawerTitle={`Rule #${index + 1} - Rulesets`}
+														drawerDescription="Select rulesets for this rule."
+														placeholder="Select rulesets"
+														items={rulesets.map((r) => ({
+															value: r.uuid,
+															title: r.name,
+															description: r.json,
+															disabled: usedRulesets.includes(r.uuid),
+															disabledLabel: "Used",
+														}))}
+														value={rule.rule_set}
+														onChange={(val) =>
+															handleUpdateRule(index, "rule_set", val)
+														}
+													/>
 												)}
 											</div>
 

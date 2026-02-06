@@ -3,8 +3,8 @@ import { useRulesetOptions } from "@/api/ruleset/options";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import { useDnsList } from "@/api/dns/list";
 import type { SingBoxConfig } from "@/components/config-form";
-import { SelectableCard } from "@/components/selectable-card";
 import {
+	MultiSelectorDrawer,
 	SelectorDrawer,
 	type SelectorDrawerItem,
 } from "@/components/selector-drawer";
@@ -256,31 +256,20 @@ export function RouteConfigSection({
 													No rulesets available
 												</div>
 											) : (
-												<div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-													{rulesetOptions.map((ruleset) => {
-														const isSelected = rule.rulesets.includes(
-															ruleset.uuid,
-														);
-
-														return (
-															<SelectableCard
-																key={ruleset.uuid}
-																id={`rule-${index}-ruleset-${ruleset.uuid}`}
-																title={ruleset.label}
-																description={ruleset.value}
-																selected={isSelected}
-																onToggle={() => {
-																	const newRulesets = isSelected
-																		? rule.rulesets.filter(
-																				(r) => r !== ruleset.uuid,
-																			)
-																		: [...rule.rulesets, ruleset.uuid];
-																	handleUpdateRule(index, "rulesets", newRulesets);
-																}}
-															/>
-														);
-													})}
-												</div>
+												<MultiSelectorDrawer
+													drawerTitle={`Rule #${index + 1} - Rulesets`}
+													drawerDescription="Select rulesets for this rule."
+													placeholder="Select rulesets"
+													items={rulesetOptions.map((r) => ({
+														value: r.uuid,
+														title: r.label,
+														description: r.value,
+													}))}
+													value={rule.rulesets}
+													onChange={(val) =>
+														handleUpdateRule(index, "rulesets", val)
+													}
+												/>
 											)}
 											{rule.rulesets.length === 0 && (
 												<p className="text-sm text-destructive">

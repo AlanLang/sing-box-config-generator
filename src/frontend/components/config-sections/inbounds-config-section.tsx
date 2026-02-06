@@ -4,8 +4,8 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { MultiSelectorDrawer } from "@/components/selector-drawer";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
-import { SelectableCard } from "@/components/selectable-card";
 
 interface InboundsConfigSectionProps {
 	value: string[];
@@ -18,21 +18,11 @@ export function InboundsConfigSection({
 }: InboundsConfigSectionProps) {
 	const { data: inbounds, isLoading: inboundsLoading } = useInboundList();
 
-	const handleToggle = (inboundUuid: string, selected: boolean) => {
-		if (selected) {
-			onChange([...value, inboundUuid]);
-		} else {
-			onChange(value.filter((id) => id !== inboundUuid));
-		}
-	};
-
-	const isValid = value.length > 0;
-
 	return (
 		<AccordionItem value="inbounds">
 			<AccordionTrigger className="hover:no-underline">
 				<div className="flex items-center gap-3">
-					{isValid ? (
+					{value.length > 0 ? (
 						<IconCheck className="size-5 text-green-500" />
 					) : (
 						<IconAlertCircle className="size-5 text-destructive" />
@@ -67,18 +57,18 @@ export function InboundsConfigSection({
 							</p>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 gap-2">
-							{inbounds.map((inbound) => (
-								<SelectableCard
-									key={inbound.uuid}
-									id={`inbound-${inbound.uuid}`}
-									title={inbound.name}
-									description={inbound.json}
-									selected={value.includes(inbound.uuid)}
-									onToggle={(selected) => handleToggle(inbound.uuid, selected)}
-								/>
-							))}
-						</div>
+						<MultiSelectorDrawer
+							drawerTitle="Select Inbounds"
+							drawerDescription="Select one or more inbound configurations."
+							placeholder="Select inbounds"
+							items={inbounds.map((i) => ({
+								value: i.uuid,
+								title: i.name,
+								description: i.json,
+							}))}
+							value={value}
+							onChange={onChange}
+						/>
 					)}
 					{value.length === 0 && inbounds && inbounds.length > 0 && (
 						<p className="text-sm text-destructive">
