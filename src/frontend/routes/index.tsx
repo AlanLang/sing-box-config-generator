@@ -1,6 +1,6 @@
 import { useConfigCreate } from "@/api/config/create";
 import { useConfigDelete } from "@/api/config/delete";
-import { useConfigList } from "@/api/config/list";
+import { useConfigList, type ConfigListDto } from "@/api/config/list";
 import { useConfigUpdate } from "@/api/config/update";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
@@ -37,10 +37,18 @@ function RouteComponent() {
     setFormOpen(true);
   };
 
-  const handleEditConfig = (config: SingBoxConfig & { uuid: string }) => {
+  const handleEditConfig = (config: ConfigListDto) => {
     setIsCreating(false);
     setSelectedUuid(config.uuid);
-    setInitialData(config);
+    // ConfigListDto 和 SingBoxConfig 结构相同（除了 uuid），可以直接传递
+    setInitialData({
+      name: config.name,
+      log: config.log,
+      dns: config.dns,
+      inbounds: config.inbounds,
+      route: config.route,
+      experimental: config.experimental,
+    });
     setFormOpen(true);
   };
 
