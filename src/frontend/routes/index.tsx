@@ -11,7 +11,7 @@ import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import { useRouteList } from "@/api/route/list";
 import { AppPage } from "@/components/app-page";
 import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
-import { ConfigRow } from "@/components/config-row";
+import { ConfigCard } from "@/components/config-card-new";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { Button } from "@/components/ui/button";
@@ -157,9 +157,9 @@ function RouteComponent() {
           onAction={handleNewConfig}
         />
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {configs.map((config, index) => (
-            <ConfigRow
+            <ConfigCard
               key={config.uuid}
               config={config}
               index={index}
