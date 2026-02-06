@@ -853,9 +853,15 @@ async fn resolve_outbounds_and_route(
   let mut outbounds = Vec::new();
   let mut groups_to_add = Vec::new();
   let mut work_queue: Vec<String> = outbound_uuids.iter().cloned().collect();
+  let mut processed_uuids = HashSet::new();
   let mut final_tag = String::new();
 
   while let Some(uuid) = work_queue.pop() {
+    // Skip already-processed UUIDs to avoid duplicates
+    if !processed_uuids.insert(uuid.clone()) {
+      continue;
+    }
+
     if is_outbound_group(&uuid).await? {
       let group = load_outbound_group(&uuid).await?;
       let group_tag = group.name.clone();
@@ -863,6 +869,11 @@ async fn resolve_outbounds_and_route(
       // Store final tag if this is the final outbound
       if uuid == final_uuid {
         final_tag = group_tag.clone();
+      }
+
+      // Skip duplicate group tags
+      if collected_tags.contains(&group_tag) {
+        continue;
       }
 
       // Collect member tags and add members to work queue
@@ -911,7 +922,8 @@ async fn resolve_outbounds_and_route(
         }
       }
 
-      // Store group with its member tags
+      // Store group with its member tags, mark tag as collected
+      collected_tags.insert(group_tag);
       groups_to_add.push((group, member_tags));
     } else if is_filter(&uuid).await? {
       // It's a filter - apply to subscriptions
