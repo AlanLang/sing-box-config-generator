@@ -8,10 +8,11 @@ import {
 	IconDeviceFloppy,
 	IconX,
 } from "@tabler/icons-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { LogConfigSection } from "./config-sections/log-config-section";
 import { DnsConfigSection } from "./config-sections/dns-config-section";
+import { LogConfigSection } from "./config-sections/log-config-section";
+import { InboundsConfigSection } from "./config-sections/inbounds-config-section";
 
 export interface SingBoxConfig {
 	name: string;
@@ -40,8 +41,11 @@ export interface SingBoxConfig {
 		}[];
 		final: string;
 	};
+	/**
+	 * inbound 的 uuid 列表
+	 */
+	inbounds: string[];
 	// TODO: 添加其他模块的字段
-	// inbounds: string[];
 	// outbounds: string[];
 	// route?: string;
 	// experimental?: string;
@@ -77,18 +81,26 @@ export function ConfigForm({
 		initialData?.dns?.final || "",
 	);
 
+	// Inbounds 配置状态
+	const [inbounds, setInbounds] = useState<string[]>(
+		initialData?.inbounds || [],
+	);
+
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
 		dnsFinal &&
 		dnsServers.includes(dnsFinal) &&
-		(!dnsRules || dnsRules.every(rule =>
-			rule.rule_set.length > 0 &&
-			rule.server &&
-			dnsServers.includes(rule.server)
-		));
+		(!dnsRules ||
+			dnsRules.every(
+				(rule) =>
+					rule.rule_set.length > 0 &&
+					rule.server &&
+					dnsServers.includes(rule.server),
+			));
 
-	const isValid = name.trim().length >= 2 && log && isDnsValid;
+	const isValid =
+		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0;
 
 	const handleSave = () => {
 		if (!isValid) return;
@@ -102,6 +114,7 @@ export function ConfigForm({
 				rules: dnsRules,
 				final: dnsFinal,
 			},
+			inbounds,
 		});
 	};
 
@@ -169,102 +182,107 @@ export function ConfigForm({
 								transition={{ delay: 0.2, duration: 0.4 }}
 								className="flex-1 overflow-y-auto"
 							>
-						<div className="space-y-6 p-6">
-							{/* 基本信息 */}
-							<div className="space-y-2">
-								<Label htmlFor="config-name">
-									Config Name <span className="text-destructive">*</span>
-								</Label>
-								<Input
-									id="config-name"
-									placeholder="Enter config name (2-50 characters)"
-									value={name}
-									onChange={(e) => setName(e.target.value)}
-									minLength={2}
-									maxLength={50}
-								/>
-								{name.trim().length > 0 && name.trim().length < 2 && (
-									<p className="text-sm text-destructive">
-										Name must be at least 2 characters
-									</p>
-								)}
-							</div>
+								<div className="space-y-6 p-6">
+									{/* 基本信息 */}
+									<div className="space-y-2">
+										<Label htmlFor="config-name">
+											Config Name <span className="text-destructive">*</span>
+										</Label>
+										<Input
+											id="config-name"
+											placeholder="Enter config name (2-50 characters)"
+											value={name}
+											onChange={(e) => setName(e.target.value)}
+											minLength={2}
+											maxLength={50}
+										/>
+										{name.trim().length > 0 && name.trim().length < 2 && (
+											<p className="text-sm text-destructive">
+												Name must be at least 2 characters
+											</p>
+										)}
+									</div>
 
-							{/* 模块配置 */}
-							<div className="space-y-2">
-								<Label>Module Configuration</Label>
-								<p className="text-sm text-muted-foreground">
-									Configure each required module. Modules marked with{" "}
-									<span className="text-destructive">*</span> are required.
-								</p>
+									{/* 模块配置 */}
+									<div className="space-y-2">
+										<Label>Module Configuration</Label>
+										<p className="text-sm text-muted-foreground">
+											Configure each required module. Modules marked with{" "}
+											<span className="text-destructive">*</span> are required.
+										</p>
 
-								<Accordion type="single" collapsible className="w-full">
-									<LogConfigSection value={log} onChange={setLog} />
+										<Accordion type="single" collapsible className="w-full">
+											<LogConfigSection value={log} onChange={setLog} />
 
-									<DnsConfigSection
-										config={dnsConfig}
-										onConfigChange={setDnsConfig}
-										servers={dnsServers}
-										onServersChange={setDnsServers}
-										rules={dnsRules}
-										onRulesChange={setDnsRules}
-										final={dnsFinal}
-										onFinalChange={setDnsFinal}
-										isValid={isDnsValid}
-									/>
+											<DnsConfigSection
+												config={dnsConfig}
+												onConfigChange={setDnsConfig}
+												servers={dnsServers}
+												onServersChange={setDnsServers}
+												rules={dnsRules}
+												onRulesChange={setDnsRules}
+												final={dnsFinal}
+												onFinalChange={setDnsFinal}
+												isValid={isDnsValid}
+											/>
 
-									{/* TODO: 其他模块 */}
-								</Accordion>
-							</div>
-						</div>
-					</motion.div>
+											<InboundsConfigSection
+												value={inbounds}
+												onChange={setInbounds}
+											/>
 
-					{/* Footer */}
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.25, duration: 0.3 }}
-						className="flex items-center justify-between p-6 border-t bg-muted/30 backdrop-blur-sm"
-					>
-						<div className="text-sm text-muted-foreground">
-							{isValid ? (
-								<motion.span
-									initial={{ scale: 0.8 }}
-									animate={{ scale: 1 }}
-									className="text-green-500 flex items-center gap-2"
-								>
-									<IconCheck className="size-4" />
-									Ready to save
-								</motion.span>
-							) : (
-								<span className="flex items-center gap-2">
-									<IconAlertCircle className="size-4" />
-									Please complete all required fields
-								</span>
-							)}
-						</div>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								onClick={onClose}
-								className="hover:bg-muted transition-colors"
+											{/* TODO: 其他模块 */}
+										</Accordion>
+									</div>
+								</div>
+							</motion.div>
+
+							{/* Footer */}
+							<motion.div
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.25, duration: 0.3 }}
+								className="flex items-center justify-between p-6 border-t bg-muted/30 backdrop-blur-sm"
 							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleSave}
-								disabled={!isValid}
-								className="relative overflow-hidden group"
-							>
-								<span className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-								<IconDeviceFloppy className="size-4 mr-2" />
-								Save Config
-							</Button>
-						</div>
+								<div className="text-sm text-muted-foreground">
+									{isValid ? (
+										<motion.span
+											initial={{ scale: 0.8 }}
+											animate={{ scale: 1 }}
+											className="text-green-500 flex items-center gap-2"
+										>
+											<IconCheck className="size-4" />
+											Ready to save
+										</motion.span>
+									) : (
+										<span className="flex items-center gap-2">
+											<IconAlertCircle className="size-4" />
+											Please complete all required fields
+										</span>
+									)}
+								</div>
+								<div className="flex gap-2">
+									<Button
+										variant="outline"
+										onClick={onClose}
+										className="hover:bg-muted transition-colors"
+									>
+										Cancel
+									</Button>
+									<Button
+										onClick={handleSave}
+										disabled={!isValid}
+										className="relative overflow-hidden group"
+									>
+										<span className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+										<IconDeviceFloppy className="size-4 mr-2" />
+										Save Config
+									</Button>
+								</div>
+							</motion.div>
+						</motion.div>
 					</motion.div>
-				</motion.div>
-			</motion.div>
-		</>
+				</>
 			)}
 		</AnimatePresence>
 	);

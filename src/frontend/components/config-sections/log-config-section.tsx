@@ -4,9 +4,9 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
+import { RadioCard } from "@/components/radio-card";
 
 interface LogConfigSectionProps {
 	value: string;
@@ -53,27 +53,16 @@ export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 						</div>
 					) : (
 						<RadioGroup value={value || undefined} onValueChange={onChange}>
-							<div className="space-y-2">
+							<div className="grid grid-cols-1 gap-2">
 								{logs.map((logItem) => (
-									<div
+									<RadioCard
 										key={logItem.uuid}
-										className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-									>
-										<RadioGroupItem
-											value={logItem.uuid}
-											id={`log-${logItem.uuid}`}
-										/>
-										<Label
-											htmlFor={`log-${logItem.uuid}`}
-											className="flex-1 cursor-pointer"
-										>
-											<div className="font-medium">{logItem.name}</div>
-											<div className="text-sm text-muted-foreground line-clamp-1">
-												{logItem.json.substring(0, 100)}
-												{logItem.json.length > 100 && "..."}
-											</div>
-										</Label>
-									</div>
+										id={`log-${logItem.uuid}`}
+										value={logItem.uuid}
+										title={logItem.name}
+										description={logItem.json}
+										selected={value === logItem.uuid}
+									/>
 								))}
 							</div>
 						</RadioGroup>

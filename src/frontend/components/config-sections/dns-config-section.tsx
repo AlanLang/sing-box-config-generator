@@ -2,13 +2,14 @@ import { useDnsConfigList } from "@/api/dns-config/list";
 import { useDnsList } from "@/api/dns/list";
 import { useRulesetList } from "@/api/ruleset/list";
 import type { SingBoxConfig } from "@/components/config-form";
+import { RadioCard } from "@/components/radio-card";
+import { SelectableCard } from "@/components/selectable-card";
 import {
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -156,39 +157,23 @@ export function DnsConfigSection({
 									onConfigChange(value === "none" ? undefined : value)
 								}
 							>
-								<div className="space-y-2">
-									<div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-										<RadioGroupItem value="none" id="dns-config-none" />
-										<Label
-											htmlFor="dns-config-none"
-											className="flex-1 cursor-pointer"
-										>
-											<div className="font-medium">No base config</div>
-											<div className="text-sm text-muted-foreground">
-												Use empty base configuration
-											</div>
-										</Label>
-									</div>
+								<div className="grid grid-cols-1 gap-2">
+									<RadioCard
+										id="dns-config-none"
+										value="none"
+										title="No base config"
+										description="Use empty base configuration"
+										selected={!config || config === "none"}
+									/>
 									{dnsConfigs.map((configItem) => (
-										<div
+										<RadioCard
 											key={configItem.uuid}
-											className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-										>
-											<RadioGroupItem
-												value={configItem.uuid}
-												id={`dns-config-${configItem.uuid}`}
-											/>
-											<Label
-												htmlFor={`dns-config-${configItem.uuid}`}
-												className="flex-1 cursor-pointer"
-											>
-												<div className="font-medium">{configItem.name}</div>
-												<div className="text-sm text-muted-foreground line-clamp-1">
-													{configItem.json.substring(0, 100)}
-													{configItem.json.length > 100 && "..."}
-												</div>
-											</Label>
-										</div>
+											id={`dns-config-${configItem.uuid}`}
+											value={configItem.uuid}
+											title={configItem.name}
+											description={configItem.json}
+											selected={config === configItem.uuid}
+										/>
 									))}
 								</div>
 							</RadioGroup>
@@ -218,30 +203,18 @@ export function DnsConfigSection({
 								</p>
 							</div>
 						) : (
-							<div className="space-y-2">
+							<div className="grid grid-cols-1 gap-2">
 								{dnsServerList.map((server) => (
-									<div
+									<SelectableCard
 										key={server.uuid}
-										className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-									>
-										<Checkbox
-											id={`dns-server-${server.uuid}`}
-											checked={servers.includes(server.uuid)}
-											onCheckedChange={(checked) =>
-												handleServerToggle(server.uuid, !!checked)
-											}
-										/>
-										<Label
-											htmlFor={`dns-server-${server.uuid}`}
-											className="flex-1 cursor-pointer"
-										>
-											<div className="font-medium">{server.name}</div>
-											<div className="text-sm text-muted-foreground line-clamp-1">
-												{server.json.substring(0, 100)}
-												{server.json.length > 100 && "..."}
-											</div>
-										</Label>
-									</div>
+										id={`dns-server-${server.uuid}`}
+										title={server.name}
+										description={server.json}
+										selected={servers.includes(server.uuid)}
+										onToggle={(selected) =>
+											handleServerToggle(server.uuid, selected)
+										}
+									/>
 								))}
 							</div>
 						)}
@@ -345,11 +318,15 @@ export function DnsConfigSection({
 																usedRulesets.includes(ruleset.uuid);
 
 															return (
-																<button
+																<SelectableCard
 																	key={ruleset.uuid}
-																	type="button"
+																	id={`rule-${index}-ruleset-${ruleset.uuid}`}
+																	title={ruleset.name}
+																	description={ruleset.json}
+																	selected={isSelected}
 																	disabled={isUsedByOthers}
-																	onClick={() => {
+																	disabledLabel="Used"
+																	onToggle={() => {
 																		const newRuleSet = isSelected
 																			? rule.rule_set.filter(
 																					(r) => r !== ruleset.uuid,
@@ -357,38 +334,7 @@ export function DnsConfigSection({
 																			: [...rule.rule_set, ruleset.uuid];
 																		handleUpdateRule(index, "rule_set", newRuleSet);
 																	}}
-																	className={`
-																		relative w-full text-left p-3 rounded-lg border-2 transition-all
-																		${
-																			isSelected
-																				? "border-primary bg-primary/5"
-																				: "border-border hover:border-primary/50 hover:bg-muted/30"
-																		}
-																		${
-																			isUsedByOthers
-																				? "opacity-50 cursor-not-allowed"
-																				: "cursor-pointer"
-																		}
-																	`}
-																>
-																	{isSelected && (
-																		<div className="absolute top-1/2 -translate-y-1/2 right-3 size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-																			<IconCheck className="size-3.5" />
-																		</div>
-																	)}
-																	{isUsedByOthers && (
-																		<div className="absolute top-1/2 -translate-y-1/2 right-3 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
-																			Used
-																		</div>
-																	)}
-																	<div className="font-medium text-sm pr-8">
-																		{ruleset.name}
-																	</div>
-																	<div className="text-xs text-muted-foreground line-clamp-1 mt-1">
-																		{ruleset.json.substring(0, 80)}
-																		{ruleset.json.length > 80 && "..."}
-																	</div>
-																</button>
+																/>
 															);
 														})}
 													</div>
@@ -470,32 +416,21 @@ export function DnsConfigSection({
 							</div>
 						) : (
 							<RadioGroup value={final || undefined} onValueChange={onFinalChange}>
-								<div className="space-y-2">
+								<div className="grid grid-cols-1 gap-2">
 									{servers.map((serverUuid) => {
 										const server = dnsServerList?.find(
 											(s) => s.uuid === serverUuid,
 										);
 										if (!server) return null;
 										return (
-											<div
+											<RadioCard
 												key={server.uuid}
-												className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-											>
-												<RadioGroupItem
-													value={server.uuid}
-													id={`final-server-${server.uuid}`}
-												/>
-												<Label
-													htmlFor={`final-server-${server.uuid}`}
-													className="flex-1 cursor-pointer"
-												>
-													<div className="font-medium">{server.name}</div>
-													<div className="text-sm text-muted-foreground line-clamp-1">
-														{server.json.substring(0, 100)}
-														{server.json.length > 100 && "..."}
-													</div>
-												</Label>
-											</div>
+												id={`final-server-${server.uuid}`}
+												value={server.uuid}
+												title={server.name}
+												description={server.json}
+												selected={final === server.uuid}
+											/>
 										);
 									})}
 								</div>
