@@ -1,6 +1,7 @@
 import { AppPage } from "@/components/app-page";
+import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { IconPlus } from "@tabler/icons-react";
+import { IconCubePlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
@@ -8,16 +9,33 @@ export const Route = createFileRoute("/")({
 });
 
 function RouteComponent() {
+  const handleNewConfig = () => {
+    // TODO: 实现新增配置功能
+    console.log("New config clicked");
+  };
+
   return (
     <AppPage
-      title="Config"
+      title="Config Management"
+      description="Create and manage SingBox configurations by selecting from other configured modules"
       actions={
-        <Button className="size-8">
-          <IconPlus />
+        <Button
+          size="sm"
+          onClick={handleNewConfig}
+          className="gap-2 relative overflow-hidden group"
+        >
+          <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <IconCubePlus className="size-4" />
+          New Config
         </Button>
       }
     >
-      123
+      <EmptyState
+        title="No configs configured"
+        description="Create your first config to generate a complete SingBox configuration from your configured modules"
+        actionLabel="Create Your First Config"
+        onAction={handleNewConfig}
+      />
     </AppPage>
   );
 }

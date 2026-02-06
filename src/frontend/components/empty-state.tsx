@@ -15,7 +15,7 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <div className="h-[calc(100vh-160px)] flex items-center justify-center">
+    <div className="min-h-[calc(100vh-240px)] flex items-center justify-center">
       <div className="text-center max-w-lg space-y-6">
         <div className="relative inline-block">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 blur-3xl rounded-full" />
