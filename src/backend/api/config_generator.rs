@@ -321,6 +321,8 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
     if path.extension().and_then(|s| s.to_str()) == Some("json") {
       if let Ok(content) = fs::read_to_string(&path).await {
         if let Ok(subscribe) = serde_json::from_str::<SubscribeCreateDto>(&content) {
+          let subscribe_name = subscribe.name.clone();
+
           // Parse subscription metadata
           if let Ok(metadata) = serde_json::from_str::<Value>(&subscribe.json) {
             if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
@@ -337,7 +339,14 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
                     }
 
                     // Parse different formats and convert to sing-box outbound
-                    if let Ok(outbound) = parse_subscription_line(line) {
+                    if let Ok(mut outbound) = parse_subscription_line(line) {
+                      // Rename tag to "original-name-subscription-name" format
+                      if let Some(obj) = outbound.as_object_mut() {
+                        if let Some(original_tag) = obj.get("tag").and_then(|t| t.as_str()) {
+                          let new_tag = format!("{}-{}", original_tag, subscribe_name);
+                          obj.insert("tag".to_string(), Value::String(new_tag));
+                        }
+                      }
                       all_outbounds.push(outbound);
                     }
                   }
