@@ -48,6 +48,13 @@ pub struct OutboundOptionDto {
 pub async fn create_outbound_group(
     Json(payload): Json<OutboundGroupCreateDto>,
 ) -> impl IntoResponse {
+    // Ensure directory exists
+    if let Err(e) = fs::create_dir_all(OUTBOUND_GROUP_DIR) {
+        let error_msg = format!("Failed to create outbound groups directory: {}", e);
+        eprintln!("{}", error_msg);
+        return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
+    }
+
     let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", payload.uuid));
 
     if file_path.exists() {
