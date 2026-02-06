@@ -945,6 +945,25 @@ async fn resolve_route(
   // Set final outbound tag (already resolved in resolve_outbounds_and_route)
   route_config.insert("final".to_string(), Value::String(final_tag.to_string()));
 
+  // Set default_domain_resolver if provided
+  if let Some(dns_server_uuid) = &route.default_domain_resolver {
+    let dns_server = load_module_json("dns-server", dns_server_uuid).await?;
+    // Use tag if available, otherwise fall back to name
+    let resolver_tag = if let Some(tag) = dns_server.get("tag").and_then(|t| t.as_str()) {
+      tag.to_string()
+    } else if let Some(name) = dns_server.get("name").and_then(|n| n.as_str()) {
+      name.to_string()
+    } else {
+      return Err(AppError::InternalServerError(
+        "DNS server missing both tag and name".to_string(),
+      ));
+    };
+    route_config.insert(
+      "default_domain_resolver".to_string(),
+      Value::String(resolver_tag),
+    );
+  }
+
   Ok(Value::Object(route_config))
 }
 

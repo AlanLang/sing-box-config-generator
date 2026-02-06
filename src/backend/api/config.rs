@@ -32,6 +32,7 @@ pub struct RouteConfigDto {
   pub rules: Option<Vec<RouteRuleDto>>,
   #[serde(rename = "final")]
   pub final_outbound: String,
+  pub default_domain_resolver: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

@@ -22,6 +22,7 @@ export interface RouteConfig {
   config?: string;
   rules?: RouteRule[];
   final: string;
+  default_domain_resolver?: string;
 }
 
 export interface ConfigCreateDto {

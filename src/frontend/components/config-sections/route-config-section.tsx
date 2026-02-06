@@ -1,6 +1,7 @@
 import { useRouteList } from "@/api/route/list";
 import { useRulesetOptions } from "@/api/ruleset/options";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
+import { useDnsList } from "@/api/dns/list";
 import type { SingBoxConfig } from "@/components/config-form";
 import { RadioCard } from "@/components/radio-card";
 import { SelectableCard } from "@/components/selectable-card";
@@ -38,6 +39,8 @@ interface RouteConfigSectionProps {
 	onRulesChange: (value: SingBoxConfig["route"]["rules"]) => void;
 	final: string;
 	onFinalChange: (value: string) => void;
+	defaultDomainResolver: string | undefined;
+	onDefaultDomainResolverChange: (value: string | undefined) => void;
 	isValid: boolean;
 }
 
@@ -48,6 +51,8 @@ export function RouteConfigSection({
 	onRulesChange,
 	final,
 	onFinalChange,
+	defaultDomainResolver,
+	onDefaultDomainResolverChange,
 	isValid,
 }: RouteConfigSectionProps) {
 	const { data: routes, isLoading: routesLoading } = useRouteList();
@@ -55,6 +60,7 @@ export function RouteConfigSection({
 		useRulesetOptions();
 	const { data: outboundOptions, isLoading: outboundsLoading } =
 		useOutboundGroupOptions();
+	const { data: dnsServers, isLoading: dnsServersLoading } = useDnsList();
 
 	// 过滤掉 filter 类型，只保留 outbound 和 outbound_group
 	const filteredOutboundOptions = useMemo(() => {
@@ -497,6 +503,60 @@ export function RouteConfigSection({
 							<p className="text-sm text-destructive">
 								Please select a final outbound
 							</p>
+						)}
+					</div>
+
+					{/* 4. Default Domain Resolver 配置（可选） */}
+					<div className="space-y-3">
+						<div>
+							<Label className="text-base">
+								Default Domain Resolver{" "}
+								<span className="text-muted-foreground text-sm font-normal">
+									(Optional)
+								</span>
+							</Label>
+							<p className="text-sm text-muted-foreground mt-1">
+								Select a DNS server for domain resolution in routing. This will use the server's tag (or name if no tag exists).
+							</p>
+						</div>
+
+						{dnsServersLoading ? (
+							<div className="text-sm text-muted-foreground">
+								Loading DNS servers...
+							</div>
+						) : !dnsServers || dnsServers.length === 0 ? (
+							<div className="p-4 border border-dashed rounded-lg text-center">
+								<p className="text-sm text-muted-foreground">
+									No DNS servers found. You can proceed without default domain resolver.
+								</p>
+							</div>
+						) : (
+							<Select
+								value={defaultDomainResolver || "none"}
+								onValueChange={(value) => onDefaultDomainResolverChange(value === "none" ? undefined : value)}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select a DNS server">
+										{defaultDomainResolver ? (
+											<span>
+												{dnsServers.find((s) => s.uuid === defaultDomainResolver)?.name}
+											</span>
+										) : (
+											<span className="text-muted-foreground">None</span>
+										)}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">
+										<span className="text-muted-foreground">None</span>
+									</SelectItem>
+									{dnsServers.map((server) => (
+										<SelectItem key={server.uuid} value={server.uuid}>
+											<span className="font-medium">{server.name}</span>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						)}
 					</div>
 				</div>

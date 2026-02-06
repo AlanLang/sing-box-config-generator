@@ -69,6 +69,10 @@ export interface SingBoxConfig {
 		 * final outbound 的 uuid
 		 */
 		final: string;
+		/**
+		 * default domain resolver 的 uuid（可选）
+		 */
+		default_domain_resolver?: string;
 	};
 	/**
 	 * experimental 配置的 uuid（可选）
@@ -123,6 +127,9 @@ export function ConfigForm({
 	const [routeFinal, setRouteFinal] = useState<string>(
 		initialData?.route?.final || "",
 	);
+	const [routeDefaultDomainResolver, setRouteDefaultDomainResolver] = useState<string | undefined>(
+		initialData?.route?.default_domain_resolver,
+	);
 
 	// Experimental 配置状态（可选）
 	const [experimental, setExperimental] = useState<string | undefined>(
@@ -141,6 +148,7 @@ export function ConfigForm({
 		setRouteConfig(initialData?.route?.config);
 		setRouteRules(initialData?.route?.rules || []);
 		setRouteFinal(initialData?.route?.final || "");
+		setRouteDefaultDomainResolver(initialData?.route?.default_domain_resolver);
 		setExperimental(initialData?.experimental);
 	}, [initialData]);
 
@@ -187,6 +195,7 @@ export function ConfigForm({
 				config: routeConfig,
 				rules: routeRules,
 				final: routeFinal,
+				default_domain_resolver: routeDefaultDomainResolver,
 			},
 			experimental,
 		});
@@ -312,6 +321,8 @@ export function ConfigForm({
 												onRulesChange={setRouteRules}
 												final={routeFinal}
 												onFinalChange={setRouteFinal}
+												defaultDomainResolver={routeDefaultDomainResolver}
+												onDefaultDomainResolverChange={setRouteDefaultDomainResolver}
 												isValid={isRouteValid}
 											/>
 
