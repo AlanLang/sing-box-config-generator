@@ -20,6 +20,7 @@ import {
   IconX,
   IconFilter,
   IconNetwork,
+  IconBoxMultiple,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +34,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { OutboundOption } from "@/api/outbound-group/types";
+
+// Icon mapping for different source types
+const SOURCE_ICONS = {
+  outbound: IconNetwork,
+  filter: IconFilter,
+  outbound_group: IconBoxMultiple,
+} as const;
+
+// Display labels for different source types
+const SOURCE_LABELS = {
+  outbound: "Outbounds",
+  filter: "Filters",
+  outbound_group: "Outbound Groups",
+} as const;
 
 interface SortableMultiSelectProps {
   selected: string[];
@@ -140,7 +155,7 @@ function SortableItem({ id, option, onRemove, disabled }: SortableItemProps) {
     transition,
   };
 
-  const SourceIcon = option.source === "filter" ? IconFilter : IconNetwork;
+  const SourceIcon = SOURCE_ICONS[option.source] || IconNetwork;
 
   return (
     <div
@@ -198,8 +213,17 @@ interface AddItemDropdownProps {
 }
 
 function AddItemDropdown({ options, onAdd, disabled }: AddItemDropdownProps) {
-  const outboundOptions = options.filter((opt) => opt.source === "outbound");
-  const filterOptions = options.filter((opt) => opt.source === "filter");
+  // Group options by source dynamically
+  const groupedOptions = options.reduce((acc, option) => {
+    if (!acc[option.source]) {
+      acc[option.source] = [];
+    }
+    acc[option.source].push(option);
+    return acc;
+  }, {} as Record<string, OutboundOption[]>);
+
+  // Get sorted source types for consistent ordering
+  const sourceTypes = Object.keys(groupedOptions).sort();
 
   return (
     <DropdownMenu>
@@ -214,47 +238,33 @@ function AddItemDropdown({ options, onAdd, disabled }: AddItemDropdownProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64">
-        {outboundOptions.length > 0 && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Outbounds</DropdownMenuLabel>
-            {outboundOptions.map((option) => (
-              <DropdownMenuItem
-                key={option.uuid}
-                onClick={() => onAdd(option.uuid)}
-                className="flex items-center gap-2"
-              >
-                <IconNetwork className="h-4 w-4" />
-                <span className="flex-1">{option.label}</span>
-                {option.type && (
-                  <span className="text-xs text-muted-foreground">{option.type}</span>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        )}
+        {sourceTypes.map((source, index) => {
+          const sourceOptions = groupedOptions[source];
+          const SourceIcon = SOURCE_ICONS[source as keyof typeof SOURCE_ICONS] || IconNetwork;
+          const label = SOURCE_LABELS[source as keyof typeof SOURCE_LABELS] || source;
 
-        {outboundOptions.length > 0 && filterOptions.length > 0 && (
-          <DropdownMenuSeparator />
-        )}
-
-        {filterOptions.length > 0 && (
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Filters</DropdownMenuLabel>
-            {filterOptions.map((option) => (
-              <DropdownMenuItem
-                key={option.uuid}
-                onClick={() => onAdd(option.uuid)}
-                className="flex items-center gap-2"
-              >
-                <IconFilter className="h-4 w-4" />
-                <span className="flex-1">{option.label}</span>
-                {option.type && (
-                  <span className="text-xs text-muted-foreground">{option.type}</span>
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        )}
+          return (
+            <div key={source}>
+              {index > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{label}</DropdownMenuLabel>
+                {sourceOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.uuid}
+                    onClick={() => onAdd(option.uuid)}
+                    className="flex items-center gap-2"
+                  >
+                    <SourceIcon className="h-4 w-4" />
+                    <span className="flex-1">{option.label}</span>
+                    {option.type && (
+                      <span className="text-xs text-muted-foreground">{option.type}</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </div>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
