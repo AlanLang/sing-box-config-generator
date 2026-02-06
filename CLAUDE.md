@@ -164,7 +164,7 @@ sudo systemctl start sing-box-config-generator
 - Deployment script: `.claude/scripts/deploy.sh`
 - Binary location: `./target/release/sing-box-config-generator`
 
-**IMPORTANT**: Always run deployment script before committing code changes to ensure they work in production.
+**Note**: The `/start` skill automatically runs deployment before committing. For other workflows, run deployment manually when needed.
 
 ## Technical Decisions
 
@@ -179,69 +179,46 @@ sudo systemctl start sing-box-config-generator
 - **`/commit`** - Create git commits with proper formatting and conventions
 - **`/deploy`** - Build, restart service, verify health before committing changes
 - **`/notify-telegram`** - Send task completion summaries to Telegram (requires configuration)
+- **`/start`** - Execute tasks autonomously with automatic deployment, commit, push, and Telegram notifications
 
 ## Telegram Notifications
-
-**IMPORTANT**: After completing any non-trivial task, send a summary notification via Telegram.
-
-**Notification Timing**: Send notification AFTER successful deployment, commit, and push.
 
 **Setup Required**: Follow `.claude/telegram-config.md` to configure:
 - Telegram Bot Token
 - Chat ID
 
-**When to Notify**:
-- ✅ Feature implementation completed and deployed
-- ✅ Bug fix completed and deployed
-- ✅ Refactoring completed and deployed
-- ✅ Configuration changes deployed
-- ❌ Skip for trivial operations (reading files, searching)
+**Automatic Notifications (Only with `/start` skill)**:
+The `/start` skill automatically sends notifications after completing tasks. For other workflows, notifications are optional unless explicitly requested.
 
-**Complete Task Flow**:
-1. Complete the task (code changes)
-2. **Deploy** (build + restart + health check)
-3. **If deployment succeeds:**
-   - Git commit changes
-   - Git push to remote
-   - Send Telegram notification with results
-4. **If deployment fails:**
-   - Fix issues and retry
-   - Do NOT commit or push
+**Manual Usage**:
+Use `/notify-telegram` skill or the script directly:
 
-**Notification Pattern**:
 ```bash
-./.claude/scripts/telegram-notify.sh "✅ Task Completed & Deployed
+./.claude/scripts/telegram-notify.sh "✅ Task Completed
 
 📋 Task: {brief description}
 
 🔧 Changes:
 - {key changes}
 
-✨ Results: {outcomes}
-
-🚀 Deployment: Success
-Commit: {commit message}"
+✨ Results: {outcomes}"
 ```
 
 See `/notify-telegram` skill for detailed guidelines.
 
 ## Git Workflow
 
-**IMPORTANT**: Always deploy, commit, AND push changes after completing tasks (unless no files changed).
+**Automatic Workflow (Only with `/start` skill)**:
+The `/start` skill automatically handles deployment, commit, and push after completing tasks. For other workflows, these operations are performed only when explicitly requested.
 
-**Standard Workflow**:
-1. **Deploy** - Build and verify changes work in production
-2. **Commit** - Create commit with proper message format (only if deployment succeeds)
-3. **Push** - Push to remote repository immediately after commit
-4. **Notify** - Send Telegram notification with results
-
-Use the `/deploy` and `/commit` skills for automation, or follow this manual process:
+**Manual Workflow**:
+When you need to deploy, commit, or push changes, use the skills or follow this process:
 
 ```bash
 # 1. Deploy (build + restart + health check)
 ./.claude/scripts/deploy.sh
 
-# 2. Only if deployment succeeds, commit
+# 2. Commit (use /commit skill or manual)
 git commit -m "$(cat <<'EOF'
 <type>(<scope>): <subject>
 
@@ -251,15 +228,13 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 EOF
 )"
 
-# 3. Push immediately
+# 3. Push to remote
 git push
-
-# 4. Notify
-./.claude/scripts/telegram-notify.sh "task summary"
 ```
 
-**Quick Reference**: `feat`(新增) | `fix`(修复) | `docs`(文档) | `refactor`(重构) | `style`(格式) | `perf`(优化) | `test`(测试) | `build`(构建) | `chore`(杂项)
+**Commit Message Format**:
+`feat`(新增) | `fix`(修复) | `docs`(文档) | `refactor`(重构) | `style`(格式) | `perf`(优化) | `test`(测试) | `build`(构建) | `chore`(杂项)
 
-**Deployment Policy**: Always deploy and verify before committing code changes.
-
-**Push Policy**: Always push after successful commit unless explicitly asked not to.
+**Available Skills**:
+- `/deploy` - Build, restart service, and verify health
+- `/commit` - Create properly formatted git commits
