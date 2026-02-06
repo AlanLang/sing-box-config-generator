@@ -55,14 +55,6 @@ pub async fn generate_config(
     inject_download_detour_to_rule_sets(route_obj, &download_detour_tag);
   }
 
-  // Inject download_detour into remote rule_set entries in dns
-  if let Some(dns_obj) = singbox_config
-    .get_mut("dns")
-    .and_then(|v| v.as_object_mut())
-  {
-    inject_download_detour_to_rule_sets(dns_obj, &download_detour_tag);
-  }
-
   let mut experimental_value = resolve_experimental(&config.experimental).await?;
 
   // Inject download_detour into experimental.clash_api.external_ui_download_detour
@@ -220,27 +212,20 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
   dns_config.insert("servers".to_string(), Value::Array(servers));
 
   // Resolve DNS rules if provided and non-empty
-  let mut collected_dns_rule_sets: Vec<Value> = Vec::new();
-  let mut collected_dns_rule_set_tags: HashSet<String> = HashSet::new();
-
+  // Note: rule_set definitions are NOT placed here - they only belong in the route section.
+  // DNS rules just reference rule_set tags by name.
   if let Some(rules) = &dns.rules {
     if !rules.is_empty() {
       let mut dns_rules = Vec::new();
       for rule in rules {
         let mut rule_obj = Map::new();
 
-        // Resolve rulesets
+        // Resolve rulesets - collect tag names only
         let mut rule_set_tags = Vec::new();
         for ruleset_uuid in &rule.rule_set {
           let ruleset = load_module_json_with_tag("rulesets", ruleset_uuid).await?;
           if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
             rule_set_tags.push(Value::String(tag.to_string()));
-
-            // Collect rule_set definition (deduplicated)
-            if !collected_dns_rule_set_tags.contains(tag) {
-              collected_dns_rule_set_tags.insert(tag.to_string());
-              collected_dns_rule_sets.push(ruleset);
-            }
           }
         }
         rule_obj.insert("rule_set".to_string(), Value::Array(rule_set_tags));
@@ -255,14 +240,6 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
       }
       dns_config.insert("rules".to_string(), Value::Array(dns_rules));
     }
-  }
-
-  // Add rule_set definitions for DNS
-  if !collected_dns_rule_sets.is_empty() {
-    dns_config.insert(
-      "rule_set".to_string(),
-      Value::Array(collected_dns_rule_sets),
-    );
   }
 
   // Resolve final server tag
