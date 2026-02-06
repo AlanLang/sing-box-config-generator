@@ -179,6 +179,9 @@ data
 .DS_Store
 
 
+# Backup files
+backups/
+
 # Added by cargo
 
 /target
