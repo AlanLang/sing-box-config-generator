@@ -14,7 +14,6 @@ export const outboundGroupCreateSchema = z
       ),
     group_type: z.enum(["selector", "urltest"]),
     outbounds: z.array(z.string()),
-    default: z.string().optional(),
     url: z
       .union([z.string(), z.undefined()])
       .transform((val) => (val === "" || val === undefined ? undefined : val))
@@ -56,15 +55,6 @@ export const outboundGroupCreateSchema = z
         code: z.ZodIssueCode.custom,
         message: "URLTest requires at least 2 outbounds",
         path: ["outbounds"],
-      });
-    }
-
-    // Default must be one of the selected outbounds
-    if (data.default && !data.outbounds.includes(data.default)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Default must be one of selected outbounds",
-        path: ["default"],
       });
     }
   });

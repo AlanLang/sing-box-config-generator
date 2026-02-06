@@ -14,8 +14,6 @@ pub struct OutboundGroupCreateDto {
     pub group_type: String,
     pub outbounds: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub default: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,

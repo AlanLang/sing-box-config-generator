@@ -5,7 +5,6 @@ export interface OutboundGroupDto {
   name: string;
   group_type: GroupType;
   outbounds: string[];
-  default?: string;
   url?: string;
   interval?: string;
   tolerance?: number;

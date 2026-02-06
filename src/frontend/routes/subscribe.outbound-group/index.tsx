@@ -46,7 +46,6 @@ function RouteComponent() {
   const [editName, setEditName] = useState("");
   const [editGroupType, setEditGroupType] = useState<GroupType>("selector");
   const [editOutbounds, setEditOutbounds] = useState<string[]>([]);
-  const [editDefault, setEditDefault] = useState("");
   const [editUrl, setEditUrl] = useState(
     "https://www.gstatic.com/generate_204",
   );
@@ -61,7 +60,6 @@ function RouteComponent() {
     setEditName("");
     setEditGroupType("selector");
     setEditOutbounds([]);
-    setEditDefault("");
     setEditUrl("https://www.gstatic.com/generate_204");
     setEditInterval("3m");
     setEditTolerance(50);
@@ -76,7 +74,6 @@ function RouteComponent() {
     setEditName(group.name);
     setEditGroupType(group.group_type);
     setEditOutbounds(group.outbounds || []);
-    setEditDefault(group.default || "");
     setEditUrl(group.url || "https://www.gstatic.com/generate_204");
     setEditInterval(group.interval || "3m");
     setEditTolerance(group.tolerance || 50);
@@ -95,8 +92,6 @@ function RouteComponent() {
         name: editName,
         group_type: editGroupType,
         outbounds: editOutbounds,
-        default:
-          editGroupType === "selector" ? editDefault || undefined : undefined,
         url: editGroupType === "urltest" ? editUrl || undefined : undefined,
         interval:
           editGroupType === "urltest" ? editInterval || undefined : undefined,
@@ -212,8 +207,6 @@ function RouteComponent() {
         onGroupTypeChange={setEditGroupType}
         outbounds={editOutbounds}
         onOutboundsChange={setEditOutbounds}
-        defaultOutbound={editDefault}
-        onDefaultOutboundChange={setEditDefault}
         url={editUrl}
         onUrlChange={setEditUrl}
         interval={editInterval}

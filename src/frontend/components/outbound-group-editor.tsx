@@ -22,8 +22,6 @@ interface OutboundGroupEditorProps {
   onGroupTypeChange: (value: GroupType) => void;
   outbounds: string[];
   onOutboundsChange: (value: string[]) => void;
-  defaultOutbound: string;
-  onDefaultOutboundChange: (value: string) => void;
   url: string;
   onUrlChange: (value: string) => void;
   interval: string;
@@ -53,8 +51,6 @@ export function OutboundGroupEditor({
   onGroupTypeChange,
   outbounds,
   onOutboundsChange,
-  defaultOutbound,
-  onDefaultOutboundChange,
   url,
   onUrlChange,
   interval,
@@ -132,30 +128,7 @@ export function OutboundGroupEditor({
         </div>
 
         {/* Conditional Fields */}
-        {groupType === "selector" ? (
-          <div className="space-y-2">
-            <Label htmlFor="default">Default Outbound</Label>
-            <Select
-              value={defaultOutbound}
-              onValueChange={onDefaultOutboundChange}
-              disabled={outbounds.length === 0}
-            >
-              <SelectTrigger id="default" className="dark:bg-background">
-                <SelectValue placeholder="Select default outbound" />
-              </SelectTrigger>
-              <SelectContent>
-                {outbounds.map((tag) => (
-                  <SelectItem key={tag} value={tag}>
-                    {tag}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              The default outbound to use when no manual selection is made
-            </p>
-          </div>
-        ) : (
+        {groupType === "urltest" && (
           <>
             <div className="space-y-2">
               <Label htmlFor="url">Test URL</Label>
