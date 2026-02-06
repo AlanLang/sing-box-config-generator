@@ -58,13 +58,21 @@ pub async fn create_outbound_group(
             .into_response();
     }
 
-    if let Err(e) = fs::write(&file_path, serde_json::to_string_pretty(&payload).unwrap()) {
-        eprintln!("Failed to write outbound group file: {}", e);
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to save outbound group",
-        )
-            .into_response();
+    // Serialize the payload
+    let json_content = match serde_json::to_string_pretty(&payload) {
+        Ok(content) => content,
+        Err(e) => {
+            let error_msg = format!("Failed to serialize outbound group: {}", e);
+            eprintln!("{}", error_msg);
+            return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
+        }
+    };
+
+    // Write to file
+    if let Err(e) = fs::write(&file_path, json_content) {
+        let error_msg = format!("Failed to write outbound group file: {}", e);
+        eprintln!("{}", error_msg);
+        return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
     }
 
     (StatusCode::CREATED, Json(payload)).into_response()
@@ -105,13 +113,21 @@ pub async fn update_outbound_group(
         return (StatusCode::NOT_FOUND, "Outbound group not found").into_response();
     }
 
-    if let Err(e) = fs::write(&file_path, serde_json::to_string_pretty(&payload).unwrap()) {
-        eprintln!("Failed to update outbound group file: {}", e);
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to update outbound group",
-        )
-            .into_response();
+    // Serialize the payload
+    let json_content = match serde_json::to_string_pretty(&payload) {
+        Ok(content) => content,
+        Err(e) => {
+            let error_msg = format!("Failed to serialize outbound group: {}", e);
+            eprintln!("{}", error_msg);
+            return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
+        }
+    };
+
+    // Write to file
+    if let Err(e) = fs::write(&file_path, json_content) {
+        let error_msg = format!("Failed to update outbound group file: {}", e);
+        eprintln!("{}", error_msg);
+        return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
     }
 
     (StatusCode::OK, Json(payload)).into_response()
@@ -127,12 +143,9 @@ pub async fn delete_outbound_group(
     }
 
     if let Err(e) = fs::remove_file(&file_path) {
-        eprintln!("Failed to delete outbound group file: {}", e);
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to delete outbound group",
-        )
-            .into_response();
+        let error_msg = format!("Failed to delete outbound group file: {}", e);
+        eprintln!("{}", error_msg);
+        return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
     }
 
     (StatusCode::OK, "Outbound group deleted successfully").into_response()

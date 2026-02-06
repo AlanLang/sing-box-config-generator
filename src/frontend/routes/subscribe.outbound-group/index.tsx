@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { extractErrorMessage } from "@/lib/error";
 import { AppPage } from "@/components/app-page";
 import { Button } from "@/components/ui/button";
 import { ConfigCard } from "@/components/config-card";
@@ -125,11 +126,13 @@ function RouteComponent() {
 
       await refetch();
       setFocusMode(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save outbound group:", error);
-      toast.error(
+      const errorMessage = await extractErrorMessage(
+        error,
         `Failed to ${isCreating ? "create" : "update"} outbound group`,
       );
+      toast.error(errorMessage);
     }
   };
 
@@ -139,9 +142,13 @@ function RouteComponent() {
       toast.success("Outbound group deleted successfully");
       setFocusMode(false);
       setDeleteDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete outbound group:", error);
-      toast.error("Failed to delete outbound group");
+      const errorMessage = await extractErrorMessage(
+        error,
+        "Failed to delete outbound group",
+      );
+      toast.error(errorMessage);
     }
   };
 

@@ -5,6 +5,7 @@ import { routeTree } from "./routes/routeTree.gen";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { toast, Toaster } from "sonner";
+import { extractErrorMessage } from "./lib/error";
 import "./index.css";
 
 // Create a new router instance
@@ -32,8 +33,8 @@ if (!rootElement.innerHTML) {
     defaultOptions: {
       mutations: {
         onError: async (error: any) => {
-          const msg = (await error.response.text()) || "操作失败，请稍后重试";
-          toast.error(msg);
+          const errorMessage = await extractErrorMessage(error);
+          toast.error(errorMessage);
         },
       },
     },
