@@ -14,6 +14,7 @@ import { DnsConfigSection } from "./config-sections/dns-config-section";
 import { LogConfigSection } from "./config-sections/log-config-section";
 import { InboundsConfigSection } from "./config-sections/inbounds-config-section";
 import { RouteConfigSection } from "./config-sections/route-config-section";
+import { ExperimentalConfigSection } from "./config-sections/experimental-config-section";
 
 export interface SingBoxConfig {
 	name: string;
@@ -69,9 +70,12 @@ export interface SingBoxConfig {
 		 */
 		final: string;
 	};
+	/**
+	 * experimental 配置的 uuid（可选）
+	 */
+	experimental?: string;
 	// TODO: 添加其他模块的字段
 	// outbounds: string[];
-	// experimental?: string;
 }
 
 interface ConfigFormProps {
@@ -120,6 +124,11 @@ export function ConfigForm({
 		initialData?.route?.final || "",
 	);
 
+	// Experimental 配置状态（可选）
+	const [experimental, setExperimental] = useState<string | undefined>(
+		initialData?.experimental,
+	);
+
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
@@ -161,6 +170,7 @@ export function ConfigForm({
 				rules: routeRules,
 				final: routeFinal,
 			},
+			experimental,
 		});
 	};
 
@@ -285,6 +295,11 @@ export function ConfigForm({
 												final={routeFinal}
 												onFinalChange={setRouteFinal}
 												isValid={isRouteValid}
+											/>
+
+											<ExperimentalConfigSection
+												value={experimental}
+												onChange={setExperimental}
 											/>
 
 											{/* TODO: 其他模块 */}
