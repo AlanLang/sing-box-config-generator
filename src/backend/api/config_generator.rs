@@ -48,7 +48,7 @@ pub async fn generate_config(
 
   // 4. Return as downloadable JSON
   let safe_name = sanitize_filename(&config.name);
-  let filename = format!("singbox-config-{}.json", safe_name);
+  let filename = format!("{}.json", safe_name);
 
   let mut response = Json(Value::Object(singbox_config)).into_response();
   response.headers_mut().insert(
