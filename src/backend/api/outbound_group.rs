@@ -234,5 +234,25 @@ pub async fn get_available_options() -> impl IntoResponse {
     }
   }
 
+  // Read outbound group options
+  if let Ok(entries) = fs::read_dir(OUTBOUND_GROUP_DIR) {
+    for entry in entries.flatten() {
+      let path = entry.path();
+      if path.extension().and_then(|s| s.to_str()) == Some("json") {
+        if let Ok(content) = fs::read_to_string(&path) {
+          if let Ok(group) = serde_json::from_str::<OutboundGroupCreateDto>(&content) {
+            options.push(OutboundOptionDto {
+              uuid: group.uuid,
+              value: group.name.clone(),
+              label: group.name,
+              source: "outbound_group".to_string(),
+              option_type: Some(group.group_type),
+            });
+          }
+        }
+      }
+    }
+  }
+
   (StatusCode::OK, Json(options)).into_response()
 }

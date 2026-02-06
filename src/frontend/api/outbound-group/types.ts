@@ -22,6 +22,6 @@ export interface OutboundOption {
   uuid: string;
   value: string;
   label: string;
-  source: "outbound" | "filter";
+  source: "outbound" | "filter" | "outbound_group";
   type?: string;
 }
