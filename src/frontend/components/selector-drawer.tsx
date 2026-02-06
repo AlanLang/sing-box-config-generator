@@ -282,14 +282,14 @@ export function MultiSelectorDrawer({
 							</span>
 							<IconSelector className="size-4 text-muted-foreground shrink-0" />
 						</div>
-						<div className="space-y-1">
+						<div className="space-y-2">
 							{selectedItems.map((item) => (
-								<div key={item.value} className="flex items-center gap-2 min-w-0">
+								<div key={item.value} className="min-w-0">
 									<div className="font-medium text-sm truncate">{item.title}</div>
 									{item.description && (
-										<span className="text-xs text-muted-foreground truncate shrink-0">
+										<div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
 											{item.description}
-										</span>
+										</div>
 									)}
 								</div>
 							))}
