@@ -43,11 +43,11 @@ export const outboundGroupCreateSchema = z
       });
     }
 
-    // URLTest requires at least 2 outbounds
-    if (data.group_type === "urltest" && data.outbounds.length < 2) {
+    // URLTest requires at least 1 outbound
+    if (data.group_type === "urltest" && data.outbounds.length < 1) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "URLTest requires at least 2 outbounds",
+        message: "URLTest requires at least 1 outbound",
         path: ["outbounds"],
       });
     }
