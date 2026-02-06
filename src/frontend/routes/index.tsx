@@ -1,17 +1,28 @@
 import { AppPage } from "@/components/app-page";
+import { ConfigForm, type ConfigFormData } from "@/components/config-form";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { IconCubePlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const [formOpen, setFormOpen] = useState(false);
+
   const handleNewConfig = () => {
-    // TODO: 实现新增配置功能
-    console.log("New config clicked");
+    setFormOpen(true);
+  };
+
+  const handleSaveConfig = (data: ConfigFormData) => {
+    // TODO: 实现保存逻辑
+    console.log("Save config:", data);
+    toast.success("Config saved successfully");
+    setFormOpen(false);
   };
 
   return (
@@ -35,6 +46,12 @@ function RouteComponent() {
         description="Create your first config to generate a complete SingBox configuration from your configured modules"
         actionLabel="Create Your First Config"
         onAction={handleNewConfig}
+      />
+
+      <ConfigForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSave={handleSaveConfig}
       />
     </AppPage>
   );
