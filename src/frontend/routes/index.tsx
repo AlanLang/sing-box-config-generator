@@ -1,5 +1,5 @@
 import { AppPage } from "@/components/app-page";
-import { ConfigForm, type ConfigFormData } from "@/components/config-form";
+import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { IconCubePlus } from "@tabler/icons-react";
@@ -18,7 +18,7 @@ function RouteComponent() {
     setFormOpen(true);
   };
 
-  const handleSaveConfig = (data: ConfigFormData) => {
+  const handleSaveConfig = (data: SingBoxConfig) => {
     // TODO: 实现保存逻辑
     console.log("Save config:", data);
     toast.success("Config saved successfully");

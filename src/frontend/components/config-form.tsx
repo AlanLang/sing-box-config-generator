@@ -1,38 +1,19 @@
-import { useDnsConfigList } from "@/api/dns-config/list";
-import { useDnsList } from "@/api/dns/list";
-import { useLogList } from "@/api/log/list";
-import { useRulesetList } from "@/api/ruleset/list";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	IconAlertCircle,
-	IconArrowUp,
-	IconArrowDown,
 	IconCheck,
 	IconDeviceFloppy,
-	IconPlus,
-	IconTrash,
 	IconX,
 } from "@tabler/icons-react";
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { LogConfigSection } from "./config-sections/log-config-section";
+import { DnsConfigSection } from "./config-sections/dns-config-section";
 
-interface ConfigFormProps {
-	isOpen: boolean;
-	onClose: () => void;
-	onSave: (data: ConfigFormData) => void;
-	initialData?: Partial<ConfigFormData>;
-}
-
-interface SingBoxConfig {
+export interface SingBoxConfig {
 	name: string;
 	/**
 	 * 日志配置的 uuid
@@ -56,30 +37,21 @@ interface SingBoxConfig {
 			 * dns-server 的 uuid
 			 */
 			server: string;
-		}[],
+		}[];
 		final: string;
-	}
-}
-
-export interface DnsRule {
-	rule_set: string[];
-	server: string;
-}
-
-export interface ConfigFormData {
-	name: string;
-	logUuid: string | null;
-	dns: {
-		config: string | null;
-		servers: string[];
-		rules: DnsRule[];
-		final: string | null;
 	};
 	// TODO: 添加其他模块的字段
-	// inboundsUuids: string[];
-	// outboundsUuids: string[];
-	// routeUuid: string | null;
-	// experimentalUuid: string | null;
+	// inbounds: string[];
+	// outbounds: string[];
+	// route?: string;
+	// experimental?: string;
+}
+
+interface ConfigFormProps {
+	isOpen: boolean;
+	onClose: () => void;
+	onSave: (data: SingBoxConfig) => void;
+	initialData?: Partial<SingBoxConfig>;
 }
 
 export function ConfigForm({
@@ -89,48 +61,41 @@ export function ConfigForm({
 	initialData,
 }: ConfigFormProps) {
 	const [name, setName] = useState(initialData?.name || "");
-	const [logUuid, setLogUuid] = useState<string | null>(
-		initialData?.logUuid || null,
-	);
+	const [log, setLog] = useState<string>(initialData?.log || "");
 
 	// DNS 配置状态
-	const [dnsConfig, setDnsConfig] = useState<string | null>(
-		initialData?.dns?.config || null,
+	const [dnsConfig, setDnsConfig] = useState<string | undefined>(
+		initialData?.dns?.config,
 	);
 	const [dnsServers, setDnsServers] = useState<string[]>(
 		initialData?.dns?.servers || [],
 	);
-	const [dnsRules, setDnsRules] = useState<DnsRule[]>(
+	const [dnsRules, setDnsRules] = useState<SingBoxConfig["dns"]["rules"]>(
 		initialData?.dns?.rules || [],
 	);
-	const [dnsFinal, setDnsFinal] = useState<string | null>(
-		initialData?.dns?.final || null,
+	const [dnsFinal, setDnsFinal] = useState<string>(
+		initialData?.dns?.final || "",
 	);
-
-	const { data: logs, isLoading: logsLoading } = useLogList();
-	const { data: dnsConfigs, isLoading: dnsConfigsLoading } = useDnsConfigList();
-	const { data: dnsServerList, isLoading: dnsServersLoading } = useDnsList();
-	const { data: rulesets, isLoading: rulesetsLoading } = useRulesetList();
 
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
-		dnsFinal !== null &&
+		dnsFinal &&
 		dnsServers.includes(dnsFinal) &&
-		dnsRules.every(rule =>
+		(!dnsRules || dnsRules.every(rule =>
 			rule.rule_set.length > 0 &&
 			rule.server &&
 			dnsServers.includes(rule.server)
-		);
+		));
 
-	const isValid = name.trim().length >= 2 && logUuid !== null && isDnsValid;
+	const isValid = name.trim().length >= 2 && log && isDnsValid;
 
 	const handleSave = () => {
 		if (!isValid) return;
 
 		onSave({
 			name,
-			logUuid,
+			log,
 			dns: {
 				config: dnsConfig,
 				servers: dnsServers,
@@ -140,27 +105,70 @@ export function ConfigForm({
 		});
 	};
 
-	if (!isOpen) return null;
-
 	return (
-		<div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-			<div className="fixed inset-y-0 right-0 w-full md:w-[600px] lg:w-[700px] bg-background border-l shadow-lg">
-				<div className="flex flex-col h-full">
-					{/* Header */}
-					<div className="flex items-center justify-between p-6 border-b">
-						<div>
-							<h2 className="text-2xl font-bold">Create Config</h2>
-							<p className="text-sm text-muted-foreground mt-1">
-								Configure modules to generate SingBox configuration
-							</p>
-						</div>
-						<Button variant="ghost" size="icon" onClick={onClose}>
-							<IconX className="size-5" />
-						</Button>
-					</div>
+		<AnimatePresence>
+			{isOpen && (
+				<>
+					{/* 背景遮罩 - 淡入效果 */}
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						transition={{ duration: 0.2 }}
+						className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+						onClick={onClose}
+					/>
 
-					{/* Content */}
-					<div className="flex-1 overflow-y-auto">
+					{/* 抽屉 - 从右侧滑入 + 弹性效果 */}
+					<motion.div
+						initial={{ x: "100%" }}
+						animate={{ x: 0 }}
+						exit={{ x: "100%" }}
+						transition={{
+							type: "spring",
+							damping: 30,
+							stiffness: 300,
+						}}
+						className="fixed inset-y-0 right-0 z-50 w-full md:w-[600px] lg:w-[700px] bg-background border-l shadow-2xl"
+					>
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ delay: 0.1, duration: 0.3 }}
+							className="flex flex-col h-full"
+						>
+							{/* Header */}
+							<motion.div
+								initial={{ opacity: 0, y: -20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.15, duration: 0.3 }}
+								className="flex items-center justify-between p-6 border-b"
+							>
+								<div>
+									<h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+										Create Config
+									</h2>
+									<p className="text-sm text-muted-foreground mt-1">
+										Configure modules to generate SingBox configuration
+									</p>
+								</div>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={onClose}
+									className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+								>
+									<IconX className="size-5" />
+								</Button>
+							</motion.div>
+
+							{/* Content */}
+							<motion.div
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ delay: 0.2, duration: 0.4 }}
+								className="flex-1 overflow-y-auto"
+							>
 						<div className="space-y-6 p-6">
 							{/* 基本信息 */}
 							<div className="space-y-2">
@@ -191,619 +199,43 @@ export function ConfigForm({
 								</p>
 
 								<Accordion type="single" collapsible className="w-full">
-									{/* LOG 模块 */}
-									<AccordionItem value="log">
-										<AccordionTrigger className="hover:no-underline">
-											<div className="flex items-center gap-3">
-												{logUuid ? (
-													<IconCheck className="size-5 text-green-500" />
-												) : (
-													<IconAlertCircle className="size-5 text-destructive" />
-												)}
-												<span className="font-medium">
-													LOG Configuration
-													<span className="text-destructive ml-1">*</span>
-												</span>
-												{logUuid && logs && (
-													<span className="text-sm text-muted-foreground ml-2">
-														({logs.find((l) => l.uuid === logUuid)?.name})
-													</span>
-												)}
-											</div>
-										</AccordionTrigger>
-										<AccordionContent>
-											<div className="pt-4 space-y-4">
-												<p className="text-sm text-muted-foreground">
-													Select a log configuration from your existing log
-													configurations.
-												</p>
+									<LogConfigSection value={log} onChange={setLog} />
 
-												{logsLoading ? (
-													<div className="text-sm text-muted-foreground">
-														Loading logs...
-													</div>
-												) : !logs || logs.length === 0 ? (
-													<div className="p-4 border border-dashed rounded-lg text-center">
-														<p className="text-sm text-muted-foreground">
-															No log configurations found. Please create a log
-															configuration first.
-														</p>
-													</div>
-												) : (
-													<RadioGroup
-														value={logUuid || undefined}
-														onValueChange={setLogUuid}
-													>
-														<div className="space-y-2">
-															{logs.map((log) => (
-																<div
-																	key={log.uuid}
-																	className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-																>
-																	<RadioGroupItem
-																		value={log.uuid}
-																		id={`log-${log.uuid}`}
-																	/>
-																	<Label
-																		htmlFor={`log-${log.uuid}`}
-																		className="flex-1 cursor-pointer"
-																	>
-																		<div className="font-medium">{log.name}</div>
-																		<div className="text-sm text-muted-foreground line-clamp-1">
-																			{log.json.substring(0, 100)}
-																			{log.json.length > 100 && "..."}
-																		</div>
-																	</Label>
-																</div>
-															))}
-														</div>
-													</RadioGroup>
-												)}
-											</div>
-										</AccordionContent>
-									</AccordionItem>
-
-									{/* DNS 模块 */}
-									<AccordionItem value="dns">
-										<AccordionTrigger className="hover:no-underline">
-											<div className="flex items-center gap-3">
-												{isDnsValid ? (
-													<IconCheck className="size-5 text-green-500" />
-												) : (
-													<IconAlertCircle className="size-5 text-destructive" />
-												)}
-												<span className="font-medium">
-													DNS Configuration
-													<span className="text-destructive ml-1">*</span>
-												</span>
-												{dnsServers.length > 0 && (
-													<span className="text-sm text-muted-foreground ml-2">
-														({dnsServers.length} servers, {dnsRules.length} rules)
-													</span>
-												)}
-											</div>
-										</AccordionTrigger>
-										<AccordionContent>
-											<div className="pt-4 space-y-6">
-												{/* 1. 基础配置（可选） */}
-												<div className="space-y-3">
-													<div>
-														<Label className="text-base">
-															Base Configuration{" "}
-															<span className="text-muted-foreground text-sm font-normal">
-																(Optional)
-															</span>
-														</Label>
-														<p className="text-sm text-muted-foreground mt-1">
-															Select a base DNS configuration. Leave unselected for
-															empty base config.
-														</p>
-													</div>
-
-													{dnsConfigsLoading ? (
-														<div className="text-sm text-muted-foreground">
-															Loading DNS configs...
-														</div>
-													) : !dnsConfigs || dnsConfigs.length === 0 ? (
-														<div className="p-4 border border-dashed rounded-lg text-center">
-															<p className="text-sm text-muted-foreground">
-																No DNS configs found. You can proceed without
-																base configuration.
-															</p>
-														</div>
-													) : (
-														<RadioGroup
-															value={dnsConfig || "none"}
-															onValueChange={(value) =>
-																setDnsConfig(value === "none" ? null : value)
-															}
-														>
-															<div className="space-y-2">
-																<div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-																	<RadioGroupItem value="none" id="dns-config-none" />
-																	<Label
-																		htmlFor="dns-config-none"
-																		className="flex-1 cursor-pointer"
-																	>
-																		<div className="font-medium">No base config</div>
-																		<div className="text-sm text-muted-foreground">
-																			Use empty base configuration
-																		</div>
-																	</Label>
-																</div>
-																{dnsConfigs.map((config) => (
-																	<div
-																		key={config.uuid}
-																		className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-																	>
-																		<RadioGroupItem
-																			value={config.uuid}
-																			id={`dns-config-${config.uuid}`}
-																		/>
-																		<Label
-																			htmlFor={`dns-config-${config.uuid}`}
-																			className="flex-1 cursor-pointer"
-																		>
-																			<div className="font-medium">
-																				{config.name}
-																			</div>
-																			<div className="text-sm text-muted-foreground line-clamp-1">
-																				{config.json.substring(0, 100)}
-																				{config.json.length > 100 && "..."}
-																			</div>
-																		</Label>
-																	</div>
-																))}
-															</div>
-														</RadioGroup>
-													)}
-												</div>
-
-												{/* 2. DNS Servers（必选，多选） */}
-												<div className="space-y-3">
-													<div>
-														<Label className="text-base">
-															DNS Servers{" "}
-															<span className="text-destructive">*</span>
-														</Label>
-														<p className="text-sm text-muted-foreground mt-1">
-															Select at least one DNS server. These will be
-															available for rules and final configuration.
-														</p>
-													</div>
-
-													{dnsServersLoading ? (
-														<div className="text-sm text-muted-foreground">
-															Loading DNS servers...
-														</div>
-													) : !dnsServerList || dnsServerList.length === 0 ? (
-														<div className="p-4 border border-dashed rounded-lg text-center">
-															<p className="text-sm text-destructive">
-																No DNS servers found. Please create DNS servers
-																first.
-															</p>
-														</div>
-													) : (
-														<div className="space-y-2">
-															{dnsServerList.map((server) => (
-																<div
-																	key={server.uuid}
-																	className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-																>
-																	<Checkbox
-																		id={`dns-server-${server.uuid}`}
-																		checked={dnsServers.includes(server.uuid)}
-																		onCheckedChange={(checked) => {
-																			if (checked) {
-																				setDnsServers([...dnsServers, server.uuid]);
-																			} else {
-																				const newServers = dnsServers.filter(
-																					(s) => s !== server.uuid,
-																				);
-																				setDnsServers(newServers);
-																				// 如果被取消的 server 是 final，清空 final
-																				if (dnsFinal === server.uuid) {
-																					setDnsFinal(null);
-																				}
-																				// 清理 rules 中使用了该 server 的规则
-																				setDnsRules(
-																					dnsRules.filter(
-																						(rule) => rule.server !== server.uuid,
-																					),
-																				);
-																			}
-																		}}
-																	/>
-																	<Label
-																		htmlFor={`dns-server-${server.uuid}`}
-																		className="flex-1 cursor-pointer"
-																	>
-																		<div className="font-medium">{server.name}</div>
-																		<div className="text-sm text-muted-foreground line-clamp-1">
-																			{server.json.substring(0, 100)}
-																			{server.json.length > 100 && "..."}
-																		</div>
-																	</Label>
-																</div>
-															))}
-														</div>
-													)}
-													{dnsServers.length === 0 && dnsServerList && dnsServerList.length > 0 && (
-														<p className="text-sm text-destructive">
-															Please select at least one DNS server
-														</p>
-													)}
-												</div>
-
-												{/* 3. Rules 配置（可选） */}
-												<div className="space-y-3">
-													<div>
-														<Label className="text-base">
-															DNS Rules{" "}
-															<span className="text-muted-foreground text-sm font-normal">
-																(Optional)
-															</span>
-														</Label>
-														<p className="text-sm text-muted-foreground mt-1">
-															Configure DNS routing rules. Each rule maps rulesets
-															to a specific DNS server.
-														</p>
-													</div>
-
-													{dnsServers.length === 0 ? (
-														<div className="p-4 border border-dashed rounded-lg text-center">
-															<p className="text-sm text-muted-foreground">
-																Select DNS servers first to configure rules.
-															</p>
-														</div>
-													) : (
-														<div className="space-y-3">
-															{dnsRules.map((rule, index) => {
-																// 获取当前 rule 外的其他 rules 已使用的 rulesets
-																const usedRulesets = dnsRules
-																	.filter((_, i) => i !== index)
-																	.flatMap((r) => r.rule_set);
-
-																return (
-																	<div
-																		key={index}
-																		className="p-4 border rounded-lg space-y-3"
-																	>
-																		<div className="flex items-center justify-between">
-																			<Label className="text-sm font-medium">
-																				Rule #{index + 1}
-																			</Label>
-																			<div className="flex items-center gap-1">
-																				{/* 上移按钮 */}
-																				<Button
-																					variant="ghost"
-																					size="sm"
-																					disabled={index === 0}
-																					onClick={() => {
-																						const newRules = [...dnsRules];
-																						[newRules[index - 1], newRules[index]] = [
-																							newRules[index],
-																							newRules[index - 1],
-																						];
-																						setDnsRules(newRules);
-																					}}
-																					title="Move up"
-																				>
-																					<IconArrowUp className="size-4" />
-																				</Button>
-																				{/* 下移按钮 */}
-																				<Button
-																					variant="ghost"
-																					size="sm"
-																					disabled={index === dnsRules.length - 1}
-																					onClick={() => {
-																						const newRules = [...dnsRules];
-																						[newRules[index], newRules[index + 1]] = [
-																							newRules[index + 1],
-																							newRules[index],
-																						];
-																						setDnsRules(newRules);
-																					}}
-																					title="Move down"
-																				>
-																					<IconArrowDown className="size-4" />
-																				</Button>
-																				{/* 删除按钮 */}
-																				<Button
-																					variant="ghost"
-																					size="sm"
-																					onClick={() => {
-																						setDnsRules(
-																							dnsRules.filter((_, i) => i !== index),
-																						);
-																					}}
-																					title="Delete rule"
-																				>
-																					<IconTrash className="size-4" />
-																				</Button>
-																			</div>
-																		</div>
-
-																		{/* Rulesets 选择 - 点击显示选中边框和角标 */}
-																		<div className="space-y-2">
-																			<Label className="text-sm">
-																				Rulesets <span className="text-destructive">*</span>
-																			</Label>
-																			{rulesetsLoading ? (
-																				<div className="text-sm text-muted-foreground">
-																					Loading rulesets...
-																				</div>
-																			) : !rulesets || rulesets.length === 0 ? (
-																				<div className="text-sm text-muted-foreground">
-																					No rulesets available
-																				</div>
-																			) : (
-																				<div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-																					{rulesets.map((ruleset) => {
-																						const isSelected = rule.rule_set.includes(
-																							ruleset.uuid,
-																						);
-																						const isUsedByOthers =
-																							usedRulesets.includes(ruleset.uuid);
-
-																						return (
-																							<button
-																								key={ruleset.uuid}
-																								type="button"
-																								disabled={isUsedByOthers}
-																								onClick={() => {
-																									const newRules = [...dnsRules];
-																									if (isSelected) {
-																										// 取消选择
-																										newRules[index].rule_set =
-																											rule.rule_set.filter(
-																												(r) => r !== ruleset.uuid,
-																											);
-																									} else {
-																										// 添加选择
-																										newRules[index].rule_set = [
-																											...rule.rule_set,
-																											ruleset.uuid,
-																										];
-																									}
-																									setDnsRules(newRules);
-																								}}
-																								className={`
-																									relative w-full text-left p-3 rounded-lg border-2 transition-all
-																									${
-																										isSelected
-																											? "border-primary bg-primary/5"
-																											: "border-border hover:border-primary/50 hover:bg-muted/30"
-																									}
-																									${
-																										isUsedByOthers
-																											? "opacity-50 cursor-not-allowed"
-																											: "cursor-pointer"
-																									}
-																								`}
-																							>
-																								{/* 选中角标 - 垂直居中 */}
-																								{isSelected && (
-																									<div className="absolute top-1/2 -translate-y-1/2 right-3 size-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-sm">
-																										<IconCheck className="size-3.5" />
-																									</div>
-																								)}
-
-																								{/* 已被其他 rule 使用的标记 */}
-																								{isUsedByOthers && (
-																									<div className="absolute top-1/2 -translate-y-1/2 right-3 text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
-																										Used
-																									</div>
-																								)}
-
-																								<div className="font-medium text-sm pr-8">
-																									{ruleset.name}
-																								</div>
-																								<div className="text-xs text-muted-foreground line-clamp-1 mt-1">
-																									{ruleset.json.substring(0, 80)}
-																									{ruleset.json.length > 80 && "..."}
-																								</div>
-																							</button>
-																						);
-																					})}
-																				</div>
-																			)}
-																		</div>
-
-																		{/* Server 选择 */}
-																		<div className="space-y-2">
-																			<Label className="text-sm">
-																				Target Server{" "}
-																				<span className="text-destructive">*</span>
-																			</Label>
-																			<RadioGroup
-																				value={rule.server}
-																				onValueChange={(value) => {
-																					const newRules = [...dnsRules];
-																					newRules[index].server = value;
-																					setDnsRules(newRules);
-																				}}
-																			>
-																				<div className="space-y-1">
-																					{dnsServers.map((serverUuid) => {
-																						const server = dnsServerList?.find(
-																							(s) => s.uuid === serverUuid,
-																						);
-																						if (!server) return null;
-																						return (
-																							<div
-																								key={server.uuid}
-																								className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded"
-																							>
-																								<RadioGroupItem
-																									value={server.uuid}
-																									id={`rule-${index}-server-${server.uuid}`}
-																								/>
-																								<Label
-																									htmlFor={`rule-${index}-server-${server.uuid}`}
-																									className="flex-1 cursor-pointer text-sm"
-																								>
-																									{server.name}
-																								</Label>
-																							</div>
-																						);
-																					})}
-																				</div>
-																			</RadioGroup>
-																		</div>
-																	</div>
-																);
-															})}
-
-															<Button
-																variant="outline"
-																size="sm"
-																onClick={() => {
-																	setDnsRules([
-																		...dnsRules,
-																		{ rule_set: [], server: dnsServers[0] || "" },
-																	]);
-																}}
-																className="w-full"
-															>
-																<IconPlus className="size-4 mr-2" />
-																Add Rule
-															</Button>
-														</div>
-													)}
-												</div>
-
-												{/* 4. Final 配置（必选） */}
-												<div className="space-y-3">
-													<div>
-														<Label className="text-base">
-															Final DNS Server{" "}
-															<span className="text-destructive">*</span>
-														</Label>
-														<p className="text-sm text-muted-foreground mt-1">
-															Select the fallback DNS server for unmatched queries.
-														</p>
-													</div>
-
-													{dnsServers.length === 0 ? (
-														<div className="p-4 border border-dashed rounded-lg text-center">
-															<p className="text-sm text-muted-foreground">
-																Select DNS servers first to configure final server.
-															</p>
-														</div>
-													) : (
-														<RadioGroup
-															value={dnsFinal || undefined}
-															onValueChange={setDnsFinal}
-														>
-															<div className="space-y-2">
-																{dnsServers.map((serverUuid) => {
-																	const server = dnsServerList?.find(
-																		(s) => s.uuid === serverUuid,
-																	);
-																	if (!server) return null;
-																	return (
-																		<div
-																			key={server.uuid}
-																			className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-																		>
-																			<RadioGroupItem
-																				value={server.uuid}
-																				id={`final-server-${server.uuid}`}
-																			/>
-																			<Label
-																				htmlFor={`final-server-${server.uuid}`}
-																				className="flex-1 cursor-pointer"
-																			>
-																				<div className="font-medium">
-																					{server.name}
-																				</div>
-																				<div className="text-sm text-muted-foreground line-clamp-1">
-																					{server.json.substring(0, 100)}
-																					{server.json.length > 100 && "..."}
-																				</div>
-																			</Label>
-																		</div>
-																	);
-																})}
-															</div>
-														</RadioGroup>
-													)}
-													{dnsFinal === null && dnsServers.length > 0 && (
-														<p className="text-sm text-destructive">
-															Please select a final DNS server
-														</p>
-													)}
-												</div>
-											</div>
-										</AccordionContent>
-									</AccordionItem>
+									<DnsConfigSection
+										config={dnsConfig}
+										onConfigChange={setDnsConfig}
+										servers={dnsServers}
+										onServersChange={setDnsServers}
+										rules={dnsRules}
+										onRulesChange={setDnsRules}
+										final={dnsFinal}
+										onFinalChange={setDnsFinal}
+										isValid={isDnsValid}
+									/>
 
 									{/* TODO: 其他模块 */}
-									<AccordionItem value="inbounds" disabled>
-										<AccordionTrigger className="hover:no-underline opacity-50">
-											<div className="flex items-center gap-3">
-												<IconAlertCircle className="size-5 text-muted-foreground" />
-												<span className="font-medium">Inbounds Configuration</span>
-												<span className="text-xs text-muted-foreground">
-													(Coming soon)
-												</span>
-											</div>
-										</AccordionTrigger>
-									</AccordionItem>
-
-									<AccordionItem value="outbounds" disabled>
-										<AccordionTrigger className="hover:no-underline opacity-50">
-											<div className="flex items-center gap-3">
-												<IconAlertCircle className="size-5 text-muted-foreground" />
-												<span className="font-medium">
-													Outbounds Configuration
-												</span>
-												<span className="text-xs text-muted-foreground">
-													(Coming soon)
-												</span>
-											</div>
-										</AccordionTrigger>
-									</AccordionItem>
-
-									<AccordionItem value="route" disabled>
-										<AccordionTrigger className="hover:no-underline opacity-50">
-											<div className="flex items-center gap-3">
-												<IconAlertCircle className="size-5 text-muted-foreground" />
-												<span className="font-medium">Route Configuration</span>
-												<span className="text-xs text-muted-foreground">
-													(Coming soon)
-												</span>
-											</div>
-										</AccordionTrigger>
-									</AccordionItem>
-
-									<AccordionItem value="experimental" disabled>
-										<AccordionTrigger className="hover:no-underline opacity-50">
-											<div className="flex items-center gap-3">
-												<IconAlertCircle className="size-5 text-muted-foreground" />
-												<span className="font-medium">
-													Experimental Configuration
-												</span>
-												<span className="text-xs text-muted-foreground">
-													(Coming soon)
-												</span>
-											</div>
-										</AccordionTrigger>
-									</AccordionItem>
 								</Accordion>
 							</div>
 						</div>
-					</div>
+					</motion.div>
 
 					{/* Footer */}
-					<div className="flex items-center justify-between p-6 border-t">
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ delay: 0.25, duration: 0.3 }}
+						className="flex items-center justify-between p-6 border-t bg-muted/30 backdrop-blur-sm"
+					>
 						<div className="text-sm text-muted-foreground">
 							{isValid ? (
-								<span className="text-green-500 flex items-center gap-2">
+								<motion.span
+									initial={{ scale: 0.8 }}
+									animate={{ scale: 1 }}
+									className="text-green-500 flex items-center gap-2"
+								>
 									<IconCheck className="size-4" />
 									Ready to save
-								</span>
+								</motion.span>
 							) : (
 								<span className="flex items-center gap-2">
 									<IconAlertCircle className="size-4" />
@@ -812,17 +244,28 @@ export function ConfigForm({
 							)}
 						</div>
 						<div className="flex gap-2">
-							<Button variant="outline" onClick={onClose}>
+							<Button
+								variant="outline"
+								onClick={onClose}
+								className="hover:bg-muted transition-colors"
+							>
 								Cancel
 							</Button>
-							<Button onClick={handleSave} disabled={!isValid}>
+							<Button
+								onClick={handleSave}
+								disabled={!isValid}
+								className="relative overflow-hidden group"
+							>
+								<span className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
 								<IconDeviceFloppy className="size-4 mr-2" />
 								Save Config
 							</Button>
 						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+					</motion.div>
+				</motion.div>
+			</motion.div>
+		</>
+			)}
+		</AnimatePresence>
 	);
 }
