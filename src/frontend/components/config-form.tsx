@@ -9,7 +9,7 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DnsConfigSection } from "./config-sections/dns-config-section";
 import { LogConfigSection } from "./config-sections/log-config-section";
 import { InboundsConfigSection } from "./config-sections/inbounds-config-section";
@@ -129,6 +129,24 @@ export function ConfigForm({
 		initialData?.experimental,
 	);
 
+	// 当 initialData 变化时，更新所有状态
+	useEffect(() => {
+		setName(initialData?.name || "");
+		setLog(initialData?.log || "");
+		setDnsConfig(initialData?.dns?.config);
+		setDnsServers(initialData?.dns?.servers || []);
+		setDnsRules(initialData?.dns?.rules || []);
+		setDnsFinal(initialData?.dns?.final || "");
+		setInbounds(initialData?.inbounds || []);
+		setRouteConfig(initialData?.route?.config);
+		setRouteRules(initialData?.route?.rules || []);
+		setRouteFinal(initialData?.route?.final || "");
+		setExperimental(initialData?.experimental);
+	}, [initialData]);
+
+	// 判断是否为编辑模式
+	const isEditMode = !!initialData?.name;
+
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
@@ -215,7 +233,7 @@ export function ConfigForm({
 							>
 								<div>
 									<h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-										Create Config
+										{isEditMode ? "Edit Config" : "Create Config"}
 									</h2>
 									<p className="text-sm text-muted-foreground mt-1">
 										Configure modules to generate SingBox configuration
