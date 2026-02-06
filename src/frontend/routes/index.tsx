@@ -13,6 +13,7 @@ import {
   IconCubePlus,
   IconEdit,
   IconLink,
+  IconCheck,
   IconTrash,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -34,6 +35,7 @@ function RouteComponent() {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedUuid, setSelectedUuid] = useState("");
   const [initialData, setInitialData] = useState<Partial<SingBoxConfig>>();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleNewConfig = () => {
     setIsCreating(true);
@@ -97,6 +99,44 @@ function RouteComponent() {
     }
   };
 
+  const copyDownloadLink = async (configId: string) => {
+    try {
+      const downloadUrl = `${window.location.origin}/download/${configId}`;
+
+      // 优先尝试现代的 clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(downloadUrl);
+      } else {
+        // 兼容性方案：使用传统的 document.execCommand
+        const textArea = document.createElement("textarea");
+        textArea.value = downloadUrl;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+
+        if (!successful) {
+          throw new Error("execCommand failed");
+        }
+      }
+
+      setCopiedId(configId);
+      toast.success("Download URL copied to clipboard");
+
+      // 2秒后清除复制状态
+      setTimeout(() => {
+        setCopiedId(null);
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      toast.error("复制链接失败，请手动复制下载地址");
+    }
+  };
+
   return (
     <AppPage
       title="Config Management"
@@ -139,12 +179,14 @@ function RouteComponent() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const url = `${window.location.origin}/download/${config.uuid}`;
-                      navigator.clipboard.writeText(url);
-                      toast.success("Download URL copied to clipboard");
+                      copyDownloadLink(config.uuid);
                     }}
                   >
-                    <IconLink className="size-4" />
+                    {copiedId === config.uuid ? (
+                      <IconCheck className="size-4 text-green-500" />
+                    ) : (
+                      <IconLink className="size-4" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
