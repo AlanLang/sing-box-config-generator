@@ -52,10 +52,14 @@ export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 						</div>
 					) : (
 						<SelectorDrawer
-							title="Select Log Configuration"
-							description="Choose a log configuration for this config."
+							drawerTitle="Select Log Configuration"
+							drawerDescription="Choose a log configuration for this config."
 							placeholder="Select a log configuration"
-							items={logs}
+							items={logs.map((l) => ({
+								value: l.uuid,
+								title: l.name,
+								description: l.json,
+							}))}
 							value={value}
 							onSelect={onChange}
 						/>

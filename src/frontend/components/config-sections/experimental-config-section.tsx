@@ -59,10 +59,14 @@ export function ExperimentalConfigSection({
 						</div>
 					) : (
 						<SelectorDrawer
-							title="Select Experimental Configuration"
-							description="Choose an experimental configuration for this config."
+							drawerTitle="Select Experimental Configuration"
+							drawerDescription="Choose an experimental configuration for this config."
 							placeholder="Select an experimental configuration"
-							items={experimentals}
+							items={experimentals.map((e) => ({
+								value: e.uuid,
+								title: e.name,
+								description: e.json,
+							}))}
 							value={value}
 							onSelect={onChange}
 						/>

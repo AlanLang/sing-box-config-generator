@@ -6,73 +6,33 @@ import {
 	DrawerTitle,
 } from "@/components/ui/drawer";
 import { IconCheck, IconSelector } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-interface SelectorDrawerItem {
-	uuid: string;
-	name: string;
-	json: string;
+export interface SelectorDrawerItem {
+	value: string;
+	title: string;
+	description?: string;
 }
 
 interface SelectorDrawerProps {
-	title: string;
-	description?: string;
+	drawerTitle: string;
+	drawerDescription?: string;
 	placeholder?: string;
 	items: SelectorDrawerItem[];
 	value: string;
 	onSelect: (value: string) => void;
 }
 
-function parseJsonEntries(json: string): [string, string][] {
-	try {
-		const parsed = JSON.parse(json);
-		return Object.entries(parsed).slice(0, 6).map(([key, val]) => {
-			if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
-				return [key, String(val)];
-			}
-			if (Array.isArray(val)) {
-				return [key, `[${val.length}]`];
-			}
-			if (val && typeof val === "object") {
-				return [key, "{...}"];
-			}
-			return [key, "null"];
-		});
-	} catch {
-		return [];
-	}
-}
-
-function JsonTags({ json }: { json: string }) {
-	const entries = useMemo(() => parseJsonEntries(json), [json]);
-
-	if (entries.length === 0) return null;
-
-	return (
-		<div className="flex flex-wrap gap-1.5 mt-2">
-			{entries.map(([key, val]) => (
-				<span
-					key={key}
-					className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-0.5 rounded-md"
-				>
-					<span className="text-muted-foreground">{key}:</span>
-					<span className="font-medium">{val}</span>
-				</span>
-			))}
-		</div>
-	);
-}
-
 export function SelectorDrawer({
-	title,
-	description,
+	drawerTitle,
+	drawerDescription,
 	placeholder = "Click to select...",
 	items,
 	value,
 	onSelect,
 }: SelectorDrawerProps) {
 	const [open, setOpen] = useState(false);
-	const selectedItem = items.find((item) => item.uuid === value);
+	const selectedItem = items.find((item) => item.value === value);
 
 	return (
 		<>
@@ -89,12 +49,16 @@ export function SelectorDrawer({
 				`}
 			>
 				{selectedItem ? (
-					<div>
-						<div className="flex items-center justify-between gap-2">
-							<span className="font-medium text-sm">{selectedItem.name}</span>
-							<IconSelector className="size-4 text-muted-foreground shrink-0" />
+					<div className="flex items-center justify-between gap-2">
+						<div className="flex-1 min-w-0">
+							<div className="font-medium text-sm">{selectedItem.title}</div>
+							{selectedItem.description && (
+								<div className="text-xs text-muted-foreground line-clamp-1 mt-1">
+									{selectedItem.description}
+								</div>
+							)}
 						</div>
-						<JsonTags json={selectedItem.json} />
+						<IconSelector className="size-4 text-muted-foreground shrink-0" />
 					</div>
 				) : (
 					<div className="flex items-center justify-between gap-2">
@@ -108,21 +72,21 @@ export function SelectorDrawer({
 			<Drawer open={open} onOpenChange={setOpen}>
 				<DrawerContent>
 					<DrawerHeader>
-						<DrawerTitle>{title}</DrawerTitle>
-						{description && (
-							<DrawerDescription>{description}</DrawerDescription>
+						<DrawerTitle>{drawerTitle}</DrawerTitle>
+						{drawerDescription && (
+							<DrawerDescription>{drawerDescription}</DrawerDescription>
 						)}
 					</DrawerHeader>
 					<div className="overflow-y-auto px-4 pb-6">
 						<div className="space-y-2">
 							{items.map((item) => {
-								const selected = value === item.uuid;
+								const selected = value === item.value;
 								return (
 									<button
 										type="button"
-										key={item.uuid}
+										key={item.value}
 										onClick={() => {
-											onSelect(item.uuid);
+											onSelect(item.value);
 											setOpen(false);
 										}}
 										className={`
@@ -133,15 +97,19 @@ export function SelectorDrawer({
 											}
 										`}
 									>
-										<div className="flex items-start gap-3">
+										<div className="flex items-center gap-3">
 											<div className="flex-1 min-w-0">
 												<div className="font-medium text-sm">
-													{item.name}
+													{item.title}
 												</div>
-												<JsonTags json={item.json} />
+												{item.description && (
+													<div className="text-xs text-muted-foreground line-clamp-1 mt-1">
+														{item.description}
+													</div>
+												)}
 											</div>
 											{selected && (
-												<IconCheck className="size-5 text-primary shrink-0 mt-0.5" />
+												<IconCheck className="size-5 text-primary shrink-0" />
 											)}
 										</div>
 									</button>
