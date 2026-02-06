@@ -117,6 +117,53 @@ async fn load_module_json(module_type: &str, uuid: &str) -> Result<Value, AppErr
   }
 }
 
+/// Load a module's JSON field, injecting the module's "name" as "tag" if not present in the JSON.
+/// This is used for outbound modules where the JSON may not contain a "tag" field.
+async fn load_module_json_with_tag(module_type: &str, uuid: &str) -> Result<Value, AppError> {
+  let file_path = Path::new("./data")
+    .join(module_type)
+    .join(format!("{}.json", uuid));
+
+  if !file_path.exists() {
+    return Err(AppError::NotFound(format!(
+      "{} module not found: {}",
+      module_type, uuid
+    )));
+  }
+
+  let content = fs::read_to_string(&file_path).await?;
+  let module: Value = serde_json::from_str(&content)?;
+
+  let module_name = module
+    .get("name")
+    .and_then(|n| n.as_str())
+    .unwrap_or("")
+    .to_string();
+
+  if let Some(json_str) = module.get("json").and_then(|j| j.as_str()) {
+    let mut parsed: Value = serde_json::from_str(json_str).map_err(|e| {
+      AppError::InternalServerError(format!(
+        "Failed to parse {} module JSON: {}",
+        module_type, e
+      ))
+    })?;
+
+    // Inject "tag" from module "name" if not already present
+    if let Some(obj) = parsed.as_object_mut() {
+      if !obj.contains_key("tag") && !module_name.is_empty() {
+        obj.insert("tag".to_string(), Value::String(module_name));
+      }
+    }
+
+    Ok(parsed)
+  } else {
+    Err(AppError::InternalServerError(format!(
+      "{} module missing 'json' field",
+      module_type
+    )))
+  }
+}
+
 /// Resolve log module
 async fn resolve_log(uuid: &str) -> Result<Value, AppError> {
   load_module_json("logs", uuid).await
@@ -827,7 +874,7 @@ async fn resolve_outbounds_and_route(
           }
         } else {
           // It's an individual outbound
-          let outbound_json = load_module_json("outbounds", member_uuid).await?;
+          let outbound_json = load_module_json_with_tag("outbounds", member_uuid).await?;
           let tag = outbound_json
             .get("tag")
             .and_then(|t| t.as_str())
@@ -871,7 +918,7 @@ async fn resolve_outbounds_and_route(
       }
     } else {
       // It's an individual outbound
-      let outbound_json = load_module_json("outbounds", &uuid).await?;
+      let outbound_json = load_module_json_with_tag("outbounds", &uuid).await?;
       let tag = outbound_json
         .get("tag")
         .and_then(|t| t.as_str())
@@ -992,7 +1039,7 @@ async fn resolve_route(
           let group = load_outbound_group(&rule.outbound).await?;
           group.name.clone()
         } else {
-          let outbound = load_module_json("outbounds", &rule.outbound).await?;
+          let outbound = load_module_json_with_tag("outbounds", &rule.outbound).await?;
           outbound
             .get("tag")
             .and_then(|t| t.as_str())
