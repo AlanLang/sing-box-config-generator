@@ -4,9 +4,14 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { RadioGroup } from "@/components/ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
-import { RadioCard } from "@/components/radio-card";
 
 interface LogConfigSectionProps {
 	value: string;
@@ -52,20 +57,18 @@ export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 							</p>
 						</div>
 					) : (
-						<RadioGroup value={value || undefined} onValueChange={onChange}>
-							<div className="grid grid-cols-1 gap-2">
+						<Select value={value || undefined} onValueChange={onChange}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select a log configuration" />
+							</SelectTrigger>
+							<SelectContent>
 								{logs.map((logItem) => (
-									<RadioCard
-										key={logItem.uuid}
-										id={`log-${logItem.uuid}`}
-										value={logItem.uuid}
-										title={logItem.name}
-										description={logItem.json}
-										selected={value === logItem.uuid}
-									/>
+									<SelectItem key={logItem.uuid} value={logItem.uuid}>
+										{logItem.name}
+									</SelectItem>
 								))}
-							</div>
-						</RadioGroup>
+							</SelectContent>
+						</Select>
 					)}
 				</div>
 			</AccordionContent>

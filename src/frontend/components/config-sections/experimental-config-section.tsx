@@ -4,9 +4,14 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { RadioGroup } from "@/components/ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
-import { RadioCard } from "@/components/radio-card";
 
 interface ExperimentalConfigSectionProps {
 	value: string;
@@ -59,23 +64,21 @@ export function ExperimentalConfigSection({
 							</p>
 						</div>
 					) : (
-						<RadioGroup
-							value={value || undefined}
-							onValueChange={onChange}
-						>
-							<div className="grid grid-cols-1 gap-2">
+						<Select value={value || undefined} onValueChange={onChange}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select an experimental configuration" />
+							</SelectTrigger>
+							<SelectContent>
 								{experimentals.map((experimentalItem) => (
-									<RadioCard
+									<SelectItem
 										key={experimentalItem.uuid}
-										id={`experimental-${experimentalItem.uuid}`}
 										value={experimentalItem.uuid}
-										title={experimentalItem.name}
-										description={experimentalItem.json}
-										selected={value === experimentalItem.uuid}
-									/>
+									>
+										{experimentalItem.name}
+									</SelectItem>
 								))}
-							</div>
-						</RadioGroup>
+							</SelectContent>
+						</Select>
 					)}
 				</div>
 			</AccordionContent>
