@@ -141,32 +141,34 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
   }
   dns_config.insert("servers".to_string(), Value::Array(servers));
 
-  // Resolve DNS rules if provided
+  // Resolve DNS rules if provided and non-empty
   if let Some(rules) = &dns.rules {
-    let mut dns_rules = Vec::new();
-    for rule in rules {
-      let mut rule_obj = Map::new();
+    if !rules.is_empty() {
+      let mut dns_rules = Vec::new();
+      for rule in rules {
+        let mut rule_obj = Map::new();
 
-      // Resolve rulesets
-      let mut rule_sets = Vec::new();
-      for ruleset_uuid in &rule.rule_set {
-        let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
-        // Extract "tag" field from ruleset
-        if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
-          rule_sets.push(Value::String(tag.to_string()));
+        // Resolve rulesets
+        let mut rule_sets = Vec::new();
+        for ruleset_uuid in &rule.rule_set {
+          let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
+          // Extract "tag" field from ruleset
+          if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
+            rule_sets.push(Value::String(tag.to_string()));
+          }
         }
-      }
-      rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
+        rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
 
-      // Resolve server tag
-      let server = load_module_json("dns-server", &rule.server).await?;
-      if let Some(tag) = server.get("tag").and_then(|t| t.as_str()) {
-        rule_obj.insert("server".to_string(), Value::String(tag.to_string()));
-      }
+        // Resolve server tag
+        let server = load_module_json("dns-server", &rule.server).await?;
+        if let Some(tag) = server.get("tag").and_then(|t| t.as_str()) {
+          rule_obj.insert("server".to_string(), Value::String(tag.to_string()));
+        }
 
-      dns_rules.push(Value::Object(rule_obj));
+        dns_rules.push(Value::Object(rule_obj));
+      }
+      dns_config.insert("rules".to_string(), Value::Array(dns_rules));
     }
-    dns_config.insert("rules".to_string(), Value::Array(dns_rules));
   }
 
   // Resolve final server tag
@@ -911,40 +913,42 @@ async fn resolve_route(
     }
   }
 
-  // Resolve route rules if provided
+  // Resolve route rules if provided and non-empty
   if let Some(rules) = &route.rules {
-    let mut route_rules = Vec::new();
-    for rule in rules {
-      let mut rule_obj = Map::new();
+    if !rules.is_empty() {
+      let mut route_rules = Vec::new();
+      for rule in rules {
+        let mut rule_obj = Map::new();
 
-      // Resolve rulesets
-      let mut rule_sets = Vec::new();
-      for ruleset_uuid in &rule.rulesets {
-        let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
-        // Extract "tag" field from ruleset
-        if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
-          rule_sets.push(Value::String(tag.to_string()));
+        // Resolve rulesets
+        let mut rule_sets = Vec::new();
+        for ruleset_uuid in &rule.rulesets {
+          let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
+          // Extract "tag" field from ruleset
+          if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
+            rule_sets.push(Value::String(tag.to_string()));
+          }
         }
+        rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
+
+        // Resolve outbound tag
+        let outbound_tag = if is_outbound_group(&rule.outbound).await? {
+          let group = load_outbound_group(&rule.outbound).await?;
+          group.name.clone()
+        } else {
+          let outbound = load_module_json("outbounds", &rule.outbound).await?;
+          outbound
+            .get("tag")
+            .and_then(|t| t.as_str())
+            .unwrap_or("")
+            .to_string()
+        };
+        rule_obj.insert("outbound".to_string(), Value::String(outbound_tag));
+
+        route_rules.push(Value::Object(rule_obj));
       }
-      rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
-
-      // Resolve outbound tag
-      let outbound_tag = if is_outbound_group(&rule.outbound).await? {
-        let group = load_outbound_group(&rule.outbound).await?;
-        group.name.clone()
-      } else {
-        let outbound = load_module_json("outbounds", &rule.outbound).await?;
-        outbound
-          .get("tag")
-          .and_then(|t| t.as_str())
-          .unwrap_or("")
-          .to_string()
-      };
-      rule_obj.insert("outbound".to_string(), Value::String(outbound_tag));
-
-      route_rules.push(Value::Object(rule_obj));
+      route_config.insert("rules".to_string(), Value::Array(route_rules));
     }
-    route_config.insert("rules".to_string(), Value::Array(route_rules));
   }
 
   // Set final outbound tag (already resolved in resolve_outbounds_and_route)
