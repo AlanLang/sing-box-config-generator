@@ -1,6 +1,6 @@
 import { http } from "@/api/http";
 import { useMutation } from "@tanstack/react-query";
-import z from "zod/v3";
+import { z } from "zod";
 
 export const dnsConfigUpdateSchema = z.object({
   uuid: z.string(),

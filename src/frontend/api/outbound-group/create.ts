@@ -1,17 +1,11 @@
 import ky from "ky";
 import { z } from "zod";
+import { nameSchema } from "@/lib/validation";
 import type { OutboundGroupDto } from "./types";
 
 export const outboundGroupCreateSchema = z
   .object({
-    name: z
-      .string()
-      .min(2, "Name must be at least 2 characters")
-      .max(50, "Name must be less than 50 characters")
-      .regex(
-        /^[a-zA-Z0-9_-]+$/,
-        "Name can only contain letters, numbers, - and _",
-      ),
+    name: nameSchema,
     group_type: z.enum(["selector", "urltest"]),
     outbounds: z.array(z.string()),
     url: z
