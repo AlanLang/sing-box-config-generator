@@ -36,11 +36,13 @@ pub async fn generate_config(
   );
 
   let (outbounds, route_final_tag) = resolve_outbounds_and_route(&config).await?;
+  let route_value = resolve_route(&config.route, &route_final_tag).await?;
+
+  // Filter out unused outbounds
+  let outbounds = filter_unused_outbounds(outbounds, &route_value, &route_final_tag);
+
   singbox_config.insert("outbounds".to_string(), outbounds);
-  singbox_config.insert(
-    "route".to_string(),
-    resolve_route(&config.route, &route_final_tag).await?,
-  );
+  singbox_config.insert("route".to_string(), route_value);
 
   if let Some(exp) = &config.experimental {
     singbox_config.insert("experimental".to_string(), resolve_experimental(exp).await?);
@@ -896,6 +898,59 @@ async fn resolve_outbounds_and_route(
   Ok((Value::Array(outbounds), final_tag))
 }
 
+/// Filter out outbounds that are not referenced by any route rule, route final, or group
+fn filter_unused_outbounds(outbounds: Value, route: &Value, final_tag: &str) -> Value {
+  let outbounds_arr = match outbounds {
+    Value::Array(arr) => arr,
+    _ => return outbounds,
+  };
+
+  // Collect all referenced tags
+  let mut referenced_tags = HashSet::new();
+
+  // From route final
+  if !final_tag.is_empty() {
+    referenced_tags.insert(final_tag.to_string());
+  }
+
+  // From route rules
+  if let Some(rules) = route.get("rules").and_then(|r| r.as_array()) {
+    for rule in rules {
+      if let Some(tag) = rule.get("outbound").and_then(|t| t.as_str()) {
+        if !tag.is_empty() {
+          referenced_tags.insert(tag.to_string());
+        }
+      }
+    }
+  }
+
+  // From group outbounds (groups reference other outbounds by tag)
+  for outbound in &outbounds_arr {
+    if let Some(outbound_tags) = outbound.get("outbounds").and_then(|o| o.as_array()) {
+      for tag_val in outbound_tags {
+        if let Some(tag) = tag_val.as_str() {
+          referenced_tags.insert(tag.to_string());
+        }
+      }
+    }
+  }
+
+  // Filter: keep only outbounds whose tag is in the referenced set
+  let filtered: Vec<Value> = outbounds_arr
+    .into_iter()
+    .filter(|outbound| {
+      let tag = outbound.get("tag").and_then(|t| t.as_str()).unwrap_or("");
+      if tag.is_empty() {
+        log::warn!("Removing outbound with empty tag: {:?}", outbound);
+        return false;
+      }
+      referenced_tags.contains(tag)
+    })
+    .collect();
+
+  Value::Array(filtered)
+}
+
 /// Resolve route configuration
 async fn resolve_route(
   route: &crate::backend::api::config::RouteConfigDto,
@@ -943,11 +998,23 @@ async fn resolve_route(
             .unwrap_or("")
             .to_string()
         };
+
+        // Skip rules with empty outbound tag (outbound has no valid tag)
+        if outbound_tag.is_empty() {
+          log::warn!(
+            "Skipping route rule with empty outbound tag for UUID: {}",
+            rule.outbound
+          );
+          continue;
+        }
+
         rule_obj.insert("outbound".to_string(), Value::String(outbound_tag));
 
         route_rules.push(Value::Object(rule_obj));
       }
-      route_config.insert("rules".to_string(), Value::Array(route_rules));
+      if !route_rules.is_empty() {
+        route_config.insert("rules".to_string(), Value::Array(route_rules));
+      }
     }
   }
 
