@@ -125,6 +125,10 @@ async fn main() -> anyhow::Result<()> {
         .put(backend::api::config::update_config)
         .delete(backend::api::config::delete_config),
     )
+    .route(
+      "/download/{uuid}",
+      axum::routing::get(backend::api::config_generator::generate_config),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005

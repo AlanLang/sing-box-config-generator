@@ -3,17 +3,27 @@ use axum::{
   response::{IntoResponse, Response},
 };
 
-// Make our own error that wraps anyhow::Error
-pub struct AppError(anyhow::Error);
+// Make our own error that wraps different error types
+pub enum AppError {
+  NotFound(String),
+  InternalServerError(String),
+  AnyhowError(anyhow::Error),
+}
 
 // Tell axum how to convert `AppError` into a response.
 impl IntoResponse for AppError {
   fn into_response(self) -> Response {
-    (
-      StatusCode::INTERNAL_SERVER_ERROR,
-      format!("Something went wrong: {}", self.0),
-    )
-      .into_response()
+    match self {
+      AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg).into_response(),
+      AppError::InternalServerError(msg) => {
+        (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()
+      }
+      AppError::AnyhowError(err) => (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Something went wrong: {}", err),
+      )
+        .into_response(),
+    }
   }
 }
 
@@ -24,6 +34,6 @@ where
   E: Into<anyhow::Error>,
 {
   fn from(err: E) -> Self {
-    Self(err.into())
+    Self::AnyhowError(err.into())
   }
 }

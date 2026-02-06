@@ -1,4 +1,5 @@
 pub mod config;
+pub mod config_generator;
 pub mod dns;
 pub mod dns_config;
 pub mod experimental;

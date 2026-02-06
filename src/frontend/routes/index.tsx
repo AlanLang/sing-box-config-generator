@@ -9,7 +9,12 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
-import { IconCubePlus, IconEdit, IconTrash } from "@tabler/icons-react";
+import {
+  IconCubePlus,
+  IconEdit,
+  IconLink,
+  IconTrash,
+} from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -129,6 +134,18 @@ function RouteComponent() {
               index={index}
               actions={
                 <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const url = `${window.location.origin}/download/${config.uuid}`;
+                      navigator.clipboard.writeText(url);
+                      toast.success("Download URL copied to clipboard");
+                    }}
+                  >
+                    <IconLink className="size-4" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
