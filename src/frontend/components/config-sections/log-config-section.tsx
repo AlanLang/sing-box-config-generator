@@ -4,10 +4,8 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { SelectorDrawer } from "@/components/selector-drawer";
-import { IconAlertCircle, IconCheck, IconSelector } from "@tabler/icons-react";
-import { useState } from "react";
+import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 
 interface LogConfigSectionProps {
 	value: string;
@@ -16,9 +14,6 @@ interface LogConfigSectionProps {
 
 export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 	const { data: logs, isLoading: logsLoading } = useLogList();
-	const [drawerOpen, setDrawerOpen] = useState(false);
-
-	const selectedLog = logs?.find((l) => l.uuid === value);
 
 	return (
 		<AccordionItem value="log">
@@ -33,9 +28,9 @@ export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 						LOG Configuration
 						<span className="text-destructive ml-1">*</span>
 					</span>
-					{selectedLog && (
+					{value && logs && (
 						<span className="text-sm text-muted-foreground ml-2">
-							({selectedLog.name})
+							({logs.find((l) => l.uuid === value)?.name})
 						</span>
 					)}
 				</div>
@@ -56,28 +51,14 @@ export function LogConfigSection({ value, onChange }: LogConfigSectionProps) {
 							</p>
 						</div>
 					) : (
-						<>
-							<Button
-								variant="outline"
-								className="w-full justify-between"
-								onClick={() => setDrawerOpen(true)}
-							>
-								<span className={selectedLog ? "" : "text-muted-foreground"}>
-									{selectedLog?.name || "Select a log configuration"}
-								</span>
-								<IconSelector className="size-4 text-muted-foreground" />
-							</Button>
-
-							<SelectorDrawer
-								open={drawerOpen}
-								onOpenChange={setDrawerOpen}
-								title="Select Log Configuration"
-								description="Choose a log configuration for this config."
-								items={logs}
-								value={value}
-								onSelect={onChange}
-							/>
-						</>
+						<SelectorDrawer
+							title="Select Log Configuration"
+							description="Choose a log configuration for this config."
+							placeholder="Select a log configuration"
+							items={logs}
+							value={value}
+							onSelect={onChange}
+						/>
 					)}
 				</div>
 			</AccordionContent>
