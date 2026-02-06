@@ -42,7 +42,7 @@ export function ConfigCard({
     >
       <motion.button
         type="button"
-        className="relative h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group"
+        className="relative flex flex-col h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group"
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -70,7 +70,7 @@ export function ConfigCard({
         />
 
         {/* Card Header */}
-        <div className="relative p-4 border-b border-border/50">
+        <div className="relative flex-shrink-0 p-4 border-b border-border/50">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {/* Icon indicator */}
@@ -103,9 +103,9 @@ export function ConfigCard({
         </div>
 
         {/* Card Content Preview */}
-        <div className="relative p-3 flex-1 overflow-hidden">
+        <div className="relative flex flex-col flex-1 min-h-0 pt-3 pl-3">
           {/* Code block container with editor styling */}
-          <div className="h-full rounded-lg bg-muted/40 group-hover:bg-muted/50 transition-all duration-150 border border-border/30 overflow-hidden flex flex-col">
+          <div className="flex flex-col h-full rounded-tl-lg bg-muted/40 group-hover:bg-muted/50 transition-all duration-150 border border-border/30 overflow-hidden">
             {/* Editor header bar */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/30 bg-muted/30 flex-shrink-0">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
@@ -117,7 +117,7 @@ export function ConfigCard({
             </div>
 
             {/* Code content */}
-            <div className="relative flex-1 p-2.5 overflow-hidden">
+            <div className="relative flex-1 min-h-0 p-2.5 overflow-hidden">
               <pre className="text-[11px] font-mono text-muted-foreground/70 group-hover:text-muted-foreground/90 leading-relaxed transition-all duration-150">
                 {formattedPreview}
               </pre>
