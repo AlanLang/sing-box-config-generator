@@ -1,5 +1,6 @@
 use axum::{Json, http::StatusCode, response::IntoResponse};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::path::Path;
 use tokio::fs;
 
@@ -23,6 +24,54 @@ pub struct BackupMetadata {
   pub created_at: String,
   pub file_name: String,
   pub file_size: u64,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub content_hash: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ContentHashResponse {
+  pub content_hash: String,
+}
+
+/// Compute SHA-256 hash of all files under ./data directory.
+/// Files are sorted by path to ensure deterministic output.
+fn compute_data_hash() -> anyhow::Result<String> {
+  let data_dir = std::path::Path::new(DATA_DIR);
+  if !data_dir.exists() {
+    return Ok(String::from(
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ));
+  }
+
+  let mut entries: Vec<std::path::PathBuf> = Vec::new();
+  collect_files(data_dir, &mut entries)?;
+  entries.sort();
+
+  let mut hasher = Sha256::new();
+  for path in &entries {
+    let rel = path.strip_prefix(data_dir).unwrap_or(path);
+    hasher.update(rel.to_string_lossy().as_bytes());
+    let content = std::fs::read(path)?;
+    hasher.update(&content);
+  }
+
+  Ok(format!("{:x}", hasher.finalize()))
+}
+
+fn collect_files(
+  dir: &std::path::Path,
+  entries: &mut Vec<std::path::PathBuf>,
+) -> anyhow::Result<()> {
+  for entry in std::fs::read_dir(dir)? {
+    let entry = entry?;
+    let path = entry.path();
+    if path.is_dir() {
+      collect_files(&path, entries)?;
+    } else {
+      entries.push(path);
+    }
+  }
+  Ok(())
 }
 
 pub async fn create_backup(
@@ -69,6 +118,12 @@ pub async fn create_backup(
   // Get archive file size
   let file_size = fs::metadata(&archive_path).await?.len();
 
+  // Compute content hash of data directory
+  let content_hash = tokio::task::spawn_blocking(compute_data_hash)
+    .await
+    .map_err(|e| AppError::InternalServerError(format!("Task join error: {}", e)))?
+    .map_err(|e| AppError::InternalServerError(format!("Hash computation failed: {}", e)))?;
+
   let now = chrono::Local::now();
   let metadata = BackupMetadata {
     uuid: payload.uuid,
@@ -77,6 +132,7 @@ pub async fn create_backup(
     created_at: now.to_rfc3339(),
     file_name: archive_name,
     file_size,
+    content_hash: Some(content_hash),
   };
 
   fs::write(&meta_path, serde_json::to_string(&metadata)?.as_bytes()).await?;
@@ -176,4 +232,13 @@ pub async fn download_backup(
     ],
     file_bytes,
   ))
+}
+
+pub async fn current_hash() -> Result<impl IntoResponse, AppError> {
+  let hash = tokio::task::spawn_blocking(compute_data_hash)
+    .await
+    .map_err(|e| AppError::InternalServerError(format!("Task join error: {}", e)))?
+    .map_err(|e| AppError::InternalServerError(format!("Hash computation failed: {}", e)))?;
+
+  Ok(Json(ContentHashResponse { content_hash: hash }))
 }

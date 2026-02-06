@@ -1,7 +1,9 @@
 import { type BackupCreateDto, createBackup } from "@/api/backup/create";
+import { useCurrentConfigHash } from "@/api/backup/current-hash";
 import { useBackupDelete } from "@/api/backup/delete";
 import { type BackupListDto, useBackupList } from "@/api/backup/list";
 import { AppPage } from "@/components/app-page";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   IconArchive,
+  IconCheck,
   IconDownload,
   IconPlus,
   IconTrash,
@@ -50,12 +58,18 @@ function formatDate(dateStr: string): string {
 
 function RouteComponent() {
   const { data: backups, refetch, isLoading } = useBackupList();
+  const { data: hashData, refetch: refetchHash } = useCurrentConfigHash();
   const deleteBackupMutation = useBackupDelete();
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<BackupListDto | null>(null);
+
+  const currentHash = hashData?.content_hash;
+  const hasMatchingBackup = backups?.some(
+    (b) => b.content_hash && b.content_hash === currentHash,
+  );
 
   const handleOpenCreate = () => {
     setName(formatDateTime());
@@ -80,6 +94,7 @@ function RouteComponent() {
       toast.success("Backup created successfully");
       setCreateOpen(false);
       refetch();
+      refetchHash();
     } catch (error) {
       console.error(error);
       toast.error("Failed to create backup");
@@ -110,15 +125,29 @@ function RouteComponent() {
       title="Backup"
       description="Create and manage backups of all your configuration data"
       actions={
-        <Button
-          size="sm"
-          onClick={handleOpenCreate}
-          className="gap-2 relative overflow-hidden group"
-        >
-          <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <IconPlus className="size-4" />
-          New Backup
-        </Button>
+        hasMatchingBackup ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" disabled className="gap-2">
+                <IconCheck className="size-4" />
+                Already Backed Up
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Current configuration already has a matching backup
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            size="sm"
+            onClick={handleOpenCreate}
+            className="gap-2 relative overflow-hidden group"
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <IconPlus className="size-4" />
+            New Backup
+          </Button>
+        )
       }
     >
       {isLoading ? (
@@ -131,6 +160,11 @@ function RouteComponent() {
             <BackupCard
               key={backup.uuid}
               backup={backup}
+              isCurrent={
+                !!currentHash &&
+                !!backup.content_hash &&
+                backup.content_hash === currentHash
+              }
               onDownload={() => handleDownload(backup)}
               onDelete={() => setDeleteTarget(backup)}
             />
@@ -216,22 +250,48 @@ function RouteComponent() {
 
 function BackupCard({
   backup,
+  isCurrent,
   onDownload,
   onDelete,
 }: {
   backup: BackupListDto;
+  isCurrent: boolean;
   onDownload: () => void;
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 p-4 sm:p-5 transition-all hover:border-border">
+    <div
+      className={`rounded-xl border p-4 sm:p-5 transition-all hover:border-border ${
+        isCurrent
+          ? "border-emerald-500/50 bg-gradient-to-br from-emerald-50/50 via-card to-emerald-50/20 dark:from-emerald-950/20 dark:to-emerald-950/5"
+          : "border-border/60 bg-gradient-to-br from-card via-card to-muted/20"
+      }`}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="shrink-0 size-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <IconArchive className="size-5 text-primary" />
+          <div
+            className={`shrink-0 size-10 rounded-lg flex items-center justify-center ${
+              isCurrent ? "bg-emerald-500/15" : "bg-primary/10"
+            }`}
+          >
+            {isCurrent ? (
+              <IconCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <IconArchive className="size-5 text-primary" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-medium truncate">{backup.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium truncate">{backup.name}</h3>
+              {isCurrent && (
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                >
+                  Current
+                </Badge>
+              )}
+            </div>
             {backup.description && (
               <p className="text-sm text-muted-foreground truncate">
                 {backup.description}

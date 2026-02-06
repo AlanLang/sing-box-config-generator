@@ -8,6 +8,7 @@ export interface BackupListDto {
   created_at: string;
   file_name: string;
   file_size: number;
+  content_hash?: string;
 }
 
 export const useBackupList = () => {
