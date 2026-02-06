@@ -9,7 +9,7 @@ export interface ConfigListDto {
   dns: DnsConfig;
   inbounds: string[];
   route: RouteConfig;
-  experimental?: string;
+  experimental: string;
 }
 
 export const useConfigList = () => {

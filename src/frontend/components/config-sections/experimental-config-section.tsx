@@ -5,12 +5,12 @@ import {
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { RadioGroup } from "@/components/ui/radio-group";
-import { IconCheck } from "@tabler/icons-react";
+import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { RadioCard } from "@/components/radio-card";
 
 interface ExperimentalConfigSectionProps {
-	value: string | undefined;
-	onChange: (value: string | undefined) => void;
+	value: string;
+	onChange: (value: string) => void;
 }
 
 export function ExperimentalConfigSection({
@@ -24,12 +24,14 @@ export function ExperimentalConfigSection({
 		<AccordionItem value="experimental">
 			<AccordionTrigger className="hover:no-underline">
 				<div className="flex items-center gap-3">
-					<IconCheck className="size-5 text-green-500" />
+					{value ? (
+						<IconCheck className="size-5 text-green-500" />
+					) : (
+						<IconAlertCircle className="size-5 text-destructive" />
+					)}
 					<span className="font-medium">
 						Experimental Configuration
-						<span className="text-muted-foreground text-sm font-normal ml-2">
-							(Optional)
-						</span>
+						<span className="text-destructive ml-1">*</span>
 					</span>
 					{value && experimentals && (
 						<span className="text-sm text-muted-foreground ml-2">
@@ -41,8 +43,8 @@ export function ExperimentalConfigSection({
 			<AccordionContent>
 				<div className="pt-4 space-y-4">
 					<p className="text-sm text-muted-foreground">
-						Select an experimental configuration (optional). Leave unselected
-						if you don't need experimental features.
+						Select an experimental configuration from your existing
+						configurations.
 					</p>
 
 					{experimentalsLoading ? (
@@ -52,25 +54,16 @@ export function ExperimentalConfigSection({
 					) : !experimentals || experimentals.length === 0 ? (
 						<div className="p-4 border border-dashed rounded-lg text-center">
 							<p className="text-sm text-muted-foreground">
-								No experimental configurations found. You can proceed without
-								experimental config.
+								No experimental configurations found. Please create an
+								experimental configuration first.
 							</p>
 						</div>
 					) : (
 						<RadioGroup
-							value={value || "none"}
-							onValueChange={(newValue) =>
-								onChange(newValue === "none" ? undefined : newValue)
-							}
+							value={value || undefined}
+							onValueChange={onChange}
 						>
 							<div className="grid grid-cols-1 gap-2">
-								<RadioCard
-									id="experimental-none"
-									value="none"
-									title="No experimental config"
-									description="Skip experimental features"
-									selected={!value || value === "none"}
-								/>
 								{experimentals.map((experimentalItem) => (
 									<RadioCard
 										key={experimentalItem.uuid}

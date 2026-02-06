@@ -44,9 +44,10 @@ pub async fn generate_config(
   singbox_config.insert("outbounds".to_string(), outbounds);
   singbox_config.insert("route".to_string(), route_value);
 
-  if let Some(exp) = &config.experimental {
-    singbox_config.insert("experimental".to_string(), resolve_experimental(exp).await?);
-  }
+  singbox_config.insert(
+    "experimental".to_string(),
+    resolve_experimental(&config.experimental).await?,
+  );
 
   // 4. Return as downloadable JSON
   let safe_name = sanitize_filename(&config.name);

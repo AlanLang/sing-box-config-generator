@@ -43,7 +43,7 @@ pub struct ConfigCreateDto {
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
-  pub experimental: Option<String>,
+  pub experimental: String,
 }
 
 pub async fn create_config(
@@ -75,7 +75,7 @@ pub struct ConfigListDto {
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
-  pub experimental: Option<String>,
+  pub experimental: String,
 }
 
 pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
@@ -116,7 +116,7 @@ pub struct ConfigUpdateDto {
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
-  pub experimental: Option<String>,
+  pub experimental: String,
 }
 
 pub async fn update_config(

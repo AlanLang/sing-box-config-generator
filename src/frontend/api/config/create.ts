@@ -32,7 +32,7 @@ export interface ConfigCreateDto {
   dns: DnsConfig;
   inbounds: string[];
   route: RouteConfig;
-  experimental?: string;
+  experimental: string;
 }
 
 export async function createConfig(data: ConfigCreateDto) {

@@ -75,9 +75,9 @@ export interface SingBoxConfig {
 		default_domain_resolver?: string;
 	};
 	/**
-	 * experimental 配置的 uuid（可选）
+	 * experimental 配置的 uuid
 	 */
-	experimental?: string;
+	experimental: string;
 	// TODO: 添加其他模块的字段
 	// outbounds: string[];
 }
@@ -131,9 +131,9 @@ export function ConfigForm({
 		initialData?.route?.default_domain_resolver,
 	);
 
-	// Experimental 配置状态（可选）
-	const [experimental, setExperimental] = useState<string | undefined>(
-		initialData?.experimental,
+	// Experimental 配置状态
+	const [experimental, setExperimental] = useState<string>(
+		initialData?.experimental || "",
 	);
 
 	// 当 initialData 变化时，更新所有状态
@@ -149,7 +149,7 @@ export function ConfigForm({
 		setRouteRules(initialData?.route?.rules || []);
 		setRouteFinal(initialData?.route?.final || "");
 		setRouteDefaultDomainResolver(initialData?.route?.default_domain_resolver);
-		setExperimental(initialData?.experimental);
+		setExperimental(initialData?.experimental || "");
 	}, [initialData]);
 
 	// 当选中的 DNS server 变化时，清除不在列表中的 default domain resolver
@@ -185,7 +185,7 @@ export function ConfigForm({
 		(dnsServers.length <= 1 || (!!routeDefaultDomainResolver && dnsServers.includes(routeDefaultDomainResolver)));
 
 	const isValid =
-		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid;
+		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid && !!experimental;
 
 	const handleSave = () => {
 		if (!isValid) return;
