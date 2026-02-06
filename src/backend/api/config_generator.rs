@@ -192,6 +192,9 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
   dns_config.insert("servers".to_string(), Value::Array(servers));
 
   // Resolve DNS rules if provided and non-empty
+  let mut collected_dns_rule_sets: Vec<Value> = Vec::new();
+  let mut collected_dns_rule_set_tags: HashSet<String> = HashSet::new();
+
   if let Some(rules) = &dns.rules {
     if !rules.is_empty() {
       let mut dns_rules = Vec::new();
@@ -199,15 +202,20 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
         let mut rule_obj = Map::new();
 
         // Resolve rulesets
-        let mut rule_sets = Vec::new();
+        let mut rule_set_tags = Vec::new();
         for ruleset_uuid in &rule.rule_set {
-          let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
-          // Extract "tag" field from ruleset
+          let ruleset = load_module_json_with_tag("rulesets", ruleset_uuid).await?;
           if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
-            rule_sets.push(Value::String(tag.to_string()));
+            rule_set_tags.push(Value::String(tag.to_string()));
+
+            // Collect rule_set definition (deduplicated)
+            if !collected_dns_rule_set_tags.contains(tag) {
+              collected_dns_rule_set_tags.insert(tag.to_string());
+              collected_dns_rule_sets.push(ruleset);
+            }
           }
         }
-        rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
+        rule_obj.insert("rule_set".to_string(), Value::Array(rule_set_tags));
 
         // Resolve server tag
         let server = load_module_json("dns-server", &rule.server).await?;
@@ -219,6 +227,14 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
       }
       dns_config.insert("rules".to_string(), Value::Array(dns_rules));
     }
+  }
+
+  // Add rule_set definitions for DNS
+  if !collected_dns_rule_sets.is_empty() {
+    dns_config.insert(
+      "rule_set".to_string(),
+      Value::Array(collected_dns_rule_sets),
+    );
   }
 
   // Resolve final server tag
@@ -1017,6 +1033,9 @@ async fn resolve_route(
   }
 
   // Resolve route rules if provided and non-empty
+  let mut collected_rule_sets: Vec<Value> = Vec::new();
+  let mut collected_rule_set_tags: HashSet<String> = HashSet::new();
+
   if let Some(rules) = &route.rules {
     if !rules.is_empty() {
       let mut route_rules = Vec::new();
@@ -1024,15 +1043,20 @@ async fn resolve_route(
         let mut rule_obj = Map::new();
 
         // Resolve rulesets
-        let mut rule_sets = Vec::new();
+        let mut rule_set_tags = Vec::new();
         for ruleset_uuid in &rule.rulesets {
-          let ruleset = load_module_json("rulesets", ruleset_uuid).await?;
-          // Extract "tag" field from ruleset
+          let ruleset = load_module_json_with_tag("rulesets", ruleset_uuid).await?;
           if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
-            rule_sets.push(Value::String(tag.to_string()));
+            rule_set_tags.push(Value::String(tag.to_string()));
+
+            // Collect rule_set definition (deduplicated)
+            if !collected_rule_set_tags.contains(tag) {
+              collected_rule_set_tags.insert(tag.to_string());
+              collected_rule_sets.push(ruleset);
+            }
           }
         }
-        rule_obj.insert("rule_set".to_string(), Value::Array(rule_sets));
+        rule_obj.insert("rule_set".to_string(), Value::Array(rule_set_tags));
 
         // Resolve outbound tag
         let outbound_tag = if is_outbound_group(&rule.outbound).await? {
@@ -1064,6 +1088,11 @@ async fn resolve_route(
         route_config.insert("rules".to_string(), Value::Array(route_rules));
       }
     }
+  }
+
+  // Add rule_set definitions
+  if !collected_rule_sets.is_empty() {
+    route_config.insert("rule_set".to_string(), Value::Array(collected_rule_sets));
   }
 
   // Set final outbound tag (already resolved in resolve_outbounds_and_route)
