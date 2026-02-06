@@ -2,8 +2,8 @@ import { useDnsConfigList } from "@/api/dns-config/list";
 import { useDnsList } from "@/api/dns/list";
 import { useRulesetList } from "@/api/ruleset/list";
 import type { SingBoxConfig } from "@/components/config-form";
-import { RadioCard } from "@/components/radio-card";
 import { SelectableCard } from "@/components/selectable-card";
+import { SelectorDrawer } from "@/components/selector-drawer";
 import {
 	AccordionContent,
 	AccordionItem,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
 	IconAlertCircle,
 	IconArrowDown,
@@ -102,6 +101,10 @@ export function DnsConfigSection({
 		onRulesChange(newRules);
 	};
 
+	// 已选中的 server 列表，用于 rules 和 final
+	const selectedServerItems =
+		dnsServerList?.filter((s) => servers.includes(s.uuid)) || [];
+
 	return (
 		<AccordionItem value="dns">
 			<AccordionTrigger className="hover:no-underline">
@@ -151,32 +154,21 @@ export function DnsConfigSection({
 								</p>
 							</div>
 						) : (
-							<RadioGroup
-								value={config || "none"}
-								onValueChange={(value) =>
-									onConfigChange(value === "none" ? undefined : value)
-								}
-							>
-								<div className="grid grid-cols-1 gap-2">
-									<RadioCard
-										id="dns-config-none"
-										value="none"
-										title="No base config"
-										description="Use empty base configuration"
-										selected={!config || config === "none"}
-									/>
-									{dnsConfigs.map((configItem) => (
-										<RadioCard
-											key={configItem.uuid}
-											id={`dns-config-${configItem.uuid}`}
-											value={configItem.uuid}
-											title={configItem.name}
-											description={configItem.json}
-											selected={config === configItem.uuid}
-										/>
-									))}
-								</div>
-							</RadioGroup>
+							<SelectorDrawer
+								drawerTitle="Select Base DNS Configuration"
+								placeholder="Select a base configuration"
+								items={dnsConfigs.map((c) => ({
+									value: c.uuid,
+									title: c.name,
+									description: c.json,
+								}))}
+								value={config || ""}
+								onSelect={(val) => onConfigChange(val || undefined)}
+								noneOption={{
+									title: "No base config",
+									description: "Use empty base configuration",
+								}}
+							/>
 						)}
 					</div>
 
@@ -347,38 +339,19 @@ export function DnsConfigSection({
 													Target Server{" "}
 													<span className="text-destructive">*</span>
 												</Label>
-												<RadioGroup
+												<SelectorDrawer
+													drawerTitle={`Rule #${index + 1} - Target Server`}
+													placeholder="Select a target server"
+													items={selectedServerItems.map((s) => ({
+														value: s.uuid,
+														title: s.name,
+														description: s.json,
+													}))}
 													value={rule.server}
-													onValueChange={(value) =>
-														handleUpdateRule(index, "server", value)
+													onSelect={(val) =>
+														handleUpdateRule(index, "server", val)
 													}
-												>
-													<div className="space-y-1">
-														{servers.map((serverUuid) => {
-															const server = dnsServerList?.find(
-																(s) => s.uuid === serverUuid,
-															);
-															if (!server) return null;
-															return (
-																<div
-																	key={server.uuid}
-																	className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded"
-																>
-																	<RadioGroupItem
-																		value={server.uuid}
-																		id={`rule-${index}-server-${server.uuid}`}
-																	/>
-																	<Label
-																		htmlFor={`rule-${index}-server-${server.uuid}`}
-																		className="flex-1 cursor-pointer text-sm"
-																	>
-																		{server.name}
-																	</Label>
-																</div>
-															);
-														})}
-													</div>
-												</RadioGroup>
+												/>
 											</div>
 										</div>
 									);
@@ -415,26 +388,17 @@ export function DnsConfigSection({
 								</p>
 							</div>
 						) : (
-							<RadioGroup value={final || undefined} onValueChange={onFinalChange}>
-								<div className="grid grid-cols-1 gap-2">
-									{servers.map((serverUuid) => {
-										const server = dnsServerList?.find(
-											(s) => s.uuid === serverUuid,
-										);
-										if (!server) return null;
-										return (
-											<RadioCard
-												key={server.uuid}
-												id={`final-server-${server.uuid}`}
-												value={server.uuid}
-												title={server.name}
-												description={server.json}
-												selected={final === server.uuid}
-											/>
-										);
-									})}
-								</div>
-							</RadioGroup>
+							<SelectorDrawer
+								drawerTitle="Select Final DNS Server"
+								placeholder="Select a final DNS server"
+								items={selectedServerItems.map((s) => ({
+									value: s.uuid,
+									title: s.name,
+									description: s.json,
+								}))}
+								value={final}
+								onSelect={onFinalChange}
+							/>
 						)}
 						{!final && servers.length > 0 && (
 							<p className="text-sm text-destructive">

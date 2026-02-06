@@ -1,19 +1,14 @@
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import {
+	SelectorDrawer,
+	type SelectorDrawerItem,
+} from "@/components/selector-drawer";
+import {
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { useMemo } from "react";
 
@@ -35,20 +30,15 @@ export function OtherConfigSection({
 		return outboundOptions.filter((option) => option.source !== "filter");
 	}, [outboundOptions]);
 
-	// 按 source 分组
-	const groupedOutboundOptions = useMemo(() => {
-		const groups: Record<string, typeof filteredOutboundOptions> = {
-			outbound_group: [],
-			outbound: [],
-		};
-
-		for (const option of filteredOutboundOptions) {
-			if (groups[option.source]) {
-				groups[option.source].push(option);
-			}
-		}
-
-		return groups;
+	// 构建 SelectorDrawer items（带分组）
+	const outboundDrawerItems: SelectorDrawerItem[] = useMemo(() => {
+		return filteredOutboundOptions.map((o) => ({
+			value: o.uuid,
+			title: o.label,
+			description: o.type ? `(${o.type})` : undefined,
+			group:
+				o.source === "outbound_group" ? "Outbound Groups" : "Outbounds",
+		}));
 	}, [filteredOutboundOptions]);
 
 	const isValid = !!downloadDetour;
@@ -113,69 +103,13 @@ export function OtherConfigSection({
 								</p>
 							</div>
 						) : (
-							<Select
-								value={downloadDetour || undefined}
-								onValueChange={onDownloadDetourChange}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select an outbound for download detour">
-										{downloadDetour && (
-											<span>
-												{
-													filteredOutboundOptions.find(
-														(o) => o.uuid === downloadDetour,
-													)?.label
-												}
-												<span className="text-xs text-muted-foreground ml-2">
-													(
-													{
-														filteredOutboundOptions.find(
-															(o) => o.uuid === downloadDetour,
-														)?.source
-													}
-													{filteredOutboundOptions.find(
-														(o) => o.uuid === downloadDetour,
-													)?.type &&
-														` - ${filteredOutboundOptions.find((o) => o.uuid === downloadDetour)?.type}`}
-													)
-												</span>
-											</span>
-										)}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									{groupedOutboundOptions.outbound_group.length > 0 && (
-										<SelectGroup>
-											<SelectLabel>Outbound Groups</SelectLabel>
-											{groupedOutboundOptions.outbound_group.map((outbound) => (
-												<SelectItem key={outbound.uuid} value={outbound.uuid}>
-													<span className="font-medium">{outbound.label}</span>
-													{outbound.type && (
-														<span className="text-xs text-muted-foreground ml-2">
-															({outbound.type})
-														</span>
-													)}
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-									{groupedOutboundOptions.outbound.length > 0 && (
-										<SelectGroup>
-											<SelectLabel>Outbounds</SelectLabel>
-											{groupedOutboundOptions.outbound.map((outbound) => (
-												<SelectItem key={outbound.uuid} value={outbound.uuid}>
-													<span className="font-medium">{outbound.label}</span>
-													{outbound.type && (
-														<span className="text-xs text-muted-foreground ml-2">
-															({outbound.type})
-														</span>
-													)}
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-								</SelectContent>
-							</Select>
+							<SelectorDrawer
+								drawerTitle="Select Download Detour"
+								placeholder="Select an outbound for download detour"
+								items={outboundDrawerItems}
+								value={downloadDetour}
+								onSelect={onDownloadDetourChange}
+							/>
 						)}
 						{!downloadDetour && filteredOutboundOptions.length > 0 && (
 							<p className="text-sm text-destructive">

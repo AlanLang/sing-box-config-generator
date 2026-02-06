@@ -3,8 +3,11 @@ import { useRulesetOptions } from "@/api/ruleset/options";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import { useDnsList } from "@/api/dns/list";
 import type { SingBoxConfig } from "@/components/config-form";
-import { RadioCard } from "@/components/radio-card";
 import { SelectableCard } from "@/components/selectable-card";
+import {
+	SelectorDrawer,
+	type SelectorDrawerItem,
+} from "@/components/selector-drawer";
 import {
 	AccordionContent,
 	AccordionItem,
@@ -12,16 +15,6 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup } from "@/components/ui/radio-group";
-import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	IconAlertCircle,
 	IconArrowDown,
@@ -76,25 +69,18 @@ export function RouteConfigSection({
 	// 过滤掉 filter 类型，只保留 outbound 和 outbound_group
 	const filteredOutboundOptions = useMemo(() => {
 		if (!outboundOptions) return [];
-		return outboundOptions.filter(
-			(option) => option.source !== "filter",
-		);
+		return outboundOptions.filter((option) => option.source !== "filter");
 	}, [outboundOptions]);
 
-	// 按 source 分组
-	const groupedOutboundOptions = useMemo(() => {
-		const groups: Record<string, typeof filteredOutboundOptions> = {
-			outbound_group: [],
-			outbound: [],
-		};
-
-		for (const option of filteredOutboundOptions) {
-			if (groups[option.source]) {
-				groups[option.source].push(option);
-			}
-		}
-
-		return groups;
+	// 构建 outbound SelectorDrawer items（带分组）
+	const outboundDrawerItems: SelectorDrawerItem[] = useMemo(() => {
+		return filteredOutboundOptions.map((o) => ({
+			value: o.uuid,
+			title: o.label,
+			description: o.type ? `(${o.type})` : undefined,
+			group:
+				o.source === "outbound_group" ? "Outbound Groups" : "Outbounds",
+		}));
 	}, [filteredOutboundOptions]);
 
 	const handleMoveRule = (index: number, direction: "up" | "down") => {
@@ -182,32 +168,21 @@ export function RouteConfigSection({
 								</p>
 							</div>
 						) : (
-							<RadioGroup
-								value={config || "none"}
-								onValueChange={(value) =>
-									onConfigChange(value === "none" ? undefined : value)
-								}
-							>
-								<div className="grid grid-cols-1 gap-2">
-									<RadioCard
-										id="route-config-none"
-										value="none"
-										title="No base config"
-										description="Use empty base configuration"
-										selected={!config || config === "none"}
-									/>
-									{routes.map((configItem) => (
-										<RadioCard
-											key={configItem.uuid}
-											id={`route-config-${configItem.uuid}`}
-											value={configItem.uuid}
-											title={configItem.name}
-											description={configItem.json}
-											selected={config === configItem.uuid}
-										/>
-									))}
-								</div>
-							</RadioGroup>
+							<SelectorDrawer
+								drawerTitle="Select Base Route Configuration"
+								placeholder="Select a base configuration"
+								items={routes.map((r) => ({
+									value: r.uuid,
+									title: r.name,
+									description: r.json,
+								}))}
+								value={config || ""}
+								onSelect={(val) => onConfigChange(val || undefined)}
+								noneOption={{
+									title: "No base config",
+									description: "Use empty base configuration",
+								}}
+							/>
 						)}
 					</div>
 
@@ -329,83 +304,15 @@ export function RouteConfigSection({
 													No outbounds available
 												</div>
 											) : (
-												<Select
+												<SelectorDrawer
+													drawerTitle={`Rule #${index + 1} - Target Outbound`}
+													placeholder="Select an outbound"
+													items={outboundDrawerItems}
 													value={rule.outbound}
-													onValueChange={(value) =>
-														handleUpdateRule(index, "outbound", value)
+													onSelect={(val) =>
+														handleUpdateRule(index, "outbound", val)
 													}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue placeholder="Select an outbound">
-															{rule.outbound && (
-																<span>
-																	{
-																		filteredOutboundOptions.find(
-																			(o) => o.uuid === rule.outbound,
-																		)?.label
-																	}
-																	<span className="text-xs text-muted-foreground ml-2">
-																		(
-																		{
-																			filteredOutboundOptions.find(
-																				(o) => o.uuid === rule.outbound,
-																			)?.source
-																		}
-																		{filteredOutboundOptions.find(
-																			(o) => o.uuid === rule.outbound,
-																		)?.type &&
-																			` - ${filteredOutboundOptions.find((o) => o.uuid === rule.outbound)?.type}`}
-																		)
-																	</span>
-																</span>
-															)}
-														</SelectValue>
-													</SelectTrigger>
-													<SelectContent>
-														{groupedOutboundOptions.outbound_group.length > 0 && (
-															<SelectGroup>
-																<SelectLabel>Outbound Groups</SelectLabel>
-																{groupedOutboundOptions.outbound_group.map(
-																	(outbound) => (
-																		<SelectItem
-																			key={outbound.uuid}
-																			value={outbound.uuid}
-																		>
-																			<span className="font-medium">
-																				{outbound.label}
-																			</span>
-																			{outbound.type && (
-																				<span className="text-xs text-muted-foreground ml-2">
-																					({outbound.type})
-																				</span>
-																			)}
-																		</SelectItem>
-																	),
-																)}
-															</SelectGroup>
-														)}
-														{groupedOutboundOptions.outbound.length > 0 && (
-															<SelectGroup>
-																<SelectLabel>Outbounds</SelectLabel>
-																{groupedOutboundOptions.outbound.map((outbound) => (
-																	<SelectItem
-																		key={outbound.uuid}
-																		value={outbound.uuid}
-																	>
-																		<span className="font-medium">
-																			{outbound.label}
-																		</span>
-																		{outbound.type && (
-																			<span className="text-xs text-muted-foreground ml-2">
-																				({outbound.type})
-																			</span>
-																		)}
-																	</SelectItem>
-																))}
-															</SelectGroup>
-														)}
-													</SelectContent>
-												</Select>
+												/>
 											)}
 											{!rule.outbound && (
 												<p className="text-sm text-destructive">
@@ -452,63 +359,13 @@ export function RouteConfigSection({
 								</p>
 							</div>
 						) : (
-							<Select value={final || undefined} onValueChange={onFinalChange}>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select a final outbound">
-										{final && (
-											<span>
-												{
-													filteredOutboundOptions.find((o) => o.uuid === final)
-														?.label
-												}
-												<span className="text-xs text-muted-foreground ml-2">
-													(
-													{
-														filteredOutboundOptions.find((o) => o.uuid === final)
-															?.source
-													}
-													{filteredOutboundOptions.find((o) => o.uuid === final)
-														?.type &&
-														` - ${filteredOutboundOptions.find((o) => o.uuid === final)?.type}`}
-													)
-												</span>
-											</span>
-										)}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									{groupedOutboundOptions.outbound_group.length > 0 && (
-										<SelectGroup>
-											<SelectLabel>Outbound Groups</SelectLabel>
-											{groupedOutboundOptions.outbound_group.map((outbound) => (
-												<SelectItem key={outbound.uuid} value={outbound.uuid}>
-													<span className="font-medium">{outbound.label}</span>
-													{outbound.type && (
-														<span className="text-xs text-muted-foreground ml-2">
-															({outbound.type})
-														</span>
-													)}
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-									{groupedOutboundOptions.outbound.length > 0 && (
-										<SelectGroup>
-											<SelectLabel>Outbounds</SelectLabel>
-											{groupedOutboundOptions.outbound.map((outbound) => (
-												<SelectItem key={outbound.uuid} value={outbound.uuid}>
-													<span className="font-medium">{outbound.label}</span>
-													{outbound.type && (
-														<span className="text-xs text-muted-foreground ml-2">
-															({outbound.type})
-														</span>
-													)}
-												</SelectItem>
-											))}
-										</SelectGroup>
-									)}
-								</SelectContent>
-							</Select>
+							<SelectorDrawer
+								drawerTitle="Select Final Outbound"
+								placeholder="Select a final outbound"
+								items={outboundDrawerItems}
+								value={final}
+								onSelect={onFinalChange}
+							/>
 						)}
 						{!final && filteredOutboundOptions.length > 0 && (
 							<p className="text-sm text-destructive">
@@ -549,34 +406,24 @@ export function RouteConfigSection({
 								</p>
 							</div>
 						) : (
-							<Select
-								value={defaultDomainResolver || "none"}
-								onValueChange={(value) => onDefaultDomainResolverChange(value === "none" ? undefined : value)}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select a DNS server">
-										{defaultDomainResolver ? (
-											<span>
-												{selectedDnsServerItems.find((s) => s.uuid === defaultDomainResolver)?.name}
-											</span>
-										) : (
-											<span className="text-muted-foreground">None</span>
-										)}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									{!isMultipleDnsServers && (
-										<SelectItem value="none">
-											<span className="text-muted-foreground">None</span>
-										</SelectItem>
-									)}
-									{selectedDnsServerItems.map((server) => (
-										<SelectItem key={server.uuid} value={server.uuid}>
-											<span className="font-medium">{server.name}</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							<SelectorDrawer
+								drawerTitle="Select Default Domain Resolver"
+								placeholder="Select a DNS server"
+								items={selectedDnsServerItems.map((s) => ({
+									value: s.uuid,
+									title: s.name,
+									description: s.json,
+								}))}
+								value={defaultDomainResolver || ""}
+								onSelect={(val) =>
+									onDefaultDomainResolverChange(val || undefined)
+								}
+								noneOption={
+									isMultipleDnsServers
+										? undefined
+										: { title: "None", description: "No default domain resolver" }
+								}
+							/>
 						)}
 						{isMultipleDnsServers && !defaultDomainResolver && (
 							<p className="text-sm text-destructive">
