@@ -12,6 +12,9 @@ export function useOutboundGroupDelete() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["outbound-group", "list"] });
+      queryClient.invalidateQueries({
+        queryKey: ["outbound-group", "options"],
+      });
     },
   });
 }

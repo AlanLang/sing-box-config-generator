@@ -13,6 +13,7 @@ import { useState } from "react";
 import { DnsConfigSection } from "./config-sections/dns-config-section";
 import { LogConfigSection } from "./config-sections/log-config-section";
 import { InboundsConfigSection } from "./config-sections/inbounds-config-section";
+import { RouteConfigSection } from "./config-sections/route-config-section";
 
 export interface SingBoxConfig {
 	name: string;
@@ -45,9 +46,31 @@ export interface SingBoxConfig {
 	 * inbound 的 uuid 列表
 	 */
 	inbounds: string[];
+	route: {
+		/**
+		 * route 基础配置的 uuid（可选）
+		 */
+		baseConfig?: string;
+		/**
+		 * route rules
+		 */
+		rules?: {
+			/**
+			 * ruleset 的 uuid 列表
+			 */
+			rulesets: string[];
+			/**
+			 * outbound 的 uuid（可以是 outbound 或 outbound_group）
+			 */
+			outbound: string;
+		}[];
+		/**
+		 * final outbound 的 uuid
+		 */
+		final: string;
+	};
 	// TODO: 添加其他模块的字段
 	// outbounds: string[];
-	// route?: string;
 	// experimental?: string;
 }
 
@@ -86,6 +109,17 @@ export function ConfigForm({
 		initialData?.inbounds || [],
 	);
 
+	// Route 配置状态
+	const [routeBaseConfig, setRouteBaseConfig] = useState<string | undefined>(
+		initialData?.route?.baseConfig,
+	);
+	const [routeRules, setRouteRules] = useState<SingBoxConfig["route"]["rules"]>(
+		initialData?.route?.rules || [],
+	);
+	const [routeFinal, setRouteFinal] = useState<string>(
+		initialData?.route?.final || "",
+	);
+
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
@@ -99,8 +133,15 @@ export function ConfigForm({
 					dnsServers.includes(rule.server),
 			));
 
+	const isRouteValid =
+		!!routeFinal &&
+		(!routeRules ||
+			routeRules.every(
+				(rule) => rule.rulesets.length > 0 && rule.outbound,
+			));
+
 	const isValid =
-		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0;
+		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid;
 
 	const handleSave = () => {
 		if (!isValid) return;
@@ -115,6 +156,11 @@ export function ConfigForm({
 				final: dnsFinal,
 			},
 			inbounds,
+			route: {
+				baseConfig: routeBaseConfig,
+				rules: routeRules,
+				final: routeFinal,
+			},
 		});
 	};
 
@@ -229,6 +275,16 @@ export function ConfigForm({
 											<InboundsConfigSection
 												value={inbounds}
 												onChange={setInbounds}
+											/>
+
+											<RouteConfigSection
+												baseConfig={routeBaseConfig}
+												onBaseConfigChange={setRouteBaseConfig}
+												rules={routeRules}
+												onRulesChange={setRouteRules}
+												final={routeFinal}
+												onFinalChange={setRouteFinal}
+												isValid={isRouteValid}
 											/>
 
 											{/* TODO: 其他模块 */}

@@ -12,6 +12,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import type { GroupType } from "@/api/outbound-group/types";
+import { useMemo } from "react";
 
 interface OutboundGroupEditorProps {
   isOpen: boolean;
@@ -72,6 +73,12 @@ export function OutboundGroupEditor({
 }: OutboundGroupEditorProps) {
   const { data: options } = useOutboundGroupOptions();
 
+  // Filter out current item from options to prevent self-reference
+  const filteredOptions = useMemo(() => {
+    if (!options) return [];
+    return options.filter((option) => option.uuid !== uuid);
+  }, [options, uuid]);
+
   return (
     <FormEditor
       isOpen={isOpen}
@@ -117,7 +124,7 @@ export function OutboundGroupEditor({
           <SortableMultiSelect
             selected={outbounds}
             onSelectedChange={onOutboundsChange}
-            options={options || []}
+            options={filteredOptions}
             placeholder="No outbounds selected. Click 'Add Outbound' to get started."
           />
           <p className="text-sm text-muted-foreground">

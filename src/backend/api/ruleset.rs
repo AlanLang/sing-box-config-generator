@@ -121,3 +121,36 @@ pub async fn delete_ruleset(
 
   Ok((StatusCode::OK, "Ruleset deleted successfully").into_response())
 }
+
+#[derive(Debug, Serialize)]
+pub struct RulesetOptionDto {
+  pub uuid: String,
+  pub value: String,
+  pub label: String,
+}
+
+pub async fn get_ruleset_options() -> Result<impl IntoResponse, AppError> {
+  let dir_path = Path::new("./data/rulesets");
+  if !dir_path.exists() {
+    return Ok(Json(Vec::<RulesetOptionDto>::new()));
+  }
+
+  let mut entries = fs::read_dir(dir_path).await?;
+  let mut options = Vec::new();
+
+  while let Some(entry) = entries.next_entry().await? {
+    let path = entry.path();
+    if path.extension().and_then(|s| s.to_str()) == Some("json") {
+      let content = fs::read_to_string(&path).await?;
+      if let Ok(ruleset_dto) = serde_json::from_str::<RulesetCreateDto>(&content) {
+        options.push(RulesetOptionDto {
+          uuid: ruleset_dto.uuid.clone(),
+          value: ruleset_dto.name.clone(),
+          label: ruleset_dto.name,
+        });
+      }
+    }
+  }
+
+  Ok(Json(options))
+}

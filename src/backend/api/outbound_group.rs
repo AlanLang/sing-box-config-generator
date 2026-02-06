@@ -207,11 +207,24 @@ pub async fn get_available_options() -> impl IntoResponse {
               .unwrap_or("")
               .to_string();
 
+            // Get name from wrapper (fallback)
+            let wrapper_name = outbound_wrapper
+              .get("name")
+              .and_then(|n| n.as_str())
+              .unwrap_or("");
+
             // Outbound data is stored with a "json" field containing the actual config as a string
             if let Some(json_str) = outbound_wrapper.get("json").and_then(|j| j.as_str()) {
               // Parse the inner JSON string
               if let Ok(outbound_config) = serde_json::from_str::<serde_json::Value>(json_str) {
-                if let Some(tag) = outbound_config.get("tag").and_then(|t| t.as_str()) {
+                // Try to get tag from config, fallback to wrapper name
+                let label = outbound_config
+                  .get("tag")
+                  .and_then(|t| t.as_str())
+                  .unwrap_or(wrapper_name);
+
+                // Only add if we have a valid label
+                if !label.is_empty() {
                   let outbound_type = outbound_config
                     .get("type")
                     .and_then(|t| t.as_str())
@@ -219,8 +232,8 @@ pub async fn get_available_options() -> impl IntoResponse {
 
                   options.push(OutboundOptionDto {
                     uuid,
-                    value: tag.to_string(),
-                    label: tag.to_string(),
+                    value: label.to_string(),
+                    label: label.to_string(),
                     source: "outbound".to_string(),
                     option_type: outbound_type,
                   });

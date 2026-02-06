@@ -17,6 +17,7 @@ import { SortableGrid } from "@/components/sortable-grid";
 import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
 import { createFileRoute } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/subscribe/outbound-group/")({
 });
 
 function RouteComponent() {
+  const queryClient = useQueryClient();
   const { data: groups, refetch, isLoading } = useOutboundGroupList();
   const { data: options } = useOutboundGroupOptions();
   const updateMutation = useOutboundGroupUpdate();
@@ -119,6 +121,10 @@ function RouteComponent() {
       if (isCreating) {
         await createOutboundGroup(selectedUuid, validation.data);
         toast.success("Outbound group created successfully");
+        // Invalidate options cache so new group appears in selectors
+        queryClient.invalidateQueries({
+          queryKey: ["outbound-group", "options"],
+        });
       } else {
         await updateMutation.mutateAsync({
           uuid: selectedUuid,
