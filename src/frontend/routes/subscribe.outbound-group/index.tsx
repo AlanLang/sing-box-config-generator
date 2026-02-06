@@ -168,11 +168,8 @@ function RouteComponent() {
         <EmptyState
           title="No outbound groups"
           description="Create your first outbound group to get started"
-          action={
-            <Button onClick={handleNew} size="lg">
-              New Group
-            </Button>
-          }
+          actionLabel="New Group"
+          onAction={handleNew}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

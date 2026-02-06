@@ -10,7 +10,7 @@ export function formatTimeAgo(date: string | number | Date | null): string {
   const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
   // Invalid date
-  if (isNaN(diffInSeconds)) return "Invalid date";
+  if (Number.isNaN(diffInSeconds)) return "Invalid date";
 
   // Future date
   if (diffInSeconds < 0) return "Just now";
@@ -66,7 +66,7 @@ export function formatDateTime(date: string | number | Date | null): string {
   if (!date) return "Never";
 
   const d = new Date(date);
-  if (isNaN(d.getTime())) return "Invalid date";
+  if (Number.isNaN(d.getTime())) return "Invalid date";
 
   return d.toLocaleString("en-US", {
     month: "short",

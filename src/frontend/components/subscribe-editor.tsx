@@ -57,7 +57,7 @@ export function SubscribeEditor({
   onSubscriptionUrlChange,
   websiteUrl,
   onWebsiteUrlChange,
-  content,
+  content: _content,
   lastUpdated,
   uuid,
   onClose,

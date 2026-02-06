@@ -89,7 +89,7 @@ export function ConfigForm({
 	// 检查表单是否有效（所有必填项已填写）
 	const isDnsValid =
 		dnsServers.length > 0 &&
-		dnsFinal &&
+		!!dnsFinal &&
 		dnsServers.includes(dnsFinal) &&
 		(!dnsRules ||
 			dnsRules.every(

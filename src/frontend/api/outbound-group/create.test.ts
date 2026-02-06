@@ -12,7 +12,6 @@ describe("outboundGroupCreateSchema", () => {
           "fc4a8459-d638-4fbd-bb50-bcb7d54bb499", // UUID
           "b2d22d81-8079-4c35-acff-311485eecb06", // UUID
         ],
-        default: "fc4a8459-d638-4fbd-bb50-bcb7d54bb499", // UUID
         interrupt_exist_connections: false,
       };
 
@@ -20,7 +19,7 @@ describe("outboundGroupCreateSchema", () => {
 
       console.log("Validation result:", result);
       if (!result.success) {
-        console.log("Validation errors:", result.error.errors);
+        console.log("Validation errors:", result.error.issues);
       }
 
       expect(result.success).toBe(true);
@@ -84,7 +83,7 @@ describe("outboundGroupCreateSchema", () => {
 
       console.log("Undefined fields result:", result);
       if (!result.success) {
-        console.log("Errors:", result.error.errors);
+        console.log("Errors:", result.error.issues);
       }
 
       expect(result.success).toBe(true);
@@ -111,7 +110,7 @@ describe("outboundGroupCreateSchema", () => {
 
       console.log("URLTest validation result:", result);
       if (!result.success) {
-        console.log("Validation errors:", result.error.errors);
+        console.log("Validation errors:", result.error.issues);
       }
 
       expect(result.success).toBe(true);
@@ -156,7 +155,7 @@ describe("outboundGroupCreateSchema", () => {
 
       console.log("URLTest with undefined fields:", result);
       if (!result.success) {
-        console.log("Errors:", result.error.errors);
+        console.log("Errors:", result.error.issues);
       }
 
       expect(result.success).toBe(true);

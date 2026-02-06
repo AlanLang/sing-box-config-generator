@@ -188,7 +188,7 @@ function RouteComponent() {
                     type: filter.filter_type,
                     pattern:
                       filter.pattern.length > 50
-                        ? filter.pattern.substring(0, 50) + "..."
+                        ? `${filter.pattern.substring(0, 50)}...`
                         : filter.pattern,
                   },
                   null,
