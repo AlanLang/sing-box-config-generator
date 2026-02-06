@@ -54,18 +54,24 @@ export interface SingBoxConfig {
 		 */
 		config?: string;
 		/**
-		 * route rules
+		 * route rules - 支持 Ruleset 和 Rule 两种类型
 		 */
-		rules?: {
-			/**
-			 * ruleset 的 uuid 列表
-			 */
-			rulesets: string[];
-			/**
-			 * outbound 的 uuid（可以是 outbound 或 outbound_group）
-			 */
-			outbound: string;
-		}[];
+		rules?: (
+			| {
+					type: "ruleset";
+					/** ruleset 的 uuid 列表 */
+					rulesets: string[];
+					/** outbound 的 uuid（可以是 outbound 或 outbound_group） */
+					outbound: string;
+			  }
+			| {
+					type: "rule";
+					/** rule 模块的 uuid */
+					rule: string;
+					/** outbound 的 uuid（可选，覆盖 rule 中的 outbound） */
+					outbound?: string;
+			  }
+		)[];
 		/**
 		 * final outbound 的 uuid
 		 */
@@ -89,6 +95,23 @@ export interface SingBoxConfig {
 		 */
 		download_detour: string;
 	};
+}
+
+/** Normalize route rules: old configs without "type" field are treated as "ruleset" */
+function normalizeRouteRules(
+	rules?: SingBoxConfig["route"]["rules"],
+): SingBoxConfig["route"]["rules"] {
+	if (!rules) return [];
+	return rules.map((rule) => {
+		if ("type" in rule && rule.type) return rule;
+		// Old format without type field → Ruleset
+		const legacy = rule as { rulesets?: string[]; outbound?: string };
+		return {
+			type: "ruleset" as const,
+			rulesets: legacy.rulesets || [],
+			outbound: legacy.outbound || "",
+		};
+	});
 }
 
 interface ConfigFormProps {
@@ -131,7 +154,7 @@ export function ConfigForm({
 		initialData?.route?.config,
 	);
 	const [routeRules, setRouteRules] = useState<SingBoxConfig["route"]["rules"]>(
-		initialData?.route?.rules || [],
+		normalizeRouteRules(initialData?.route?.rules),
 	);
 	const [routeFinal, setRouteFinal] = useState<string>(
 		initialData?.route?.final || "",
@@ -160,7 +183,7 @@ export function ConfigForm({
 		setDnsFinal(initialData?.dns?.final || "");
 		setInbounds(initialData?.inbounds || []);
 		setRouteConfig(initialData?.route?.config);
-		setRouteRules(initialData?.route?.rules || []);
+		setRouteRules(normalizeRouteRules(initialData?.route?.rules));
 		setRouteFinal(initialData?.route?.final || "");
 		setRouteDefaultDomainResolver(initialData?.route?.default_domain_resolver);
 		setExperimental(initialData?.experimental || "");
@@ -193,9 +216,13 @@ export function ConfigForm({
 	const isRouteValid =
 		!!routeFinal &&
 		(!routeRules ||
-			routeRules.every(
-				(rule) => rule.rulesets.length > 0 && rule.outbound,
-			)) &&
+			routeRules.every((rule) => {
+				if (rule.type === "rule") {
+					return !!rule.rule;
+				}
+				// type === "ruleset"
+				return rule.rulesets.length > 0 && !!rule.outbound;
+			})) &&
 		// 如果选择了多个 DNS server，default_domain_resolver 必填，且必须是已选中的 DNS server
 		(dnsServers.length <= 1 || (!!routeDefaultDomainResolver && dnsServers.includes(routeDefaultDomainResolver)));
 

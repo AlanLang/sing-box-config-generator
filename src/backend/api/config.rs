@@ -20,10 +20,91 @@ pub struct DnsConfigDto {
   pub final_server: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RouteRuleDto {
-  pub rulesets: Vec<String>,
-  pub outbound: String,
+#[derive(Debug, Serialize, Clone)]
+#[serde(tag = "type")]
+pub enum RouteRuleDto {
+  #[serde(rename = "ruleset")]
+  Ruleset {
+    rulesets: Vec<String>,
+    outbound: String,
+  },
+  #[serde(rename = "rule")]
+  Rule {
+    rule: String,
+    outbound: Option<String>,
+  },
+}
+
+// Custom Deserialize: support tagged format and backward-compatible untagged (old Ruleset)
+impl<'de> Deserialize<'de> for RouteRuleDto {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    let value = serde_json::Value::deserialize(deserializer)?;
+
+    if let Some(obj) = value.as_object() {
+      match obj.get("type").and_then(|t| t.as_str()) {
+        Some("ruleset") => {
+          let rulesets = obj
+            .get("rulesets")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+              arr
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+            })
+            .unwrap_or_default();
+          let outbound = obj
+            .get("outbound")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+          Ok(RouteRuleDto::Ruleset { rulesets, outbound })
+        }
+        Some("rule") => {
+          let rule = obj
+            .get("rule")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+          let outbound = obj
+            .get("outbound")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+          Ok(RouteRuleDto::Rule { rule, outbound })
+        }
+        // No "type" field → backward-compatible: treat as old Ruleset format
+        None => {
+          let rulesets = obj
+            .get("rulesets")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+              arr
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+            })
+            .unwrap_or_default();
+          let outbound = obj
+            .get("outbound")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+          Ok(RouteRuleDto::Ruleset { rulesets, outbound })
+        }
+        Some(unknown) => Err(serde::de::Error::custom(format!(
+          "unknown RouteRuleDto type: {}",
+          unknown
+        ))),
+      }
+    } else {
+      Err(serde::de::Error::custom(
+        "expected an object for RouteRuleDto",
+      ))
+    }
+  }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

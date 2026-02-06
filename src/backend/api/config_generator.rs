@@ -840,7 +840,16 @@ async fn resolve_outbounds_and_route(
   // Collect from route rules
   if let Some(rules) = &config.route.rules {
     for rule in rules {
-      outbound_uuids.insert(rule.outbound.clone());
+      match rule {
+        crate::backend::api::config::RouteRuleDto::Ruleset { outbound, .. } => {
+          outbound_uuids.insert(outbound.clone());
+        }
+        crate::backend::api::config::RouteRuleDto::Rule { outbound, .. } => {
+          if let Some(ob) = outbound {
+            outbound_uuids.insert(ob.clone());
+          }
+        }
+      }
     }
   }
 
@@ -1032,6 +1041,23 @@ fn filter_unused_outbounds(outbounds: Value, route: &Value, final_tag: &str) -> 
   Value::Array(filtered)
 }
 
+/// Resolve an outbound UUID to its tag (outbound_group name or outbound tag)
+async fn resolve_outbound_uuid_to_tag(uuid: &str) -> Result<String, AppError> {
+  if is_outbound_group(uuid).await? {
+    let group = load_outbound_group(uuid).await?;
+    Ok(group.name)
+  } else {
+    let outbound = load_module_json_with_tag("outbounds", uuid).await?;
+    Ok(
+      outbound
+        .get("tag")
+        .and_then(|t| t.as_str())
+        .unwrap_or("")
+        .to_string(),
+    )
+  }
+}
+
 /// Resolve route configuration
 async fn resolve_route(
   route: &crate::backend::api::config::RouteConfigDto,
@@ -1057,49 +1083,61 @@ async fn resolve_route(
     if !rules.is_empty() {
       let mut route_rules = Vec::new();
       for rule in rules {
-        let mut rule_obj = Map::new();
+        match rule {
+          crate::backend::api::config::RouteRuleDto::Ruleset { rulesets, outbound } => {
+            let mut rule_obj = Map::new();
 
-        // Resolve rulesets
-        let mut rule_set_tags = Vec::new();
-        for ruleset_uuid in &rule.rulesets {
-          let ruleset = load_module_json_with_tag("rulesets", ruleset_uuid).await?;
-          if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
-            rule_set_tags.push(Value::String(tag.to_string()));
+            // Resolve rulesets
+            let mut rule_set_tags = Vec::new();
+            for ruleset_uuid in rulesets {
+              let ruleset = load_module_json_with_tag("rulesets", ruleset_uuid).await?;
+              if let Some(tag) = ruleset.get("tag").and_then(|t| t.as_str()) {
+                rule_set_tags.push(Value::String(tag.to_string()));
 
-            // Collect rule_set definition (deduplicated)
-            if !collected_rule_set_tags.contains(tag) {
-              collected_rule_set_tags.insert(tag.to_string());
-              collected_rule_sets.push(ruleset);
+                // Collect rule_set definition (deduplicated)
+                if !collected_rule_set_tags.contains(tag) {
+                  collected_rule_set_tags.insert(tag.to_string());
+                  collected_rule_sets.push(ruleset);
+                }
+              }
             }
+            rule_obj.insert("rule_set".to_string(), Value::Array(rule_set_tags));
+
+            // Resolve outbound tag
+            let outbound_tag = resolve_outbound_uuid_to_tag(outbound).await?;
+
+            // Skip rules with empty outbound tag
+            if outbound_tag.is_empty() {
+              log::warn!(
+                "Skipping route rule with empty outbound tag for UUID: {}",
+                outbound
+              );
+              continue;
+            }
+
+            rule_obj.insert("outbound".to_string(), Value::String(outbound_tag));
+            route_rules.push(Value::Object(rule_obj));
+          }
+          crate::backend::api::config::RouteRuleDto::Rule {
+            rule: rule_uuid,
+            outbound,
+          } => {
+            // Load rule module JSON - it's a complete SingBox rule object
+            let mut rule_obj_value = load_module_json("rules", rule_uuid).await?;
+
+            // If outbound UUID is specified, resolve and override outbound in the rule
+            if let Some(outbound_uuid) = outbound {
+              let outbound_tag = resolve_outbound_uuid_to_tag(outbound_uuid).await?;
+              if !outbound_tag.is_empty() {
+                if let Some(obj) = rule_obj_value.as_object_mut() {
+                  obj.insert("outbound".to_string(), Value::String(outbound_tag));
+                }
+              }
+            }
+
+            route_rules.push(rule_obj_value);
           }
         }
-        rule_obj.insert("rule_set".to_string(), Value::Array(rule_set_tags));
-
-        // Resolve outbound tag
-        let outbound_tag = if is_outbound_group(&rule.outbound).await? {
-          let group = load_outbound_group(&rule.outbound).await?;
-          group.name.clone()
-        } else {
-          let outbound = load_module_json_with_tag("outbounds", &rule.outbound).await?;
-          outbound
-            .get("tag")
-            .and_then(|t| t.as_str())
-            .unwrap_or("")
-            .to_string()
-        };
-
-        // Skip rules with empty outbound tag (outbound has no valid tag)
-        if outbound_tag.is_empty() {
-          log::warn!(
-            "Skipping route rule with empty outbound tag for UUID: {}",
-            rule.outbound
-          );
-          continue;
-        }
-
-        rule_obj.insert("outbound".to_string(), Value::String(outbound_tag));
-
-        route_rules.push(Value::Object(rule_obj));
       }
       if !route_rules.is_empty() {
         route_config.insert("rules".to_string(), Value::Array(route_rules));
@@ -1139,19 +1177,13 @@ async fn resolve_route(
 
 /// Resolve download_detour UUID to its tag (outbound tag or outbound_group name)
 async fn resolve_download_detour_tag(uuid: &str) -> Result<String, AppError> {
-  if is_outbound_group(uuid).await? {
-    let group = load_outbound_group(uuid).await?;
-    Ok(group.name)
-  } else {
-    let outbound = load_module_json_with_tag("outbounds", uuid).await?;
-    outbound
-      .get("tag")
-      .and_then(|t| t.as_str())
-      .map(|s| s.to_string())
-      .ok_or_else(|| {
-        AppError::InternalServerError("download_detour outbound has no tag".to_string())
-      })
+  let tag = resolve_outbound_uuid_to_tag(uuid).await?;
+  if tag.is_empty() {
+    return Err(AppError::InternalServerError(
+      "download_detour outbound has no tag".to_string(),
+    ));
   }
+  Ok(tag)
 }
 
 /// Inject download_detour into remote rule_set entries within a config object (route or dns)

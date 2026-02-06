@@ -1,3 +1,4 @@
+import { useRuleList } from "@/api/rule/list";
 import { useRouteList } from "@/api/route/list";
 import { useRulesetOptions } from "@/api/ruleset/options";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
@@ -24,6 +25,8 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useMemo } from "react";
+
+type RouteRule = NonNullable<SingBoxConfig["route"]["rules"]>[number];
 
 interface RouteConfigSectionProps {
 	config: string | undefined;
@@ -56,6 +59,7 @@ export function RouteConfigSection({
 	const { data: outboundOptions, isLoading: outboundsLoading } =
 		useOutboundGroupOptions();
 	const { data: allDnsServers, isLoading: dnsServersLoading } = useDnsList();
+	const { data: ruleModules, isLoading: ruleModulesLoading } = useRuleList();
 
 	// 只显示在 DNS Configuration 中选中的 DNS servers
 	const selectedDnsServerItems = useMemo(() => {
@@ -83,6 +87,16 @@ export function RouteConfigSection({
 		}));
 	}, [filteredOutboundOptions]);
 
+	// 构建 rule module SelectorDrawer items
+	const ruleDrawerItems: SelectorDrawerItem[] = useMemo(() => {
+		if (!ruleModules) return [];
+		return ruleModules.map((r) => ({
+			value: r.uuid,
+			title: r.name,
+			description: r.json,
+		}));
+	}, [ruleModules]);
+
 	const handleMoveRule = (index: number, direction: "up" | "down") => {
 		if (!rules) return;
 		const newRules = [...rules];
@@ -101,21 +115,28 @@ export function RouteConfigSection({
 
 	const handleAddRule = () => {
 		const newRules = rules || [];
-		onRulesChange([...newRules, { rulesets: [], outbound: "" }]);
+		onRulesChange([
+			...newRules,
+			{ type: "ruleset", rulesets: [], outbound: "" },
+		]);
 	};
 
-	const handleUpdateRule = (
-		index: number,
-		field: "rulesets" | "outbound",
-		value: string[] | string,
-	) => {
+	const handleToggleRuleType = (index: number) => {
 		if (!rules) return;
 		const newRules = [...rules];
-		if (field === "rulesets") {
-			newRules[index].rulesets = value as string[];
+		const current = newRules[index];
+		if (current.type === "ruleset") {
+			newRules[index] = { type: "rule", rule: "", outbound: undefined };
 		} else {
-			newRules[index].outbound = value as string;
+			newRules[index] = { type: "ruleset", rulesets: [], outbound: "" };
 		}
+		onRulesChange(newRules);
+	};
+
+	const handleUpdateRule = (index: number, updated: RouteRule) => {
+		if (!rules) return;
+		const newRules = [...rules];
+		newRules[index] = updated;
 		onRulesChange(newRules);
 	};
 
@@ -196,8 +217,9 @@ export function RouteConfigSection({
 								</span>
 							</Label>
 							<p className="text-sm text-muted-foreground mt-1">
-								Configure routing rules. Each rule maps rulesets to a specific
-								outbound.
+								Configure routing rules. Each rule can be a Ruleset type (maps
+								rulesets to outbound) or a Rule type (uses a predefined rule
+								module).
 							</p>
 						</div>
 
@@ -208,10 +230,44 @@ export function RouteConfigSection({
 										key={index}
 										className="p-4 border rounded-lg space-y-3"
 									>
+										{/* Header: Rule # + type toggle + actions */}
 										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Rule #{index + 1}
-											</Label>
+											<div className="flex items-center gap-2">
+												<Label className="text-sm font-medium">
+													Rule #{index + 1}
+												</Label>
+												{/* Type toggle */}
+												<div className="inline-flex rounded-md border text-xs">
+													<button
+														type="button"
+														onClick={() =>
+															rule.type !== "ruleset" &&
+															handleToggleRuleType(index)
+														}
+														className={`px-2.5 py-1 rounded-l-md transition-colors ${
+															rule.type === "ruleset"
+																? "bg-primary text-primary-foreground"
+																: "hover:bg-muted"
+														}`}
+													>
+														Ruleset
+													</button>
+													<button
+														type="button"
+														onClick={() =>
+															rule.type !== "rule" &&
+															handleToggleRuleType(index)
+														}
+														className={`px-2.5 py-1 rounded-r-md transition-colors ${
+															rule.type === "rule"
+																? "bg-primary text-primary-foreground"
+																: "hover:bg-muted"
+														}`}
+													>
+														Rule
+													</button>
+												</div>
+											</div>
 											<div className="flex items-center gap-1">
 												<Button
 													variant="ghost"
@@ -242,73 +298,33 @@ export function RouteConfigSection({
 											</div>
 										</div>
 
-										{/* Rulesets 选择 */}
-										<div className="space-y-2">
-											<Label className="text-sm">
-												Rulesets <span className="text-destructive">*</span>
-											</Label>
-											{rulesetsLoading ? (
-												<div className="text-sm text-muted-foreground">
-													Loading rulesets...
-												</div>
-											) : !rulesetOptions || rulesetOptions.length === 0 ? (
-												<div className="text-sm text-muted-foreground">
-													No rulesets available
-												</div>
-											) : (
-												<MultiSelectorDrawer
-													drawerTitle={`Rule #${index + 1} - Rulesets`}
-													drawerDescription="Select rulesets for this rule."
-													placeholder="Select rulesets"
-													items={rulesetOptions.map((r) => ({
-														value: r.uuid,
-														title: r.label,
-														description: r.value,
-													}))}
-													value={rule.rulesets}
-													onChange={(val) =>
-														handleUpdateRule(index, "rulesets", val)
-													}
-												/>
-											)}
-											{rule.rulesets.length === 0 && (
-												<p className="text-sm text-destructive">
-													Please select at least one ruleset
-												</p>
-											)}
-										</div>
-
-										{/* Outbound 选择 */}
-										<div className="space-y-2">
-											<Label className="text-sm">
-												Target Outbound{" "}
-												<span className="text-destructive">*</span>
-											</Label>
-											{outboundsLoading ? (
-												<div className="text-sm text-muted-foreground">
-													Loading outbounds...
-												</div>
-											) : filteredOutboundOptions.length === 0 ? (
-												<div className="text-sm text-muted-foreground">
-													No outbounds available
-												</div>
-											) : (
-												<SelectorDrawer
-													drawerTitle={`Rule #${index + 1} - Target Outbound`}
-													placeholder="Select an outbound"
-													items={outboundDrawerItems}
-													value={rule.outbound}
-													onSelect={(val) =>
-														handleUpdateRule(index, "outbound", val)
-													}
-												/>
-											)}
-											{!rule.outbound && (
-												<p className="text-sm text-destructive">
-													Please select an outbound
-												</p>
-											)}
-										</div>
+										{/* Content based on type */}
+										{rule.type === "ruleset" ? (
+											<RulesetContent
+												rule={rule}
+												index={index}
+												rulesetsLoading={rulesetsLoading}
+												rulesetOptions={rulesetOptions}
+												outboundsLoading={outboundsLoading}
+												filteredOutboundOptions={filteredOutboundOptions}
+												outboundDrawerItems={outboundDrawerItems}
+												onUpdate={(updated) =>
+													handleUpdateRule(index, updated)
+												}
+											/>
+										) : (
+											<RuleContent
+												rule={rule}
+												index={index}
+												ruleModulesLoading={ruleModulesLoading}
+												ruleDrawerItems={ruleDrawerItems}
+												outboundsLoading={outboundsLoading}
+												outboundDrawerItems={outboundDrawerItems}
+												onUpdate={(updated) =>
+													handleUpdateRule(index, updated)
+												}
+											/>
+										)}
 									</div>
 								);
 							})}
@@ -423,5 +439,191 @@ export function RouteConfigSection({
 				</div>
 			</AccordionContent>
 		</AccordionItem>
+	);
+}
+
+// ─── Sub-components for rule types ───
+
+interface RulesetContentProps {
+	rule: Extract<RouteRule, { type: "ruleset" }>;
+	index: number;
+	rulesetsLoading: boolean;
+	rulesetOptions:
+		| { uuid: string; label: string; value: string }[]
+		| undefined;
+	outboundsLoading: boolean;
+	filteredOutboundOptions: { uuid: string }[];
+	outboundDrawerItems: SelectorDrawerItem[];
+	onUpdate: (rule: RouteRule) => void;
+}
+
+function RulesetContent({
+	rule,
+	index,
+	rulesetsLoading,
+	rulesetOptions,
+	outboundsLoading,
+	filteredOutboundOptions,
+	outboundDrawerItems,
+	onUpdate,
+}: RulesetContentProps) {
+	return (
+		<>
+			{/* Rulesets 选择 */}
+			<div className="space-y-2">
+				<Label className="text-sm">
+					Rulesets <span className="text-destructive">*</span>
+				</Label>
+				{rulesetsLoading ? (
+					<div className="text-sm text-muted-foreground">
+						Loading rulesets...
+					</div>
+				) : !rulesetOptions || rulesetOptions.length === 0 ? (
+					<div className="text-sm text-muted-foreground">
+						No rulesets available
+					</div>
+				) : (
+					<MultiSelectorDrawer
+						drawerTitle={`Rule #${index + 1} - Rulesets`}
+						drawerDescription="Select rulesets for this rule."
+						placeholder="Select rulesets"
+						items={rulesetOptions.map((r) => ({
+							value: r.uuid,
+							title: r.label,
+							description: r.value,
+						}))}
+						value={rule.rulesets}
+						onChange={(val) =>
+							onUpdate({ ...rule, rulesets: val })
+						}
+					/>
+				)}
+				{rule.rulesets.length === 0 && (
+					<p className="text-sm text-destructive">
+						Please select at least one ruleset
+					</p>
+				)}
+			</div>
+
+			{/* Outbound 选择 */}
+			<div className="space-y-2">
+				<Label className="text-sm">
+					Target Outbound{" "}
+					<span className="text-destructive">*</span>
+				</Label>
+				{outboundsLoading ? (
+					<div className="text-sm text-muted-foreground">
+						Loading outbounds...
+					</div>
+				) : filteredOutboundOptions.length === 0 ? (
+					<div className="text-sm text-muted-foreground">
+						No outbounds available
+					</div>
+				) : (
+					<SelectorDrawer
+						drawerTitle={`Rule #${index + 1} - Target Outbound`}
+						placeholder="Select an outbound"
+						items={outboundDrawerItems}
+						value={rule.outbound}
+						onSelect={(val) =>
+							onUpdate({ ...rule, outbound: val })
+						}
+					/>
+				)}
+				{!rule.outbound && (
+					<p className="text-sm text-destructive">
+						Please select an outbound
+					</p>
+				)}
+			</div>
+		</>
+	);
+}
+
+interface RuleContentProps {
+	rule: Extract<RouteRule, { type: "rule" }>;
+	index: number;
+	ruleModulesLoading: boolean;
+	ruleDrawerItems: SelectorDrawerItem[];
+	outboundsLoading: boolean;
+	outboundDrawerItems: SelectorDrawerItem[];
+	onUpdate: (rule: RouteRule) => void;
+}
+
+function RuleContent({
+	rule,
+	index,
+	ruleModulesLoading,
+	ruleDrawerItems,
+	outboundsLoading,
+	outboundDrawerItems,
+	onUpdate,
+}: RuleContentProps) {
+	return (
+		<>
+			{/* Rule 选择 */}
+			<div className="space-y-2">
+				<Label className="text-sm">
+					Rule <span className="text-destructive">*</span>
+				</Label>
+				{ruleModulesLoading ? (
+					<div className="text-sm text-muted-foreground">
+						Loading rules...
+					</div>
+				) : ruleDrawerItems.length === 0 ? (
+					<div className="text-sm text-muted-foreground">
+						No rule modules available
+					</div>
+				) : (
+					<SelectorDrawer
+						drawerTitle={`Rule #${index + 1} - Select Rule`}
+						placeholder="Select a rule module"
+						items={ruleDrawerItems}
+						value={rule.rule}
+						onSelect={(val) =>
+							onUpdate({ ...rule, rule: val })
+						}
+					/>
+				)}
+				{!rule.rule && (
+					<p className="text-sm text-destructive">
+						Please select a rule
+					</p>
+				)}
+			</div>
+
+			{/* Outbound 选择（可选，覆盖 rule 中的 outbound） */}
+			<div className="space-y-2">
+				<Label className="text-sm">
+					Target Outbound{" "}
+					<span className="text-muted-foreground text-xs font-normal">
+						(Optional, overrides rule's outbound)
+					</span>
+				</Label>
+				{outboundsLoading ? (
+					<div className="text-sm text-muted-foreground">
+						Loading outbounds...
+					</div>
+				) : (
+					<SelectorDrawer
+						drawerTitle={`Rule #${index + 1} - Target Outbound`}
+						placeholder="Use rule's built-in outbound"
+						items={outboundDrawerItems}
+						value={rule.outbound || ""}
+						onSelect={(val) =>
+							onUpdate({
+								...rule,
+								outbound: val || undefined,
+							})
+						}
+						noneOption={{
+							title: "Use rule's built-in outbound",
+							description:
+								"Don't override, use the outbound defined in the rule",
+						}}
+					/>
+				)}
+			</div>
+		</>
 	);
 }

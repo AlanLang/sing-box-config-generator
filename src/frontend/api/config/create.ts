@@ -13,10 +13,9 @@ export interface DnsConfig {
   final: string;
 }
 
-export interface RouteRule {
-  rulesets: string[];
-  outbound: string;
-}
+export type RouteRule =
+  | { type: "ruleset"; rulesets: string[]; outbound: string }
+  | { type: "rule"; rule: string; outbound?: string };
 
 export interface RouteConfig {
   config?: string;
