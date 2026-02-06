@@ -2,23 +2,16 @@ import { useConfigCreate } from "@/api/config/create";
 import { useConfigDelete } from "@/api/config/delete";
 import { useConfigList } from "@/api/config/list";
 import { useConfigUpdate } from "@/api/config/update";
-import { useDnsConfigList } from "@/api/dns-config/list";
-import { useDnsList } from "@/api/dns/list";
-import { useExperimentalList } from "@/api/experimental/list";
-import { useInboundList } from "@/api/inbound/list";
-import { useLogList } from "@/api/log/list";
-import { useOutboundGroupOptions } from "@/api/outbound-group/options";
-import { useRouteList } from "@/api/route/list";
 import { AppPage } from "@/components/app-page";
+import { ConfigCard } from "@/components/config-card";
 import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
-import { ConfigCard } from "@/components/config-card-new";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
-import { IconCubePlus } from "@tabler/icons-react";
+import { IconCubePlus, IconEdit, IconTrash } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -31,46 +24,6 @@ function RouteComponent() {
   const createMutation = useConfigCreate();
   const updateMutation = useConfigUpdate();
   const deleteMutation = useConfigDelete();
-
-  // 查询所有模块数据用于显示名称
-  const { data: logs } = useLogList();
-  const { data: dnsConfigs } = useDnsConfigList();
-  const { data: dnsServers } = useDnsList();
-  const { data: inbounds } = useInboundList();
-  const { data: routes } = useRouteList();
-  const { data: outboundOptions } = useOutboundGroupOptions();
-  const { data: experimentals } = useExperimentalList();
-
-  // 创建 uuid 到名称的映射
-  const logMap = useMemo(
-    () => new Map(logs?.map((item) => [item.uuid, item.name]) || []),
-    [logs],
-  );
-  const dnsConfigMap = useMemo(
-    () => new Map(dnsConfigs?.map((item) => [item.uuid, item.name]) || []),
-    [dnsConfigs],
-  );
-  const dnsServerMap = useMemo(
-    () => new Map(dnsServers?.map((item) => [item.uuid, item.name]) || []),
-    [dnsServers],
-  );
-  const inboundMap = useMemo(
-    () => new Map(inbounds?.map((item) => [item.uuid, item.name]) || []),
-    [inbounds],
-  );
-  const routeMap = useMemo(
-    () => new Map(routes?.map((item) => [item.uuid, item.name]) || []),
-    [routes],
-  );
-  const outboundMap = useMemo(
-    () =>
-      new Map(outboundOptions?.map((item) => [item.uuid, item.label]) || []),
-    [outboundOptions],
-  );
-  const experimentalMap = useMemo(
-    () => new Map(experimentals?.map((item) => [item.uuid, item.name]) || []),
-    [experimentals],
-  );
 
   const [formOpen, setFormOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -157,40 +110,38 @@ function RouteComponent() {
           onAction={handleNewConfig}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {configs.map((config, index) => (
             <ConfigCard
               key={config.uuid}
-              config={config}
+              uuid={config.uuid}
+              name={config.name}
+              jsonPreview={JSON.stringify(config, null, 2)}
+              onClick={() => handleEditConfig(config)}
               index={index}
-              onEdit={() => handleEditConfig(config)}
-              onDelete={() => handleDeleteConfig(config.uuid)}
-              logName={logMap.get(config.log)}
-              dnsConfigName={
-                config.dns.config
-                  ? dnsConfigMap.get(config.dns.config)
-                  : undefined
-              }
-              dnsServerNames={
-                config.dns.servers
-                  .map((uuid) => dnsServerMap.get(uuid))
-                  .filter(Boolean) as string[]
-              }
-              inboundNames={
-                config.inbounds
-                  .map((uuid) => inboundMap.get(uuid))
-                  .filter(Boolean) as string[]
-              }
-              routeConfigName={
-                config.route.config
-                  ? routeMap.get(config.route.config)
-                  : undefined
-              }
-              routeFinalName={outboundMap.get(config.route.final)}
-              experimentalName={
-                config.experimental
-                  ? experimentalMap.get(config.experimental)
-                  : undefined
+              actions={
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditConfig(config);
+                    }}
+                  >
+                    <IconEdit className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteConfig(config.uuid);
+                    }}
+                  >
+                    <IconTrash className="size-4" />
+                  </Button>
+                </>
               }
             />
           ))}
