@@ -132,6 +132,14 @@ async fn main() -> anyhow::Result<()> {
         .delete(backend::api::backup::delete_backup),
     )
     .route(
+      "/api/backup/restore",
+      axum::routing::post(backend::api::backup::restore_backup),
+    )
+    .route(
+      "/api/backup/upload",
+      axum::routing::post(backend::api::backup::upload_backup),
+    )
+    .route(
       "/api/backup/current-hash",
       axum::routing::get(backend::api::backup::current_hash),
     )

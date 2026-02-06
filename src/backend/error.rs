@@ -5,6 +5,7 @@ use axum::{
 
 // Make our own error that wraps different error types
 pub enum AppError {
+  BadRequest(String),
   NotFound(String),
   InternalServerError(String),
   AnyhowError(anyhow::Error),
@@ -14,6 +15,7 @@ pub enum AppError {
 impl IntoResponse for AppError {
   fn into_response(self) -> Response {
     match self {
+      AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
       AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg).into_response(),
       AppError::InternalServerError(msg) => {
         (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response()

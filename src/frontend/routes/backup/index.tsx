@@ -2,9 +2,12 @@ import { type BackupCreateDto, createBackup } from "@/api/backup/create";
 import { useCurrentConfigHash } from "@/api/backup/current-hash";
 import { useBackupDelete } from "@/api/backup/delete";
 import { type BackupListDto, useBackupList } from "@/api/backup/list";
+import { restoreBackup } from "@/api/backup/restore";
+import { uploadBackup } from "@/api/backup/upload";
 import { AppPage } from "@/components/app-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,11 +28,13 @@ import {
   IconArchive,
   IconCheck,
   IconDownload,
+  IconHistory,
   IconPlus,
   IconTrash,
+  IconUpload,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -65,6 +70,15 @@ function RouteComponent() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<BackupListDto | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<BackupListDto | null>(
+    null,
+  );
+  const [autoBackup, setAutoBackup] = useState(true);
+  const [restoring, setRestoring] = useState(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentHash = hashData?.content_hash;
   const hasMatchingBackup = backups?.some(
@@ -120,34 +134,127 @@ function RouteComponent() {
     }
   };
 
+  const handleRestore = async () => {
+    if (!restoreTarget) return;
+    setRestoring(true);
+    try {
+      // Auto-backup current config if not yet backed up and checkbox is checked
+      if (!hasMatchingBackup && autoBackup) {
+        const dto: BackupCreateDto = {
+          uuid: uuidv4(),
+          name: formatDateTime(),
+          description: "Auto backup before restore",
+        };
+        await createBackup(dto);
+      }
+
+      await restoreBackup({ uuid: restoreTarget.uuid });
+      toast.success("Backup restored successfully");
+      setRestoreTarget(null);
+      refetch();
+      refetchHash();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to restore backup");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const handleFileSelected = (file: File) => {
+    setUploadFile(file);
+    if (hasMatchingBackup) {
+      // Current config already backed up, proceed directly
+      executeUpload(file, false);
+    } else {
+      // Show confirmation dialog with auto-backup option
+      setAutoBackup(true);
+      setUploadOpen(true);
+    }
+  };
+
+  const executeUpload = async (file: File, shouldAutoBackup: boolean) => {
+    setUploading(true);
+    try {
+      if (shouldAutoBackup) {
+        const dto: BackupCreateDto = {
+          uuid: uuidv4(),
+          name: formatDateTime(),
+          description: "Auto backup before upload restore",
+        };
+        await createBackup(dto);
+      }
+
+      const result = await uploadBackup(file);
+      if (result.status === "conflict") {
+        toast.info(`Backup already exists: ${result.name}`);
+      } else {
+        toast.success("Backup uploaded and restored successfully");
+      }
+      setUploadOpen(false);
+      setUploadFile(null);
+      refetch();
+      refetchHash();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to upload backup");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
   return (
     <AppPage
       title="Backup"
       description="Create and manage backups of all your configuration data"
       actions={
-        hasMatchingBackup ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="sm" disabled className="gap-2">
-                <IconCheck className="size-4" />
-                Already Backed Up
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Current configuration already has a matching backup
-            </TooltipContent>
-          </Tooltip>
-        ) : (
+        <div className="flex gap-2">
           <Button
             size="sm"
-            onClick={handleOpenCreate}
-            className="gap-2 relative overflow-hidden group"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            className="gap-2"
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <IconPlus className="size-4" />
-            New Backup
+            <IconUpload className="size-4" />
+            Upload
           </Button>
-        )
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".tar.gz,.gz"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileSelected(file);
+            }}
+          />
+          {hasMatchingBackup ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" disabled className="gap-2">
+                  <IconCheck className="size-4" />
+                  Already Backed Up
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Current configuration already has a matching backup
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handleOpenCreate}
+              className="gap-2 relative overflow-hidden group"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <IconPlus className="size-4" />
+              New Backup
+            </Button>
+          )}
+        </div>
       }
     >
       {isLoading ? (
@@ -167,6 +274,10 @@ function RouteComponent() {
               }
               onDownload={() => handleDownload(backup)}
               onDelete={() => setDeleteTarget(backup)}
+              onRestore={() => {
+                setAutoBackup(true);
+                setRestoreTarget(backup);
+              }}
             />
           ))}
         </div>
@@ -244,6 +355,110 @@ function RouteComponent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Restore Confirmation Dialog */}
+      <Dialog
+        open={restoreTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !restoring) setRestoreTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Restore Backup</DialogTitle>
+            <DialogDescription>
+              Restore configuration from backup "{restoreTarget?.name}"? This
+              will replace all current configuration data.
+            </DialogDescription>
+          </DialogHeader>
+          {!hasMatchingBackup && (
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+              <Checkbox
+                id="auto-backup"
+                checked={autoBackup}
+                onCheckedChange={(checked) => setAutoBackup(checked === true)}
+              />
+              <Label
+                htmlFor="auto-backup"
+                className="text-sm leading-snug cursor-pointer"
+              >
+                Auto-backup current configuration before restoring
+              </Label>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRestoreTarget(null)}
+              disabled={restoring}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRestore} disabled={restoring}>
+              {restoring ? "Restoring..." : "Restore"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Upload Confirmation Dialog */}
+      <Dialog
+        open={uploadOpen}
+        onOpenChange={(open) => {
+          if (!open && !uploading) {
+            setUploadOpen(false);
+            setUploadFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = "";
+            }
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Backup</DialogTitle>
+            <DialogDescription>
+              Upload and restore from "{uploadFile?.name}". This will replace
+              all current configuration data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+            <Checkbox
+              id="auto-backup-upload"
+              checked={autoBackup}
+              onCheckedChange={(checked) => setAutoBackup(checked === true)}
+            />
+            <Label
+              htmlFor="auto-backup-upload"
+              className="text-sm leading-snug cursor-pointer"
+            >
+              Auto-backup current configuration before restoring
+            </Label>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setUploadOpen(false);
+                setUploadFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                }
+              }}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                uploadFile && executeUpload(uploadFile, autoBackup)
+              }
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Upload & Restore"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppPage>
   );
 }
@@ -253,11 +468,13 @@ function BackupCard({
   isCurrent,
   onDownload,
   onDelete,
+  onRestore,
 }: {
   backup: BackupListDto;
   isCurrent: boolean;
   onDownload: () => void;
   onDelete: () => void;
+  onRestore: () => void;
 }) {
   return (
     <div
@@ -304,6 +521,12 @@ function BackupCard({
           </div>
         </div>
         <div className="flex gap-2 justify-end shrink-0">
+          {!isCurrent && (
+            <Button size="sm" variant="outline" onClick={onRestore}>
+              <IconHistory className="size-4" />
+              <span className="sm:inline hidden">Restore</span>
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={onDownload}>
             <IconDownload className="size-4" />
             <span className="sm:inline hidden">Download</span>
