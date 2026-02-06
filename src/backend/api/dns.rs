@@ -26,11 +26,7 @@ pub async fn create_dns(Json(payload): Json<DnsCreateDto>) -> Result<impl IntoRe
     return Ok((StatusCode::CONFLICT, "Dns with this name already exists").into_response());
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Dns created successfully").into_response())
 }
@@ -91,11 +87,7 @@ pub async fn update_dns(Json(payload): Json<DnsUpdateDto>) -> Result<impl IntoRe
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Dns updated successfully").into_response())
 }

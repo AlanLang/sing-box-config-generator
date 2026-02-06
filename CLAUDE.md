@@ -46,6 +46,40 @@ src/
 2. Use the wrapper to apply custom styles and behavior
 3. Never modify the original shadcn component
 
+### Code Quality Checks
+
+**CRITICAL RULE**: After ANY code modification, you MUST run the following checks before completing the task:
+
+**Frontend Checks (Always Required)**:
+```bash
+# 1. Biome check (lint + format)
+bun run check
+
+# 2. TypeScript type check
+bun run type-check
+```
+
+**Backend Checks (Required if Rust code was modified)**:
+```bash
+# 3. Rust format check
+cargo fmt --check
+```
+
+**Check Requirements**:
+- ❌ **NEVER** mark a task as complete if any check fails
+- ✅ Fix all issues reported by the checks before proceeding
+- ✅ Re-run checks after fixes until all pass
+- ✅ In `/start` skill: Run all checks BEFORE deployment
+
+**Workflow**:
+1. Make code changes
+2. Run applicable checks
+3. Fix any issues
+4. Re-run checks to verify
+5. Only then proceed to deployment/commit
+
+**Note**: These checks are automatically run by Husky pre-commit hooks, but you must run them manually during development to catch issues early.
+
 ## Core Patterns
 
 ### Data Model (All Config Modules)

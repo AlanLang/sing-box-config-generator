@@ -6,6 +6,7 @@
   "scripts": {
     "build": "NODE_ENV=production rsbuild build",
     "check": "biome check --write",
+    "type-check": "tsc --noEmit",
     "dev": "rsbuild dev --open && cargo run",
     "format": "biome format --write",
     "preview": "rsbuild preview",

@@ -12,7 +12,9 @@ pub struct SubscribeCreateDto {
   pub json: String,
 }
 
-pub async fn create_subscribe(Json(payload): Json<SubscribeCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_subscribe(
+  Json(payload): Json<SubscribeCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating subscribe: {}", file_name);
   let dir_path = Path::new("./data/subscribes");
@@ -23,14 +25,16 @@ pub async fn create_subscribe(Json(payload): Json<SubscribeCreateDto>) -> Result
   }
 
   if file_path.exists() {
-    return Ok((StatusCode::CONFLICT, "Subscribe with this UUID already exists").into_response());
+    return Ok(
+      (
+        StatusCode::CONFLICT,
+        "Subscribe with this UUID already exists",
+      )
+        .into_response(),
+    );
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Subscribe created successfully").into_response())
 }
@@ -75,7 +79,9 @@ pub struct SubscribeUpdateDto {
   pub json: String,
 }
 
-pub async fn update_subscribe(Json(payload): Json<SubscribeUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_subscribe(
+  Json(payload): Json<SubscribeUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/subscribes");
   let file_path = dir_path.join(&file_name);
@@ -90,11 +96,7 @@ pub async fn update_subscribe(Json(payload): Json<SubscribeUpdateDto>) -> Result
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Subscribe updated successfully").into_response())
 }
@@ -167,13 +169,21 @@ pub async fn refresh_subscribe(
     .map_err(|e| AppError::from(anyhow::anyhow!("Failed to fetch subscription: {}", e)))?;
 
   if !response.status().is_success() {
-    return Ok((StatusCode::BAD_GATEWAY, format!("Failed to fetch subscription: HTTP {}", response.status())).into_response());
+    return Ok(
+      (
+        StatusCode::BAD_GATEWAY,
+        format!("Failed to fetch subscription: HTTP {}", response.status()),
+      )
+        .into_response(),
+    );
   }
 
-  let subscription_content = response
-    .text()
-    .await
-    .map_err(|e| AppError::from(anyhow::anyhow!("Failed to read subscription content: {}", e)))?;
+  let subscription_content = response.text().await.map_err(|e| {
+    AppError::from(anyhow::anyhow!(
+      "Failed to read subscription content: {}",
+      e
+    ))
+  })?;
 
   let now = chrono::Utc::now().to_rfc3339();
 
@@ -186,11 +196,7 @@ pub async fn refresh_subscribe(
 
   subscribe_dto.json = serde_json::to_string(&updated_metadata)?;
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&subscribe_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&subscribe_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Subscribe refreshed successfully").into_response())
 }

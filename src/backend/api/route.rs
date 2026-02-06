@@ -12,7 +12,9 @@ pub struct RouteCreateDto {
   pub json: String,
 }
 
-pub async fn create_route(Json(payload): Json<RouteCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_route(
+  Json(payload): Json<RouteCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating route: {}", file_name);
   let dir_path = Path::new("./data/routes");
@@ -26,11 +28,7 @@ pub async fn create_route(Json(payload): Json<RouteCreateDto>) -> Result<impl In
     return Ok((StatusCode::CONFLICT, "Route with this UUID already exists").into_response());
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Route created successfully").into_response())
 }
@@ -75,7 +73,9 @@ pub struct RouteUpdateDto {
   pub json: String,
 }
 
-pub async fn update_route(Json(payload): Json<RouteUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_route(
+  Json(payload): Json<RouteUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/routes");
   let file_path = dir_path.join(&file_name);
@@ -90,11 +90,7 @@ pub async fn update_route(Json(payload): Json<RouteUpdateDto>) -> Result<impl In
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Route updated successfully").into_response())
 }

@@ -52,10 +52,11 @@ allowed-tools:
    - 在关键节点发送进度通知
    - 创建/修改文件
    - 运行必要的命令
-6. 🚀 部署（deploy script）
-7. ✅ 如果部署成功：commit + push
-8. 📤 发送完成通知
-9. ❌ 如果失败：发送错误通知
+6. ✅ 代码质量检查（biome + TypeScript + Rust fmt）
+7. 🚀 部署（deploy script）
+8. ✅ 如果部署成功：commit + push
+9. 📤 发送完成通知
+10. ❌ 如果失败：发送错误通知
 ```
 
 ## 使用的工具和脚本
@@ -110,6 +111,7 @@ allowed-tools:
 - ✅ 完成代码分析/规划
 - ✅ 完成后端代码（如适用）
 - ✅ 完成前端代码（如适用）
+- ✅ 代码质量检查通过/失败
 - ✅ 开始部署
 - ✅ 部署成功/失败
 - ✅ 任务完成
@@ -138,7 +140,53 @@ allowed-tools:
 - 实施优���方案
 - 测量改进效果
 
-### 5. 部署
+### 5. 代码质量检查
+
+**在部署之前必须执行所有适用的检查**:
+
+```bash
+# 发送检查开始通知
+/home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "🔍 开始代码质量检查
+
+运行 Biome 和 TypeScript 检查..."
+
+# 1. Biome 检查 (必须)
+echo "Running Biome check..."
+if ! bun run check; then
+    /home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "❌ Biome 检查失败
+
+请修复 lint 和格式问题后重试"
+    exit 1
+fi
+
+# 2. TypeScript 类型检查 (必须)
+echo "Running TypeScript type check..."
+if ! bun run type-check; then
+    /home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "❌ TypeScript 类型检查失败
+
+请修复类型错误后重试"
+    exit 1
+fi
+
+# 3. Rust 格式检查 (如果修改了后端代码)
+# 检查是否有 Rust 文件被修改
+if git diff --name-only HEAD | grep -q '\.rs$'; then
+    echo "Rust files modified, running cargo fmt check..."
+    if ! cargo fmt --check; then
+        /home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "❌ Rust 格式检查失败
+
+运行 'cargo fmt' 修复格式问题"
+        exit 1
+    fi
+fi
+
+# 所有检查通过
+/home/alan/code/sing-box-config-generator/.claude/scripts/telegram-notify.sh "✅ 代码质量检查通过
+
+准备部署..."
+```
+
+### 6. 部署
 
 ```bash
 # 发送部署开始通知
@@ -167,7 +215,7 @@ ${DEPLOY_OUTPUT}
 fi
 ```
 
-### 6. Commit 和 Push
+### 7. Commit 和 Push
 
 **只在部署成功后执行**:
 
@@ -202,7 +250,7 @@ else
 fi
 ```
 
-### 7. 发送完成通知
+### 8. 发送完成通知
 
 ```bash
 # 获取 commit 信息和 GitHub URL
@@ -395,6 +443,10 @@ fi
 - 保持代码一致性
 
 ### 3. 保证质量
+- 执行完整的代码质量检查
+  - Biome 检查（必须）
+  - TypeScript 类型检查（必须）
+  - Rust fmt 检查（修改后端时）
 - 部署前验证代码
 - 通过健康检查再提交
 - 写清晰的 commit message
@@ -421,11 +473,13 @@ fi
 7. 🔧 创建 src/frontend/routes/outbound/
 8. 🔧 创建 src/frontend/api/outbound.ts
 9. 🔧 更新 Sidebar 添加导航
-10. 📨 通知: "代码完成，开始部署"
-11. 🚀 执行 deploy.sh
-12. 📨 通知: "部署成功，提交代码"
-13. ✅ Commit + Push
-14. 📨 通知: "任务完成（包含 GitHub commit 链接）"
+10. 📨 通知: "代码完成，开始质量检查"
+11. ✅ 执行代码质量检查（biome + TypeScript + Rust fmt）
+12. 📨 通知: "检查通过，开始部署"
+13. 🚀 执行 deploy.sh
+14. 📨 通知: "部署成功，提交代码"
+15. ✅ Commit + Push
+16. 📨 通知: "任务完成（包含 GitHub commit 链接）"
 ```
 
 ### 场景 2: Bug 修复
@@ -438,11 +492,13 @@ fi
 2. 🔍 分析问题原因
 3. 📨 通知: "定位到问题：FocusEditor 在条件渲染内部，开始修复"
 4. 🔧 修改 4 个配置模块的 index.tsx
-5. 📨 通知: "修复完成，开始部署"
-6. 🚀 执行 deploy.sh
-7. 📨 通知: "部署成功，提交代码"
-8. ✅ Commit + Push
-9. 📨 通知: "Bug 修复完成（包含 GitHub commit 链接）"
+5. 📨 通知: "修复完成，开始质量检查"
+6. ✅ 执行代码质量检查（biome + TypeScript）
+7. 📨 通知: "检查通过，开始部署"
+8. 🚀 执行 deploy.sh
+9. 📨 通知: "部署成功，提交代码"
+10. ✅ Commit + Push
+11. 📨 通知: "Bug 修复完成（包含 GitHub commit 链接）"
 ```
 
 ### 场景 3: 性能优化
@@ -453,22 +509,26 @@ fi
 流程:
 1. 📨 通知: "开始执行任务：优化前端性能"
 2. 🔍 分析性能瓶颈
-3. 📨 通知: "发现问题：组件过度渲染，使用 React.memo 优化"
+3. �� 通知: "发现问题：组件过度渲染，使用 React.memo 优化"
 4. 🔧 优化关键组件
-5. 📨 通知: "优化完成，开始部署"
-6. 🚀 执行 deploy.sh
-7. 📨 通知: "部署成功，提交代码"
-8. ✅ Commit + Push
-9. 📨 通知: "性能优化完成（包含 GitHub commit 链接）"
+5. 📨 通知: "优化完成，开始质量检查"
+6. ✅ 执行代码质量检查（biome + TypeScript）
+7. 📨 通知: "检查通过，开始部署"
+8. 🚀 执行 deploy.sh
+9. 📨 通知: "部署成功，提交代码"
+10. ✅ Commit + Push
+11. 📨 通知: "性能优化完成（包含 GitHub commit 链接）"
 ```
 
 ## 注意事项
 
 1. **不要使用 AskUserQuestion** - 这是核心要求
 2. **频繁发送 Telegram 通知** - 让用户知道进度
-3. **部署失败不提交代码** - 保证代码质量
-4. **自主决策** - 遵循最佳实践和项目约定
-5. **保持简洁** - 只做必要的改动
+3. **必须执行代码质量检查** - 部署前运行所有适用的检查
+4. **检查失败立即停止** - 不要在检查失败时继续部署
+5. **部署失败不提交代码** - 保证代码质量
+6. **自主决策** - 遵循最佳实践和项目约定
+7. **保持简洁** - 只做必要的改动
 
 ## 配置要求
 

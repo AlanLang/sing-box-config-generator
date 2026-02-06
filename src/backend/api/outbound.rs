@@ -12,7 +12,9 @@ pub struct OutboundCreateDto {
   pub json: String,
 }
 
-pub async fn create_outbound(Json(payload): Json<OutboundCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_outbound(
+  Json(payload): Json<OutboundCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating outbound: {}", file_name);
   let dir_path = Path::new("./data/outbounds");
@@ -23,14 +25,16 @@ pub async fn create_outbound(Json(payload): Json<OutboundCreateDto>) -> Result<i
   }
 
   if file_path.exists() {
-    return Ok((StatusCode::CONFLICT, "Outbound with this name already exists").into_response());
+    return Ok(
+      (
+        StatusCode::CONFLICT,
+        "Outbound with this name already exists",
+      )
+        .into_response(),
+    );
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Outbound created successfully").into_response())
 }
@@ -75,7 +79,9 @@ pub struct OutboundUpdateDto {
   pub json: String,
 }
 
-pub async fn update_outbound(Json(payload): Json<OutboundUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_outbound(
+  Json(payload): Json<OutboundUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/outbounds");
   let file_path = dir_path.join(&file_name);
@@ -91,11 +97,7 @@ pub async fn update_outbound(Json(payload): Json<OutboundUpdateDto>) -> Result<i
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Outbound updated successfully").into_response())
 }

@@ -13,7 +13,9 @@ pub struct FilterCreateDto {
   pub pattern: String,
 }
 
-pub async fn create_filter(Json(payload): Json<FilterCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_filter(
+  Json(payload): Json<FilterCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating filter: {}", file_name);
   let dir_path = Path::new("./data/filters");
@@ -27,11 +29,7 @@ pub async fn create_filter(Json(payload): Json<FilterCreateDto>) -> Result<impl 
     return Ok((StatusCode::CONFLICT, "Filter with this UUID already exists").into_response());
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Filter created successfully").into_response())
 }
@@ -79,7 +77,9 @@ pub struct FilterUpdateDto {
   pub pattern: String,
 }
 
-pub async fn update_filter(Json(payload): Json<FilterUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_filter(
+  Json(payload): Json<FilterUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/filters");
   let file_path = dir_path.join(&file_name);
@@ -96,11 +96,7 @@ pub async fn update_filter(Json(payload): Json<FilterUpdateDto>) -> Result<impl 
     pattern: payload.pattern,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Filter updated successfully").into_response())
 }

@@ -26,11 +26,7 @@ pub async fn create_log(Json(payload): Json<LogCreateDto>) -> Result<impl IntoRe
     return Ok((StatusCode::CONFLICT, "Log with this name already exists").into_response());
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Log created successfully").into_response())
 }
@@ -91,11 +87,7 @@ pub async fn update_log(Json(payload): Json<LogUpdateDto>) -> Result<impl IntoRe
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Log updated successfully").into_response())
 }

@@ -12,7 +12,9 @@ pub struct RuleCreateDto {
   pub json: String,
 }
 
-pub async fn create_rule(Json(payload): Json<RuleCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_rule(
+  Json(payload): Json<RuleCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating rule: {}", file_name);
   let dir_path = Path::new("./data/rules");
@@ -26,11 +28,7 @@ pub async fn create_rule(Json(payload): Json<RuleCreateDto>) -> Result<impl Into
     return Ok((StatusCode::CONFLICT, "Rule with this UUID already exists").into_response());
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Rule created successfully").into_response())
 }
@@ -75,7 +73,9 @@ pub struct RuleUpdateDto {
   pub json: String,
 }
 
-pub async fn update_rule(Json(payload): Json<RuleUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_rule(
+  Json(payload): Json<RuleUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/rules");
   let file_path = dir_path.join(&file_name);
@@ -90,11 +90,7 @@ pub async fn update_rule(Json(payload): Json<RuleUpdateDto>) -> Result<impl Into
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Rule updated successfully").into_response())
 }

@@ -12,7 +12,9 @@ pub struct RulesetCreateDto {
   pub json: String,
 }
 
-pub async fn create_ruleset(Json(payload): Json<RulesetCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_ruleset(
+  Json(payload): Json<RulesetCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating ruleset: {}", file_name);
   let dir_path = Path::new("./data/rulesets");
@@ -23,14 +25,16 @@ pub async fn create_ruleset(Json(payload): Json<RulesetCreateDto>) -> Result<imp
   }
 
   if file_path.exists() {
-    return Ok((StatusCode::CONFLICT, "Ruleset with this UUID already exists").into_response());
+    return Ok(
+      (
+        StatusCode::CONFLICT,
+        "Ruleset with this UUID already exists",
+      )
+        .into_response(),
+    );
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Ruleset created successfully").into_response())
 }
@@ -75,7 +79,9 @@ pub struct RulesetUpdateDto {
   pub json: String,
 }
 
-pub async fn update_ruleset(Json(payload): Json<RulesetUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_ruleset(
+  Json(payload): Json<RulesetUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/rulesets");
   let file_path = dir_path.join(&file_name);
@@ -90,11 +96,7 @@ pub async fn update_ruleset(Json(payload): Json<RulesetUpdateDto>) -> Result<imp
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Ruleset updated successfully").into_response())
 }

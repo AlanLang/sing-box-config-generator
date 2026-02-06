@@ -12,7 +12,9 @@ pub struct ExperimentalCreateDto {
   pub json: String,
 }
 
-pub async fn create_experimental(Json(payload): Json<ExperimentalCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_experimental(
+  Json(payload): Json<ExperimentalCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating experimental: {}", file_name);
   let dir_path = Path::new("./data/experimentals");
@@ -23,14 +25,16 @@ pub async fn create_experimental(Json(payload): Json<ExperimentalCreateDto>) -> 
   }
 
   if file_path.exists() {
-    return Ok((StatusCode::CONFLICT, "Experimental with this UUID already exists").into_response());
+    return Ok(
+      (
+        StatusCode::CONFLICT,
+        "Experimental with this UUID already exists",
+      )
+        .into_response(),
+    );
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Experimental created successfully").into_response())
 }
@@ -75,7 +79,9 @@ pub struct ExperimentalUpdateDto {
   pub json: String,
 }
 
-pub async fn update_experimental(Json(payload): Json<ExperimentalUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_experimental(
+  Json(payload): Json<ExperimentalUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/experimentals");
   let file_path = dir_path.join(&file_name);
@@ -90,11 +96,7 @@ pub async fn update_experimental(Json(payload): Json<ExperimentalUpdateDto>) -> 
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "Experimental updated successfully").into_response())
 }

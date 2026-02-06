@@ -12,7 +12,9 @@ pub struct DnsConfigCreateDto {
   pub json: String,
 }
 
-pub async fn create_dns_config(Json(payload): Json<DnsConfigCreateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn create_dns_config(
+  Json(payload): Json<DnsConfigCreateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating dns_config: {}", file_name);
   let dir_path = Path::new("./data/dns-config");
@@ -23,14 +25,16 @@ pub async fn create_dns_config(Json(payload): Json<DnsConfigCreateDto>) -> Resul
   }
 
   if file_path.exists() {
-    return Ok((StatusCode::CONFLICT, "DNS Config with this name already exists").into_response());
+    return Ok(
+      (
+        StatusCode::CONFLICT,
+        "DNS Config with this name already exists",
+      )
+        .into_response(),
+    );
   }
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&payload)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "DNS Config created successfully").into_response())
 }
@@ -75,7 +79,9 @@ pub struct DnsConfigUpdateDto {
   pub json: String,
 }
 
-pub async fn update_dns_config(Json(payload): Json<DnsConfigUpdateDto>) -> Result<impl IntoResponse, AppError> {
+pub async fn update_dns_config(
+  Json(payload): Json<DnsConfigUpdateDto>,
+) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   let dir_path = Path::new("./data/dns-config");
   let file_path = dir_path.join(&file_name);
@@ -91,11 +97,7 @@ pub async fn update_dns_config(Json(payload): Json<DnsConfigUpdateDto>) -> Resul
     json: payload.json,
   };
 
-  fs::write(
-    file_path,
-    serde_json::to_string(&storage_dto)?.as_bytes(),
-  )
-  .await?;
+  fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;
 
   Ok((StatusCode::OK, "DNS Config updated successfully").into_response())
 }
