@@ -4,14 +4,10 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { SelectorDrawer } from "@/components/selector-drawer";
+import { IconAlertCircle, IconCheck, IconSelector } from "@tabler/icons-react";
+import { useState } from "react";
 
 interface ExperimentalConfigSectionProps {
 	value: string;
@@ -24,6 +20,9 @@ export function ExperimentalConfigSection({
 }: ExperimentalConfigSectionProps) {
 	const { data: experimentals, isLoading: experimentalsLoading } =
 		useExperimentalList();
+	const [drawerOpen, setDrawerOpen] = useState(false);
+
+	const selectedExperimental = experimentals?.find((e) => e.uuid === value);
 
 	return (
 		<AccordionItem value="experimental">
@@ -38,9 +37,9 @@ export function ExperimentalConfigSection({
 						Experimental Configuration
 						<span className="text-destructive ml-1">*</span>
 					</span>
-					{value && experimentals && (
+					{selectedExperimental && (
 						<span className="text-sm text-muted-foreground ml-2">
-							({experimentals.find((e) => e.uuid === value)?.name})
+							({selectedExperimental.name})
 						</span>
 					)}
 				</div>
@@ -64,21 +63,33 @@ export function ExperimentalConfigSection({
 							</p>
 						</div>
 					) : (
-						<Select value={value || undefined} onValueChange={onChange}>
-							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select an experimental configuration" />
-							</SelectTrigger>
-							<SelectContent>
-								{experimentals.map((experimentalItem) => (
-									<SelectItem
-										key={experimentalItem.uuid}
-										value={experimentalItem.uuid}
-									>
-										{experimentalItem.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<>
+							<Button
+								variant="outline"
+								className="w-full justify-between"
+								onClick={() => setDrawerOpen(true)}
+							>
+								<span
+									className={
+										selectedExperimental ? "" : "text-muted-foreground"
+									}
+								>
+									{selectedExperimental?.name ||
+										"Select an experimental configuration"}
+								</span>
+								<IconSelector className="size-4 text-muted-foreground" />
+							</Button>
+
+							<SelectorDrawer
+								open={drawerOpen}
+								onOpenChange={setDrawerOpen}
+								title="Select Experimental Configuration"
+								description="Choose an experimental configuration for this config."
+								items={experimentals}
+								value={value}
+								onSelect={onChange}
+							/>
+						</>
 					)}
 				</div>
 			</AccordionContent>
