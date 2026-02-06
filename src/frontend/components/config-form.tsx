@@ -51,7 +51,7 @@ export interface SingBoxConfig {
 		/**
 		 * route 基础配置的 uuid（可选）
 		 */
-		baseConfig?: string;
+		config?: string;
 		/**
 		 * route rules
 		 */
@@ -114,8 +114,8 @@ export function ConfigForm({
 	);
 
 	// Route 配置状态
-	const [routeBaseConfig, setRouteBaseConfig] = useState<string | undefined>(
-		initialData?.route?.baseConfig,
+	const [routeConfig, setRouteConfig] = useState<string | undefined>(
+		initialData?.route?.config,
 	);
 	const [routeRules, setRouteRules] = useState<SingBoxConfig["route"]["rules"]>(
 		initialData?.route?.rules || [],
@@ -166,7 +166,7 @@ export function ConfigForm({
 			},
 			inbounds,
 			route: {
-				baseConfig: routeBaseConfig,
+				config: routeConfig,
 				rules: routeRules,
 				final: routeFinal,
 			},
@@ -288,8 +288,8 @@ export function ConfigForm({
 											/>
 
 											<RouteConfigSection
-												baseConfig={routeBaseConfig}
-												onBaseConfigChange={setRouteBaseConfig}
+												config={routeConfig}
+												onConfigChange={setRouteConfig}
 												rules={routeRules}
 												onRulesChange={setRouteRules}
 												final={routeFinal}

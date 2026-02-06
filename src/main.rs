@@ -118,6 +118,13 @@ async fn main() -> anyhow::Result<()> {
       "/api/outbound-group/reorder",
       axum::routing::post(backend::api::outbound_group::reorder_outbound_groups),
     )
+    .route(
+      "/api/config",
+      axum::routing::post(backend::api::config::create_config)
+        .get(backend::api::config::list_configs)
+        .put(backend::api::config::update_config)
+        .delete(backend::api::config::delete_config),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005

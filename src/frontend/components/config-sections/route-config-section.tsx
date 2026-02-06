@@ -32,8 +32,8 @@ import {
 import { useMemo } from "react";
 
 interface RouteConfigSectionProps {
-	baseConfig: string | undefined;
-	onBaseConfigChange: (value: string | undefined) => void;
+	config: string | undefined;
+	onConfigChange: (value: string | undefined) => void;
 	rules: SingBoxConfig["route"]["rules"];
 	onRulesChange: (value: SingBoxConfig["route"]["rules"]) => void;
 	final: string;
@@ -42,8 +42,8 @@ interface RouteConfigSectionProps {
 }
 
 export function RouteConfigSection({
-	baseConfig,
-	onBaseConfigChange,
+	config,
+	onConfigChange,
 	rules,
 	onRulesChange,
 	final,
@@ -166,9 +166,9 @@ export function RouteConfigSection({
 							</div>
 						) : (
 							<RadioGroup
-								value={baseConfig || "none"}
+								value={config || "none"}
 								onValueChange={(value) =>
-									onBaseConfigChange(value === "none" ? undefined : value)
+									onConfigChange(value === "none" ? undefined : value)
 								}
 							>
 								<div className="grid grid-cols-1 gap-2">
@@ -177,7 +177,7 @@ export function RouteConfigSection({
 										value="none"
 										title="No base config"
 										description="Use empty base configuration"
-										selected={!baseConfig || baseConfig === "none"}
+										selected={!config || config === "none"}
 									/>
 									{routes.map((configItem) => (
 										<RadioCard
@@ -186,7 +186,7 @@ export function RouteConfigSection({
 											value={configItem.uuid}
 											title={configItem.name}
 											description={configItem.json}
-											selected={baseConfig === configItem.uuid}
+											selected={config === configItem.uuid}
 										/>
 									))}
 								</div>
