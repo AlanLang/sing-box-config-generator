@@ -126,6 +126,16 @@ async fn main() -> anyhow::Result<()> {
         .delete(backend::api::config::delete_config),
     )
     .route(
+      "/api/backup",
+      axum::routing::post(backend::api::backup::create_backup)
+        .get(backend::api::backup::list_backups)
+        .delete(backend::api::backup::delete_backup),
+    )
+    .route(
+      "/api/backup/download/{uuid}",
+      axum::routing::get(backend::api::backup::download_backup),
+    )
+    .route(
       "/download/{uuid}",
       axum::routing::get(backend::api::config_generator::generate_config),
     )

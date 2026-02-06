@@ -20,6 +20,7 @@ import { Route as InboundIndexRouteImport } from './inbound/index'
 import { Route as ExperimentalIndexRouteImport } from './experimental/index'
 import { Route as DnsServerIndexRouteImport } from './dns-server/index'
 import { Route as DnsConfigIndexRouteImport } from './dns-config/index'
+import { Route as BackupIndexRouteImport } from './backup/index'
 import { Route as SubscribeOutboundGroupIndexRouteImport } from './subscribe.outbound-group/index'
 import { Route as SubscribeFilterIndexRouteImport } from './subscribe.filter/index'
 
@@ -78,6 +79,11 @@ const DnsConfigIndexRoute = DnsConfigIndexRouteImport.update({
   path: '/dns-config/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackupIndexRoute = BackupIndexRouteImport.update({
+  id: '/backup/',
+  path: '/backup/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SubscribeOutboundGroupIndexRoute =
   SubscribeOutboundGroupIndexRouteImport.update({
     id: '/subscribe/outbound-group/',
@@ -92,6 +98,7 @@ const SubscribeFilterIndexRoute = SubscribeFilterIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/backup': typeof BackupIndexRoute
   '/dns-config': typeof DnsConfigIndexRoute
   '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/backup': typeof BackupIndexRoute
   '/dns-config': typeof DnsConfigIndexRoute
   '/dns-server': typeof DnsServerIndexRoute
   '/experimental': typeof ExperimentalIndexRoute
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/backup/': typeof BackupIndexRoute
   '/dns-config/': typeof DnsConfigIndexRoute
   '/dns-server/': typeof DnsServerIndexRoute
   '/experimental/': typeof ExperimentalIndexRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/backup'
     | '/dns-config'
     | '/dns-server'
     | '/experimental'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/backup'
     | '/dns-config'
     | '/dns-server'
     | '/experimental'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/backup/'
     | '/dns-config/'
     | '/dns-server/'
     | '/experimental/'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BackupIndexRoute: typeof BackupIndexRoute
   DnsConfigIndexRoute: typeof DnsConfigIndexRoute
   DnsServerIndexRoute: typeof DnsServerIndexRoute
   ExperimentalIndexRoute: typeof ExperimentalIndexRoute
@@ -279,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DnsConfigIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backup/': {
+      id: '/backup/'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof BackupIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/subscribe/outbound-group/': {
       id: '/subscribe/outbound-group/'
       path: '/subscribe/outbound-group'
@@ -298,6 +318,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BackupIndexRoute: BackupIndexRoute,
   DnsConfigIndexRoute: DnsConfigIndexRoute,
   DnsServerIndexRoute: DnsServerIndexRoute,
   ExperimentalIndexRoute: ExperimentalIndexRoute,

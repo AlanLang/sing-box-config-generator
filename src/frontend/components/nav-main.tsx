@@ -9,7 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { IconCloudDown, IconCloudPlus, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconListCheck, IconLocationDown, IconLogs, IconMoodHeart, IconRouter, IconWorldSearch, IconWorldCog, IconFilter, IconLayersIntersect } from "@tabler/icons-react"
+import { IconArchive, IconCloudDown, IconCloudPlus, IconCloudUp, IconCubeUnfolded, IconFlaskFilled, IconListCheck, IconLocationDown, IconLogs, IconMoodHeart, IconRouter, IconWorldSearch, IconWorldCog, IconFilter, IconLayersIntersect } from "@tabler/icons-react"
 import { Link, useLocation } from "@tanstack/react-router"
 
 const resources = [
@@ -78,6 +78,14 @@ const singBoxConfigs = [
   }
 ]
 
+const tools = [
+  {
+    title: "Backup",
+    url: "/backup",
+    icon: IconArchive,
+  },
+]
+
 
 
 export function NavMain({
@@ -125,6 +133,19 @@ export function NavMain({
         <SidebarGroupLabel>SingBox Configs</SidebarGroupLabel>
         <SidebarMenu>
           {singBoxConfigs.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton tooltip={item.title} asChild isActive={location.pathname === item.url}>
+                <Link to={item.url} className="w-full">
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+        <SidebarGroupLabel>Tools</SidebarGroupLabel>
+        <SidebarMenu>
+          {tools.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} asChild isActive={location.pathname === item.url}>
                 <Link to={item.url} className="w-full">
