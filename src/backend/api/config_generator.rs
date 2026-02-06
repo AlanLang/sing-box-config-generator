@@ -949,18 +949,16 @@ async fn resolve_route(
 }
 
 /// Sanitize filename for safe download
+/// Keeps Unicode characters (including Chinese) but replaces filesystem-unsafe characters
 fn sanitize_filename(name: &str) -> String {
+  // Characters that are generally unsafe in filenames across platforms
+  const UNSAFE_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
+
   name
     .chars()
-    .map(|c| {
-      if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
-        c
-      } else {
-        '_'
-      }
-    })
+    .map(|c| if UNSAFE_CHARS.contains(&c) { '_' } else { c })
     .collect::<String>()
     .chars()
-    .take(50) // Limit length
+    .take(100) // Increased limit to accommodate Unicode characters
     .collect()
 }
