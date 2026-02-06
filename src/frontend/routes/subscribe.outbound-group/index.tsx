@@ -193,7 +193,7 @@ function RouteComponent() {
         <SortableGrid
           items={groups || []}
           onReorder={handleReorder}
-          renderItem={(group, index) => {
+          renderItem={(group, index, dragHandleProps) => {
             // Map UUIDs to names, filter out not found ones
             const outboundNames = group.outbounds
               .map((uuid) => uuidToNameMap.get(uuid))
@@ -215,6 +215,7 @@ function RouteComponent() {
                 onClick={() => handleEdit(group)}
                 index={index}
                 uuid={group.uuid}
+                dragHandleProps={dragHandleProps}
               />
             );
           }}

@@ -1,5 +1,10 @@
-import { IconChevronRight, IconCode } from "@tabler/icons-react";
+import {
+  IconChevronRight,
+  IconCode,
+  IconGripVertical,
+} from "@tabler/icons-react";
 import { motion } from "framer-motion";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import type { ReactNode } from "react";
 
 interface ConfigCardProps {
@@ -9,6 +14,7 @@ interface ConfigCardProps {
   index: number;
   uuid: string;
   actions?: ReactNode;
+  dragHandleProps?: SyntheticListenerMap;
 }
 
 /**
@@ -32,6 +38,7 @@ export function ConfigCard({
   onClick,
   index,
   actions,
+  dragHandleProps,
 }: ConfigCardProps) {
   const formattedPreview = formatJsonPreview(jsonPreview);
   return (
@@ -73,9 +80,21 @@ export function ConfigCard({
         <div className="relative flex-shrink-0 p-4 border-b border-border/50">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {/* Icon indicator */}
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-150">
-                <IconCode className="size-4 text-primary/60 group-hover:text-primary transition-all duration-150" />
+              {/* Drag handle (visible on hover) or icon indicator */}
+              <div
+                className="relative flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-150 cursor-grab active:cursor-grabbing"
+                {...dragHandleProps}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                {/* Default icon - hidden on hover if drag handle is available */}
+                <IconCode
+                  className={`size-4 text-primary/60 transition-all duration-150 absolute ${dragHandleProps ? "group-hover:opacity-0" : ""}`}
+                />
+                {/* Drag handle icon - shown on hover if available */}
+                {dragHandleProps && (
+                  <IconGripVertical className="size-4 text-primary/60 group-hover:text-primary transition-all duration-150 absolute opacity-0 group-hover:opacity-100" />
+                )}
               </div>
               <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-all duration-150">
                 {name}

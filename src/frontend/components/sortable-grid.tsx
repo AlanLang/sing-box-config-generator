@@ -20,7 +20,11 @@ import type { ReactNode } from "react";
 interface SortableGridProps<T extends { uuid: string }> {
   items: T[];
   onReorder: (items: T[]) => void;
-  renderItem: (item: T, index: number) => ReactNode;
+  renderItem: (
+    item: T,
+    index: number,
+    dragHandleProps: ReturnType<typeof useSortable>["listeners"],
+  ) => ReactNode;
 }
 
 export function SortableGrid<T extends { uuid: string }>({
@@ -57,7 +61,7 @@ export function SortableGrid<T extends { uuid: string }>({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {items.map((item, index) => (
             <SortableItem key={item.uuid} id={item.uuid}>
-              {renderItem(item, index)}
+              {(dragHandleProps) => renderItem(item, index, dragHandleProps)}
             </SortableItem>
           ))}
         </div>
@@ -68,23 +72,26 @@ export function SortableGrid<T extends { uuid: string }>({
 
 interface SortableItemProps {
   id: string;
-  children: ReactNode;
+  children: (
+    dragHandleProps: ReturnType<typeof useSortable>["listeners"],
+  ) => ReactNode;
 }
 
 function SortableItem({ id, children }: SortableItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useSortable({
+      id,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    // Remove transition to eliminate rubber band effect on drop
     opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {children(listeners)}
     </div>
   );
 }
