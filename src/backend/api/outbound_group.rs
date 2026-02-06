@@ -3,11 +3,12 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-const OUTBOUND_GROUP_DIR: &str = "./data/outbound_groups";
+const DATA_DIR: &str = "./data";
+const OUTBOUND_GROUP_FILE: &str = "./data/outbound_groups.json";
 const OUTBOUND_DIR: &str = "./data/outbounds";
 const FILTER_DIR: &str = "./data/filters";
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct OutboundGroupCreateDto {
   pub uuid: String,
   pub name: String,
@@ -25,6 +26,11 @@ pub struct OutboundGroupCreateDto {
   pub interrupt_exist_connections: Option<bool>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct OutboundGroupList {
+  pub groups: Vec<OutboundGroupCreateDto>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct UpdateQuery {
   pub uuid: String,
@@ -33,6 +39,40 @@ pub struct UpdateQuery {
 #[derive(Debug, Deserialize)]
 pub struct DeleteQuery {
   pub uuid: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderDto {
+  pub uuids: Vec<String>,
+}
+
+// Helper function to read the groups list
+fn read_groups_list() -> Result<OutboundGroupList, String> {
+  if !PathBuf::from(OUTBOUND_GROUP_FILE).exists() {
+    return Ok(OutboundGroupList { groups: Vec::new() });
+  }
+
+  let content = fs::read_to_string(OUTBOUND_GROUP_FILE)
+    .map_err(|e| format!("Failed to read outbound groups file: {}", e))?;
+
+  let list: OutboundGroupList = serde_json::from_str(&content)
+    .map_err(|e| format!("Failed to parse outbound groups file: {}", e))?;
+
+  Ok(list)
+}
+
+// Helper function to write the groups list
+fn write_groups_list(list: &OutboundGroupList) -> Result<(), String> {
+  // Ensure data directory exists
+  fs::create_dir_all(DATA_DIR).map_err(|e| format!("Failed to create data directory: {}", e))?;
+
+  let json_content = serde_json::to_string_pretty(list)
+    .map_err(|e| format!("Failed to serialize outbound groups: {}", e))?;
+
+  fs::write(OUTBOUND_GROUP_FILE, json_content)
+    .map_err(|e| format!("Failed to write outbound groups file: {}", e))?;
+
+  Ok(())
 }
 
 #[derive(Debug, Serialize)]
@@ -48,16 +88,17 @@ pub struct OutboundOptionDto {
 pub async fn create_outbound_group(
   Json(payload): Json<OutboundGroupCreateDto>,
 ) -> impl IntoResponse {
-  // Ensure directory exists
-  if let Err(e) = fs::create_dir_all(OUTBOUND_GROUP_DIR) {
-    let error_msg = format!("Failed to create outbound groups directory: {}", e);
-    eprintln!("{}", error_msg);
-    return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
-  }
+  // Read existing groups
+  let mut list = match read_groups_list() {
+    Ok(list) => list,
+    Err(e) => {
+      eprintln!("{}", e);
+      return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+    }
+  };
 
-  let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", payload.uuid));
-
-  if file_path.exists() {
+  // Check if UUID already exists
+  if list.groups.iter().any(|g| g.uuid == payload.uuid) {
     return (
       StatusCode::CONFLICT,
       "Outbound group with this UUID already exists",
@@ -65,97 +106,88 @@ pub async fn create_outbound_group(
       .into_response();
   }
 
-  // Serialize the payload
-  let json_content = match serde_json::to_string_pretty(&payload) {
-    Ok(content) => content,
-    Err(e) => {
-      let error_msg = format!("Failed to serialize outbound group: {}", e);
-      eprintln!("{}", error_msg);
-      return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
-    }
-  };
+  // Add new group
+  list.groups.push(payload.clone());
 
-  // Write to file
-  if let Err(e) = fs::write(&file_path, json_content) {
-    let error_msg = format!("Failed to write outbound group file: {}", e);
-    eprintln!("{}", error_msg);
-    return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
+  // Write back
+  if let Err(e) = write_groups_list(&list) {
+    eprintln!("{}", e);
+    return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
   }
 
   (StatusCode::CREATED, Json(payload)).into_response()
 }
 
 pub async fn list_outbound_groups() -> impl IntoResponse {
-  let mut groups = Vec::new();
-
-  let entries = match fs::read_dir(OUTBOUND_GROUP_DIR) {
-    Ok(entries) => entries,
-    Err(_) => {
-      return (StatusCode::OK, Json(groups)).into_response();
-    }
+  let list = match read_groups_list() {
+    Ok(list) => list,
+    Err(_) => OutboundGroupList { groups: Vec::new() },
   };
 
-  for entry in entries.flatten() {
-    let path = entry.path();
-    if path.extension().and_then(|s| s.to_str()) == Some("json") {
-      if let Ok(content) = fs::read_to_string(&path) {
-        if let Ok(group) = serde_json::from_str::<OutboundGroupCreateDto>(&content) {
-          // Return full data instead of summary
-          groups.push(group);
-        }
-      }
-    }
-  }
-
-  (StatusCode::OK, Json(groups)).into_response()
+  (StatusCode::OK, Json(list.groups)).into_response()
 }
 
 pub async fn update_outbound_group(
   axum::extract::Query(query): axum::extract::Query<UpdateQuery>,
   Json(payload): Json<OutboundGroupCreateDto>,
 ) -> impl IntoResponse {
-  let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", query.uuid));
-
-  if !file_path.exists() {
-    return (StatusCode::NOT_FOUND, "Outbound group not found").into_response();
-  }
-
-  // Serialize the payload
-  let json_content = match serde_json::to_string_pretty(&payload) {
-    Ok(content) => content,
+  // Read existing groups
+  let mut list = match read_groups_list() {
+    Ok(list) => list,
     Err(e) => {
-      let error_msg = format!("Failed to serialize outbound group: {}", e);
-      eprintln!("{}", error_msg);
-      return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
+      eprintln!("{}", e);
+      return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
     }
   };
 
-  // Write to file
-  if let Err(e) = fs::write(&file_path, json_content) {
-    let error_msg = format!("Failed to update outbound group file: {}", e);
-    eprintln!("{}", error_msg);
-    return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
-  }
+  // Find and update the group
+  let group_index = list.groups.iter().position(|g| g.uuid == query.uuid);
 
-  (StatusCode::OK, Json(payload)).into_response()
+  match group_index {
+    Some(index) => {
+      list.groups[index] = payload.clone();
+
+      // Write back
+      if let Err(e) = write_groups_list(&list) {
+        eprintln!("{}", e);
+        return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+      }
+
+      (StatusCode::OK, Json(payload)).into_response()
+    }
+    None => (StatusCode::NOT_FOUND, "Outbound group not found").into_response(),
+  }
 }
 
 pub async fn delete_outbound_group(
   axum::extract::Query(query): axum::extract::Query<DeleteQuery>,
 ) -> impl IntoResponse {
-  let file_path = PathBuf::from(OUTBOUND_GROUP_DIR).join(format!("{}.json", query.uuid));
+  // Read existing groups
+  let mut list = match read_groups_list() {
+    Ok(list) => list,
+    Err(e) => {
+      eprintln!("{}", e);
+      return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+    }
+  };
 
-  if !file_path.exists() {
-    return (StatusCode::NOT_FOUND, "Outbound group not found").into_response();
+  // Find and remove the group
+  let group_index = list.groups.iter().position(|g| g.uuid == query.uuid);
+
+  match group_index {
+    Some(index) => {
+      list.groups.remove(index);
+
+      // Write back
+      if let Err(e) = write_groups_list(&list) {
+        eprintln!("{}", e);
+        return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+      }
+
+      (StatusCode::OK, "Outbound group deleted successfully").into_response()
+    }
+    None => (StatusCode::NOT_FOUND, "Outbound group not found").into_response(),
   }
-
-  if let Err(e) = fs::remove_file(&file_path) {
-    let error_msg = format!("Failed to delete outbound group file: {}", e);
-    eprintln!("{}", error_msg);
-    return (StatusCode::INTERNAL_SERVER_ERROR, error_msg).into_response();
-  }
-
-  (StatusCode::OK, "Outbound group deleted successfully").into_response()
 }
 
 pub async fn get_available_options() -> impl IntoResponse {
@@ -235,24 +267,57 @@ pub async fn get_available_options() -> impl IntoResponse {
   }
 
   // Read outbound group options
-  if let Ok(entries) = fs::read_dir(OUTBOUND_GROUP_DIR) {
-    for entry in entries.flatten() {
-      let path = entry.path();
-      if path.extension().and_then(|s| s.to_str()) == Some("json") {
-        if let Ok(content) = fs::read_to_string(&path) {
-          if let Ok(group) = serde_json::from_str::<OutboundGroupCreateDto>(&content) {
-            options.push(OutboundOptionDto {
-              uuid: group.uuid,
-              value: group.name.clone(),
-              label: group.name,
-              source: "outbound_group".to_string(),
-              option_type: Some(group.group_type),
-            });
-          }
-        }
-      }
-    }
+  let list = read_groups_list().unwrap_or(OutboundGroupList { groups: Vec::new() });
+  for group in list.groups {
+    options.push(OutboundOptionDto {
+      uuid: group.uuid,
+      value: group.name.clone(),
+      label: group.name,
+      source: "outbound_group".to_string(),
+      option_type: Some(group.group_type),
+    });
   }
 
   (StatusCode::OK, Json(options)).into_response()
+}
+
+pub async fn reorder_outbound_groups(Json(payload): Json<ReorderDto>) -> impl IntoResponse {
+  // Read existing groups
+  let mut list = match read_groups_list() {
+    Ok(list) => list,
+    Err(e) => {
+      eprintln!("{}", e);
+      return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+    }
+  };
+
+  // Create a map of uuid -> group for quick lookup
+  let mut group_map: std::collections::HashMap<String, OutboundGroupCreateDto> = list
+    .groups
+    .into_iter()
+    .map(|g| (g.uuid.clone(), g))
+    .collect();
+
+  // Rebuild the list in the new order
+  let mut reordered_groups = Vec::new();
+  for uuid in payload.uuids {
+    if let Some(group) = group_map.remove(&uuid) {
+      reordered_groups.push(group);
+    }
+  }
+
+  // Add any remaining groups that weren't in the reorder list
+  for (_, group) in group_map {
+    reordered_groups.push(group);
+  }
+
+  list.groups = reordered_groups;
+
+  // Write back
+  if let Err(e) = write_groups_list(&list) {
+    eprintln!("{}", e);
+    return (StatusCode::INTERNAL_SERVER_ERROR, e).into_response();
+  }
+
+  (StatusCode::OK, "Reordered successfully").into_response()
 }

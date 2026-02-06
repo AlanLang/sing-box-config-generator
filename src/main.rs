@@ -110,6 +110,10 @@ async fn main() -> anyhow::Result<()> {
       "/api/outbound-group/options",
       axum::routing::get(backend::api::outbound_group::get_available_options),
     )
+    .route(
+      "/api/outbound-group/reorder",
+      axum::routing::post(backend::api::outbound_group::reorder_outbound_groups),
+    )
     .fallback_service(get_service(serve_dir));
 
   // 从环境变量读取端口，默认为 3005

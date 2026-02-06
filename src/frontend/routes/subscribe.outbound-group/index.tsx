@@ -7,11 +7,13 @@ import { useOutboundGroupList } from "@/api/outbound-group/list";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import type { GroupType, OutboundGroupDto } from "@/api/outbound-group/types";
 import { useOutboundGroupUpdate } from "@/api/outbound-group/update";
+import { useOutboundGroupReorder } from "@/api/outbound-group/reorder";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
 import { OutboundGroupEditor } from "@/components/outbound-group-editor";
 import { SkeletonGrid } from "@/components/skeleton-grid";
+import { SortableGrid } from "@/components/sortable-grid";
 import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
 import { createFileRoute } from "@tanstack/react-router";
@@ -28,6 +30,7 @@ function RouteComponent() {
   const { data: options } = useOutboundGroupOptions();
   const updateMutation = useOutboundGroupUpdate();
   const deleteMutation = useOutboundGroupDelete();
+  const reorderMutation = useOutboundGroupReorder();
 
   // Create a UUID to name mapping from options data
   const uuidToNameMap = useMemo(() => {
@@ -152,6 +155,21 @@ function RouteComponent() {
     }
   };
 
+  const handleReorder = async (reorderedGroups: OutboundGroupDto[]) => {
+    try {
+      const uuids = reorderedGroups.map((g) => g.uuid);
+      await reorderMutation.mutateAsync(uuids);
+      toast.success("Order saved successfully");
+    } catch (error: any) {
+      console.error("Failed to reorder outbound groups:", error);
+      const errorMessage = await extractErrorMessage(
+        error,
+        "Failed to save order",
+      );
+      toast.error(errorMessage);
+    }
+  };
+
   return (
     <AppPage
       title="Outbound Group Configuration"
@@ -172,8 +190,10 @@ function RouteComponent() {
           onAction={handleNew}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {groups?.map((group, index) => {
+        <SortableGrid
+          items={groups || []}
+          onReorder={handleReorder}
+          renderItem={(group, index) => {
             // Map UUIDs to names, filter out not found ones
             const outboundNames = group.outbounds
               .map((uuid) => uuidToNameMap.get(uuid))
@@ -190,7 +210,6 @@ function RouteComponent() {
             );
             return (
               <ConfigCard
-                key={group.uuid}
                 name={group.name}
                 jsonPreview={preview}
                 onClick={() => handleEdit(group)}
@@ -198,8 +217,8 @@ function RouteComponent() {
                 uuid={group.uuid}
               />
             );
-          })}
-        </div>
+          }}
+        />
       )}
 
       <OutboundGroupEditor
