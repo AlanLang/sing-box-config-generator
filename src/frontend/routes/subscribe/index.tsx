@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { SubscribeEditor } from "@/components/subscribe-editor";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   IconCubePlus,
   IconExternalLink,
@@ -54,6 +55,7 @@ function RouteComponent() {
     website_url: "",
     content: "",
     last_updated: null,
+    enabled: true,
   });
   const [editUuid, setEditUuid] = useState("");
 
@@ -108,6 +110,7 @@ function RouteComponent() {
       website_url: "",
       content: "",
       last_updated: null,
+      enabled: true,
     });
     setEditUuid(uuidv4());
     setFocusMode(true);
@@ -205,6 +208,26 @@ function RouteComponent() {
     }
   };
 
+  const handleToggleEnabled = async (
+    subscribe: { uuid: string; name: string; json: string },
+    enabled: boolean,
+  ) => {
+    try {
+      const metadata = parseSubscriptionJson(subscribe.json);
+      metadata.enabled = enabled;
+      await updateSubscribeMutation.mutateAsync({
+        uuid: subscribe.uuid,
+        name: subscribe.name,
+        json: stringifySubscriptionJson(metadata),
+      });
+      toast.success(enabled ? "Subscribe enabled" : "Subscribe disabled");
+      await refetchList();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update subscribe");
+    }
+  };
+
   const handleRefreshInEditor = async () => {
     if (!selectedUuid) return;
     await handleRefresh(selectedUuid);
@@ -259,10 +282,12 @@ function RouteComponent() {
               {subscribes.map((subscribe, index) => {
                 const metadata = parseSubscriptionJson(subscribe.json);
                 const timeAgo = formatTimeAgo(metadata.last_updated);
+                const isEnabled = metadata.enabled !== false;
                 return (
                   <ConfigCard
                     key={subscribe.uuid}
                     name={subscribe.name}
+                    disabled={!isEnabled}
                     jsonPreview={`URL: ${metadata.subscription_url}\n${metadata.last_updated ? `Updated: ${timeAgo}` : "Not fetched yet"}`}
                     onClick={() => {
                       setSelectedUuid(subscribe.uuid);
@@ -273,6 +298,14 @@ function RouteComponent() {
                     uuid={subscribe.uuid}
                     actions={
                       <>
+                        <Switch
+                          checked={metadata.enabled !== false}
+                          onCheckedChange={(checked) =>
+                            handleToggleEnabled(subscribe, checked)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          className="scale-75"
+                        />
                         {metadata.website_url && (
                           <a
                             href={metadata.website_url}
@@ -325,6 +358,10 @@ function RouteComponent() {
         }
         content={editMetadata.content}
         lastUpdated={editMetadata.last_updated}
+        enabled={editMetadata.enabled !== false}
+        onEnabledChange={(enabled) =>
+          setEditMetadata({ ...editMetadata, enabled })
+        }
         uuid={isCreating ? editUuid : selectedSubscribe?.uuid || ""}
         onClose={handleExitFocus}
         onSave={handleSave}

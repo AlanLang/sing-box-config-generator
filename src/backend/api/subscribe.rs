@@ -136,6 +136,8 @@ struct SubscriptionMetadata {
   content: String,
   #[allow(dead_code)]
   last_updated: Option<String>,
+  #[allow(dead_code)]
+  enabled: Option<bool>,
 }
 
 pub async fn refresh_subscribe(
@@ -192,6 +194,7 @@ pub async fn refresh_subscribe(
     "website_url": metadata.website_url,
     "content": subscription_content,
     "last_updated": now,
+    "enabled": metadata.enabled.unwrap_or(true),
   });
 
   subscribe_dto.json = serde_json::to_string(&updated_metadata)?;

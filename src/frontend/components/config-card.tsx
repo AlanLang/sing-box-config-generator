@@ -15,6 +15,7 @@ interface ConfigCardProps {
   uuid: string;
   actions?: ReactNode;
   dragHandleProps?: SyntheticListenerMap;
+  disabled?: boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ export function ConfigCard({
   index,
   actions,
   dragHandleProps,
+  disabled,
 }: ConfigCardProps) {
   const formattedPreview = formatJsonPreview(jsonPreview);
   return (
@@ -49,7 +51,7 @@ export function ConfigCard({
     >
       <motion.button
         type="button"
-        className="relative flex flex-col h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group"
+        className={`relative flex flex-col h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group ${disabled ? "opacity-50" : ""}`}
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {

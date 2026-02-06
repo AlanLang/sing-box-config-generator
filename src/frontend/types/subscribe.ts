@@ -3,6 +3,7 @@ export interface SubscriptionMetadata {
   website_url?: string;
   content: string;
   last_updated: string | null;
+  enabled?: boolean;
 }
 
 export function parseSubscriptionJson(jsonStr: string): SubscriptionMetadata {
@@ -13,6 +14,7 @@ export function parseSubscriptionJson(jsonStr: string): SubscriptionMetadata {
       website_url: parsed.website_url,
       content: parsed.content || "",
       last_updated: parsed.last_updated || null,
+      enabled: parsed.enabled !== false,
     };
   } catch {
     return {
@@ -20,6 +22,7 @@ export function parseSubscriptionJson(jsonStr: string): SubscriptionMetadata {
       website_url: "",
       content: "",
       last_updated: null,
+      enabled: true,
     };
   }
 }

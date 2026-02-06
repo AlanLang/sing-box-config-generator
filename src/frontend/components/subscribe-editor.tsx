@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +37,8 @@ interface SubscribeEditorProps {
   onWebsiteUrlChange: (url: string) => void;
   content: string;
   lastUpdated: string | null;
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
   uuid: string;
   onClose: () => void;
   onSave: () => void;
@@ -59,6 +62,8 @@ export function SubscribeEditor({
   onWebsiteUrlChange,
   content: _content,
   lastUpdated,
+  enabled,
+  onEnabledChange,
   uuid,
   onClose,
   onSave,
@@ -184,6 +189,15 @@ export function SubscribeEditor({
               <div className="p-6 space-y-6">
                 {/* Form Fields */}
                 <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="subscribe-enabled">Enabled</Label>
+                    <Switch
+                      id="subscribe-enabled"
+                      checked={enabled}
+                      onCheckedChange={onEnabledChange}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="subscription-url">Subscription URL</Label>
                     <Input

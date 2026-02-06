@@ -325,6 +325,11 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
 
           // Parse subscription metadata
           if let Ok(metadata) = serde_json::from_str::<Value>(&subscribe.json) {
+            // Skip disabled subscriptions (enabled defaults to true if not set)
+            if metadata.get("enabled").and_then(|e| e.as_bool()) == Some(false) {
+              continue;
+            }
+
             if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
               // Decode base64 content
               if let Ok(decoded) =
