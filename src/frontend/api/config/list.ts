@@ -1,6 +1,6 @@
 import { http } from "@/api/http";
 import { useQuery } from "@tanstack/react-query";
-import type { DnsConfig, RouteConfig } from "./create";
+import type { DnsConfig, ExtConfig, RouteConfig } from "./create";
 
 export interface ConfigListDto {
   uuid: string;
@@ -10,6 +10,7 @@ export interface ConfigListDto {
   inbounds: string[];
   route: RouteConfig;
   experimental: string;
+  ext_config: ExtConfig;
 }
 
 export const useConfigList = () => {

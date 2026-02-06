@@ -25,6 +25,10 @@ export interface RouteConfig {
   default_domain_resolver?: string;
 }
 
+export interface ExtConfig {
+  download_detour: string;
+}
+
 export interface ConfigCreateDto {
   uuid: string;
   name: string;
@@ -33,6 +37,7 @@ export interface ConfigCreateDto {
   inbounds: string[];
   route: RouteConfig;
   experimental: string;
+  ext_config: ExtConfig;
 }
 
 export async function createConfig(data: ConfigCreateDto) {

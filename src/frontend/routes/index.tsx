@@ -55,6 +55,7 @@ function RouteComponent() {
       inbounds: config.inbounds,
       route: config.route,
       experimental: config.experimental,
+      ext_config: config.ext_config,
     });
     setFormOpen(true);
   };
