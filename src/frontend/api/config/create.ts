@@ -1,4 +1,5 @@
 import { http } from "@/api/http";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface DnsRule {
   rule_set: string[];
@@ -35,4 +36,15 @@ export interface ConfigCreateDto {
 
 export async function createConfig(data: ConfigCreateDto) {
   await http.post("config", { json: data });
+}
+
+export function useConfigCreate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createConfig,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["config", "list"] });
+    },
+  });
 }
