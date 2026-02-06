@@ -152,6 +152,13 @@ export function ConfigForm({
 		setExperimental(initialData?.experimental);
 	}, [initialData]);
 
+	// 当选中的 DNS server 变化时，清除不在列表中的 default domain resolver
+	useEffect(() => {
+		if (routeDefaultDomainResolver && !dnsServers.includes(routeDefaultDomainResolver)) {
+			setRouteDefaultDomainResolver(undefined);
+		}
+	}, [dnsServers, routeDefaultDomainResolver]);
+
 	// 判断是否为编辑模式
 	const isEditMode = !!initialData?.name;
 
@@ -173,7 +180,9 @@ export function ConfigForm({
 		(!routeRules ||
 			routeRules.every(
 				(rule) => rule.rulesets.length > 0 && rule.outbound,
-			));
+			)) &&
+		// 如果选择了多个 DNS server，default_domain_resolver 必填，且必须是已选中的 DNS server
+		(dnsServers.length <= 1 || (!!routeDefaultDomainResolver && dnsServers.includes(routeDefaultDomainResolver)));
 
 	const isValid =
 		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid;
@@ -323,6 +332,7 @@ export function ConfigForm({
 												onFinalChange={setRouteFinal}
 												defaultDomainResolver={routeDefaultDomainResolver}
 												onDefaultDomainResolverChange={setRouteDefaultDomainResolver}
+												dnsServers={dnsServers}
 												isValid={isRouteValid}
 											/>
 

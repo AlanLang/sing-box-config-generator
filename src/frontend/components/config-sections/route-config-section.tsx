@@ -41,6 +41,7 @@ interface RouteConfigSectionProps {
 	onFinalChange: (value: string) => void;
 	defaultDomainResolver: string | undefined;
 	onDefaultDomainResolverChange: (value: string | undefined) => void;
+	dnsServers: string[]; // DNS Configuration 中选中的 DNS servers
 	isValid: boolean;
 }
 
@@ -53,6 +54,7 @@ export function RouteConfigSection({
 	onFinalChange,
 	defaultDomainResolver,
 	onDefaultDomainResolverChange,
+	dnsServers,
 	isValid,
 }: RouteConfigSectionProps) {
 	const { data: routes, isLoading: routesLoading } = useRouteList();
@@ -60,7 +62,16 @@ export function RouteConfigSection({
 		useRulesetOptions();
 	const { data: outboundOptions, isLoading: outboundsLoading } =
 		useOutboundGroupOptions();
-	const { data: dnsServers, isLoading: dnsServersLoading } = useDnsList();
+	const { data: allDnsServers, isLoading: dnsServersLoading } = useDnsList();
+
+	// 只显示在 DNS Configuration 中选中的 DNS servers
+	const selectedDnsServerItems = useMemo(() => {
+		if (!allDnsServers) return [];
+		return allDnsServers.filter((server) => dnsServers.includes(server.uuid));
+	}, [allDnsServers, dnsServers]);
+
+	// 如果选择了多个 DNS server，default_domain_resolver 必填
+	const isMultipleDnsServers = dnsServers.length > 1;
 
 	// 过滤掉 filter 类型，只保留 outbound 和 outbound_group
 	const filteredOutboundOptions = useMemo(() => {
@@ -506,17 +517,24 @@ export function RouteConfigSection({
 						)}
 					</div>
 
-					{/* 4. Default Domain Resolver 配置（可选） */}
+					{/* 4. Default Domain Resolver 配置 */}
 					<div className="space-y-3">
 						<div>
 							<Label className="text-base">
 								Default Domain Resolver{" "}
-								<span className="text-muted-foreground text-sm font-normal">
-									(Optional)
-								</span>
+								{isMultipleDnsServers ? (
+									<span className="text-destructive">*</span>
+								) : (
+									<span className="text-muted-foreground text-sm font-normal">
+										(Optional)
+									</span>
+								)}
 							</Label>
 							<p className="text-sm text-muted-foreground mt-1">
-								Select a DNS server for domain resolution in routing. This will use the server's tag (or name if no tag exists).
+								Select a DNS server for domain resolution in routing. Only servers selected in DNS Configuration are available.
+								{isMultipleDnsServers && (
+									<span className="text-destructive font-medium"> Required when multiple DNS servers are selected.</span>
+								)}
 							</p>
 						</div>
 
@@ -524,10 +542,10 @@ export function RouteConfigSection({
 							<div className="text-sm text-muted-foreground">
 								Loading DNS servers...
 							</div>
-						) : !dnsServers || dnsServers.length === 0 ? (
+						) : selectedDnsServerItems.length === 0 ? (
 							<div className="p-4 border border-dashed rounded-lg text-center">
 								<p className="text-sm text-muted-foreground">
-									No DNS servers found. You can proceed without default domain resolver.
+									No DNS servers selected in DNS Configuration. Please select DNS servers first.
 								</p>
 							</div>
 						) : (
@@ -539,7 +557,7 @@ export function RouteConfigSection({
 									<SelectValue placeholder="Select a DNS server">
 										{defaultDomainResolver ? (
 											<span>
-												{dnsServers.find((s) => s.uuid === defaultDomainResolver)?.name}
+												{selectedDnsServerItems.find((s) => s.uuid === defaultDomainResolver)?.name}
 											</span>
 										) : (
 											<span className="text-muted-foreground">None</span>
@@ -547,16 +565,23 @@ export function RouteConfigSection({
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="none">
-										<span className="text-muted-foreground">None</span>
-									</SelectItem>
-									{dnsServers.map((server) => (
+									{!isMultipleDnsServers && (
+										<SelectItem value="none">
+											<span className="text-muted-foreground">None</span>
+										</SelectItem>
+									)}
+									{selectedDnsServerItems.map((server) => (
 										<SelectItem key={server.uuid} value={server.uuid}>
 											<span className="font-medium">{server.name}</span>
 										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
+						)}
+						{isMultipleDnsServers && !defaultDomainResolver && (
+							<p className="text-sm text-destructive">
+								Please select a default domain resolver
+							</p>
 						)}
 					</div>
 				</div>
