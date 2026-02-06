@@ -15,6 +15,7 @@ import { LogConfigSection } from "./config-sections/log-config-section";
 import { InboundsConfigSection } from "./config-sections/inbounds-config-section";
 import { RouteConfigSection } from "./config-sections/route-config-section";
 import { ExperimentalConfigSection } from "./config-sections/experimental-config-section";
+import { OtherConfigSection } from "./config-sections/other-config-section";
 
 export interface SingBoxConfig {
 	name: string;
@@ -78,8 +79,16 @@ export interface SingBoxConfig {
 	 * experimental 配置的 uuid
 	 */
 	experimental: string;
-	// TODO: 添加其他模块的字段
-	// outbounds: string[];
+	/**
+	 * 扩展配置
+	 */
+	ext_config: {
+		/**
+		 * download_detour: outbound 或 outbound_group 的 uuid
+		 * 用于 remote rule_set 的 download_detour 和 experimental.clash_api.external_ui_download_detour
+		 */
+		download_detour: string;
+	};
 }
 
 interface ConfigFormProps {
@@ -136,6 +145,11 @@ export function ConfigForm({
 		initialData?.experimental || "",
 	);
 
+	// Other 配置状态
+	const [downloadDetour, setDownloadDetour] = useState<string>(
+		initialData?.ext_config?.download_detour || "",
+	);
+
 	// 当 initialData 变化时，更新所有状态
 	useEffect(() => {
 		setName(initialData?.name || "");
@@ -150,6 +164,7 @@ export function ConfigForm({
 		setRouteFinal(initialData?.route?.final || "");
 		setRouteDefaultDomainResolver(initialData?.route?.default_domain_resolver);
 		setExperimental(initialData?.experimental || "");
+		setDownloadDetour(initialData?.ext_config?.download_detour || "");
 	}, [initialData]);
 
 	// 当选中的 DNS server 变化时，清除不在列表中的 default domain resolver
@@ -185,7 +200,7 @@ export function ConfigForm({
 		(dnsServers.length <= 1 || (!!routeDefaultDomainResolver && dnsServers.includes(routeDefaultDomainResolver)));
 
 	const isValid =
-		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid && !!experimental;
+		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid && !!experimental && !!downloadDetour;
 
 	const handleSave = () => {
 		if (!isValid) return;
@@ -207,6 +222,9 @@ export function ConfigForm({
 				default_domain_resolver: routeDefaultDomainResolver,
 			},
 			experimental,
+			ext_config: {
+				download_detour: downloadDetour,
+			},
 		});
 	};
 
@@ -341,7 +359,11 @@ export function ConfigForm({
 												onChange={setExperimental}
 											/>
 
-											{/* TODO: 其他模块 */}
+
+											<OtherConfigSection
+												downloadDetour={downloadDetour}
+												onDownloadDetourChange={setDownloadDetour}
+											/>
 										</Accordion>
 									</div>
 								</div>

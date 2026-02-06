@@ -35,6 +35,11 @@ pub struct RouteConfigDto {
   pub default_domain_resolver: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ExtConfigDto {
+  pub download_detour: String,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ConfigCreateDto {
   pub uuid: String,
@@ -44,6 +49,7 @@ pub struct ConfigCreateDto {
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
   pub experimental: String,
+  pub ext_config: ExtConfigDto,
 }
 
 pub async fn create_config(
@@ -76,6 +82,7 @@ pub struct ConfigListDto {
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
   pub experimental: String,
+  pub ext_config: ExtConfigDto,
 }
 
 pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
@@ -100,6 +107,7 @@ pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
           inbounds: config_dto.inbounds,
           route: config_dto.route,
           experimental: config_dto.experimental,
+          ext_config: config_dto.ext_config,
         });
       }
     }
@@ -117,6 +125,7 @@ pub struct ConfigUpdateDto {
   pub inbounds: Vec<String>,
   pub route: RouteConfigDto,
   pub experimental: String,
+  pub ext_config: ExtConfigDto,
 }
 
 pub async fn update_config(
@@ -138,6 +147,7 @@ pub async fn update_config(
     inbounds: payload.inbounds,
     route: payload.route,
     experimental: payload.experimental,
+    ext_config: payload.ext_config,
   };
 
   fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;

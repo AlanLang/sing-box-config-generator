@@ -44,10 +44,38 @@ pub async fn generate_config(
   singbox_config.insert("outbounds".to_string(), outbounds);
   singbox_config.insert("route".to_string(), route_value);
 
-  singbox_config.insert(
-    "experimental".to_string(),
-    resolve_experimental(&config.experimental).await?,
-  );
+  // Resolve download_detour tag
+  let download_detour_tag = resolve_download_detour_tag(&config.ext_config.download_detour).await?;
+
+  // Inject download_detour into remote rule_set entries in route
+  if let Some(route_obj) = singbox_config
+    .get_mut("route")
+    .and_then(|v| v.as_object_mut())
+  {
+    inject_download_detour_to_rule_sets(route_obj, &download_detour_tag);
+  }
+
+  // Inject download_detour into remote rule_set entries in dns
+  if let Some(dns_obj) = singbox_config
+    .get_mut("dns")
+    .and_then(|v| v.as_object_mut())
+  {
+    inject_download_detour_to_rule_sets(dns_obj, &download_detour_tag);
+  }
+
+  let mut experimental_value = resolve_experimental(&config.experimental).await?;
+
+  // Inject download_detour into experimental.clash_api.external_ui_download_detour
+  if let Some(exp_obj) = experimental_value.as_object_mut() {
+    if let Some(clash_api) = exp_obj.get_mut("clash_api").and_then(|v| v.as_object_mut()) {
+      clash_api.insert(
+        "external_ui_download_detour".to_string(),
+        Value::String(download_detour_tag.clone()),
+      );
+    }
+  }
+
+  singbox_config.insert("experimental".to_string(), experimental_value);
 
   // 4. Return as downloadable JSON
   let safe_name = sanitize_filename(&config.name);
@@ -1118,6 +1146,39 @@ async fn resolve_route(
   }
 
   Ok(Value::Object(route_config))
+}
+
+/// Resolve download_detour UUID to its tag (outbound tag or outbound_group name)
+async fn resolve_download_detour_tag(uuid: &str) -> Result<String, AppError> {
+  if is_outbound_group(uuid).await? {
+    let group = load_outbound_group(uuid).await?;
+    Ok(group.name)
+  } else {
+    let outbound = load_module_json_with_tag("outbounds", uuid).await?;
+    outbound
+      .get("tag")
+      .and_then(|t| t.as_str())
+      .map(|s| s.to_string())
+      .ok_or_else(|| {
+        AppError::InternalServerError("download_detour outbound has no tag".to_string())
+      })
+  }
+}
+
+/// Inject download_detour into remote rule_set entries within a config object (route or dns)
+fn inject_download_detour_to_rule_sets(obj: &mut Map<String, Value>, download_detour_tag: &str) {
+  if let Some(rule_sets) = obj.get_mut("rule_set").and_then(|v| v.as_array_mut()) {
+    for rule_set in rule_sets {
+      if let Some(rs_obj) = rule_set.as_object_mut() {
+        if rs_obj.get("type").and_then(|t| t.as_str()) == Some("remote") {
+          rs_obj.insert(
+            "download_detour".to_string(),
+            Value::String(download_detour_tag.to_string()),
+          );
+        }
+      }
+    }
+  }
 }
 
 /// Sanitize filename for safe download
