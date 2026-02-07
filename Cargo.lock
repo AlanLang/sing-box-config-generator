@@ -1110,31 +1110,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
-name = "react-rust-start"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64",
- "chrono",
- "env_logger",
- "flate2",
- "log",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "tempfile",
- "tokio",
- "tower",
- "tower-http",
- "urlencoding",
- "uuid",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.5.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1429,6 +1404,31 @@ name = "simd-adler32"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
+
+[[package]]
+name = "sing-box-config-generator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64",
+ "chrono",
+ "env_logger",
+ "flate2",
+ "log",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "tempfile",
+ "tokio",
+ "tower",
+ "tower-http",
+ "urlencoding",
+ "uuid",
+]
 
 [[package]]
 name = "slab"

@@ -1,8 +1,24 @@
 {
-  "name": "alan-demo-test",
+  "name": "sing-box-config-generator",
+  "description": "SingBox 配置文件可视化生成器 - 基于 React + Rust (Axum) 的全栈应用，提供模块化配置管理、订阅管理、备份恢复等功能",
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
+  "author": "Alan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlanLang/sing-box-config-generator.git"
+  },
+  "keywords": [
+    "singbox",
+    "sing-box",
+    "proxy",
+    "config-generator",
+    "react",
+    "rust",
+    "axum"
+  ],
   "scripts": {
     "build": "NODE_ENV=production rsbuild build",
     "check": "biome check --write",
