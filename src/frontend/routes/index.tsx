@@ -25,6 +25,7 @@ import {
   IconLink,
   IconCheck,
   IconTrash,
+  IconCopy,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -72,6 +73,32 @@ function RouteComponent() {
       ext_config: config.ext_config,
     });
     setFormOpen(true);
+  };
+
+  const handleCopyConfig = async (config: ConfigListDto) => {
+    try {
+      const newUuid = uuidv4();
+      const payload = {
+        uuid: newUuid,
+        name: `${config.name}-复制`,
+        log: config.log,
+        dns: config.dns,
+        inbounds: config.inbounds,
+        route: config.route,
+        experimental: config.experimental,
+        ext_config: config.ext_config,
+      };
+
+      await createMutation.mutateAsync(payload);
+      toast.success("Config copied successfully");
+    } catch (error: unknown) {
+      console.error("Failed to copy config:", error);
+      const errorMessage = await extractErrorMessage(
+        error,
+        "Failed to copy config",
+      );
+      toast.error(errorMessage);
+    }
   };
 
   const handleSaveConfig = async (data: SingBoxConfig) => {
@@ -204,6 +231,16 @@ function RouteComponent() {
                     ) : (
                       <IconLink className="size-4" />
                     )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyConfig(config);
+                    }}
+                  >
+                    <IconCopy className="size-4" />
                   </Button>
                   <Button
                     variant="ghost"
