@@ -1,7 +1,7 @@
+import type { DnsConfig, RouteConfig } from "@/api/config/create";
 import { IconCode } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
-import type { DnsConfig, RouteConfig } from "@/api/config/create";
 
 interface ConfigManagementCardProps {
 	name: string;
@@ -139,20 +139,7 @@ export function ConfigManagementCard({
 					}}
 				>
 					{/* Info block container */}
-					<div className="flex flex-col rounded-lg bg-muted/30 group-hover:bg-muted/40 transition-all duration-150 border-t border-border/20 m-3 sm:m-4">
-						{/* Header bar */}
-						<div className="flex items-center gap-1.5 px-3 py-2 border-b border-border/30 bg-muted/40 flex-shrink-0">
-							<div className="w-2 h-2 rounded-full bg-red-500/60" />
-							<div className="w-2 h-2 rounded-full bg-yellow-500/60" />
-							<div className="w-2 h-2 rounded-full bg-green-500/60" />
-							<span className="ml-2 text-xs text-muted-foreground/70 font-medium">
-								Metadata
-							</span>
-							<span className="ml-auto text-[10px] text-muted-foreground/50 font-medium hidden sm:inline">
-								Click to edit
-							</span>
-						</div>
-
+					<div className="flex flex-col rounded-lg bg-muted/30 group-hover:bg-muted/40 transition-all duration-150 border-t border-border/20">
 						{/* Metadata content */}
 						<div className="p-4 space-y-2">
 							<div className="flex items-start gap-2">
