@@ -1,5 +1,4 @@
 import {
-  IconChevronRight,
   IconCode,
   IconGripVertical,
 } from "@tabler/icons-react";
@@ -51,7 +50,7 @@ export function ConfigCard({
     >
       <motion.button
         type="button"
-        className={`relative flex flex-col h-48 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group ${disabled ? "opacity-50" : ""}`}
+        className={`relative flex flex-col md:flex-row h-auto md:h-40 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 cursor-pointer overflow-hidden w-full text-left group ${disabled ? "opacity-50" : ""}`}
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -59,8 +58,8 @@ export function ConfigCard({
             onClick();
           }
         }}
-        whileHover={{ scale: 1.02, y: -4 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={{ scale: 1.01, y: -2 }}
+        whileTap={{ scale: 0.99 }}
         transition={{ duration: 0.15 }}
       >
         {/* Single gradient overlay */}
@@ -79,9 +78,9 @@ export function ConfigCard({
         />
 
         {/* Card Header */}
-        <div className="relative flex-shrink-0 p-4 border-b border-border/50">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="relative flex-shrink-0 p-4 border-b md:border-b-0 md:border-r border-border/50 md:w-80">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               {/* Drag handle (visible on hover) or icon indicator */}
               <div
                 className="relative flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-all duration-150 cursor-grab active:cursor-grabbing"
@@ -98,35 +97,27 @@ export function ConfigCard({
                   <IconGripVertical className="size-4 text-primary/60 group-hover:text-primary transition-all duration-150 absolute opacity-0 group-hover:opacity-100" />
                 )}
               </div>
-              <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-all duration-150">
+              <h3 className="font-semibold text-lg truncate group-hover:text-primary transition-all duration-150 flex-1">
                 {name}
               </h3>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Action buttons */}
-              {actions && (
-                <div
-                  className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity duration-150"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
-                  {actions}
-                </div>
-              )}
-              {/* Arrow indicator - only show when no actions or on hover */}
-              {!actions && (
-                <div className="opacity-0 group-hover:opacity-100 transition-all duration-150">
-                  <IconChevronRight className="size-5 text-primary" />
-                </div>
-              )}
-            </div>
+            {/* Action buttons */}
+            {actions && (
+              <div
+                className="flex items-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity duration-150 flex-wrap"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                {actions}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Card Content Preview */}
-        <div className="relative flex flex-col flex-1 min-h-0 pt-3 pl-3">
+        <div className="relative flex flex-col flex-1 min-h-0 p-3 md:py-3">
           {/* Code block container with editor styling */}
-          <div className="flex flex-col h-full rounded-tl-lg bg-muted/40 group-hover:bg-muted/50 transition-all duration-150 border border-border/30 overflow-hidden">
+          <div className="flex flex-col h-full rounded-lg bg-muted/40 group-hover:bg-muted/50 transition-all duration-150 border border-border/30 overflow-hidden">
             {/* Editor header bar */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border/30 bg-muted/30 flex-shrink-0">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500/60" />
