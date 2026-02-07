@@ -7,6 +7,16 @@ import { ConfigCard } from "@/components/config-card";
 import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
 import {
@@ -36,6 +46,10 @@ function RouteComponent() {
   const [selectedUuid, setSelectedUuid] = useState("");
   const [initialData, setInitialData] = useState<Partial<SingBoxConfig>>();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    uuid: string;
+    name: string;
+  } | null>(null);
 
   const handleNewConfig = () => {
     setIsCreating(true);
@@ -86,10 +100,12 @@ function RouteComponent() {
     }
   };
 
-  const handleDeleteConfig = async (uuid: string) => {
+  const handleDeleteConfig = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteMutation.mutateAsync(uuid);
+      await deleteMutation.mutateAsync(deleteTarget.uuid);
       toast.success("Config deleted successfully");
+      setDeleteTarget(null);
     } catch (error: any) {
       console.error("Failed to delete config:", error);
       const errorMessage = await extractErrorMessage(
@@ -204,7 +220,10 @@ function RouteComponent() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteConfig(config.uuid);
+                      setDeleteTarget({
+                        uuid: config.uuid,
+                        name: config.name,
+                      });
                     }}
                   >
                     <IconTrash className="size-4" />
@@ -222,6 +241,31 @@ function RouteComponent() {
         onSave={handleSaveConfig}
         initialData={initialData}
       />
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除配置</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除 "{deleteTarget?.name}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDeleteConfig}
+            >
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppPage>
   );
 }
