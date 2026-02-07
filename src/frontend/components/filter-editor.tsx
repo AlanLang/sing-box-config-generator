@@ -84,7 +84,7 @@ export function FilterEditor({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="simple">Simple (使用 | 分隔)</SelectItem>
+              <SelectItem value="simple">Simple (use | to separate)</SelectItem>
               <SelectItem value="regex">Regular Expression</SelectItem>
             </SelectContent>
           </Select>

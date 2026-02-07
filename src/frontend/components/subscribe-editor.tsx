@@ -245,7 +245,7 @@ export function SubscribeEditor({
                     className="gap-2"
                   >
                     <IconRefresh className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    <span>刷新订阅</span>
+                    <span>Refresh</span>
                   </DropdownMenuItem>
                 ) : undefined
               }
