@@ -14,6 +14,9 @@ async fn main() -> anyhow::Result<()> {
   }
   env_logger::init();
 
+  // 运行数据迁移（在接受请求前完成）
+  backend::migration::run_migrations().await?;
+
   // 构建静态文件服务（用于 serve ./web 目录）
   let serve_dir = ServeDir::new("./web").not_found_service(ServeFile::new("./web/index.html"));
 

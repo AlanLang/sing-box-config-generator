@@ -122,6 +122,21 @@ All endpoints under `/api/{module}`:
 <FocusEditor isOpen={focusMode} />  // Always rendered
 ```
 
+### Config Data Version Migration
+
+**CRITICAL RULE**: Any change to the config persistence format (`./data/configs/` JSON structure) MUST:
+
+1. Increment `CURRENT_VERSION` in `src/backend/migration/mod.rs`
+2. Add a new migration function `migrate_vN_to_vN+1` in `src/backend/migration/migrations.rs`
+3. Register the new function in `get_migrations()` vec
+4. The migration function must be idempotent and handle the transformation from old format to new
+
+Migration files:
+- Engine: `src/backend/migration/mod.rs`
+- Functions: `src/backend/migration/migrations.rs`
+
+This ensures old data is automatically upgraded at server startup.
+
 ## Development
 
 **Quick Start**:

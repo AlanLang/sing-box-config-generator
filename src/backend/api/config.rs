@@ -4,6 +4,7 @@ use std::path::Path;
 use tokio::fs;
 
 use crate::backend::error::AppError;
+use crate::backend::migration::CURRENT_VERSION;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DnsRuleDto {
@@ -131,6 +132,8 @@ pub struct ExtConfigDto {
 pub struct ConfigCreateDto {
   pub uuid: String,
   pub name: String,
+  #[serde(default)]
+  pub version: Option<u64>,
   pub log: String,
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
@@ -140,7 +143,7 @@ pub struct ConfigCreateDto {
 }
 
 pub async fn create_config(
-  Json(payload): Json<ConfigCreateDto>,
+  Json(mut payload): Json<ConfigCreateDto>,
 ) -> Result<impl IntoResponse, AppError> {
   let file_name = format!("{}.json", payload.uuid);
   log::info!("Creating config: {}", file_name);
@@ -155,6 +158,7 @@ pub async fn create_config(
     return Ok((StatusCode::CONFLICT, "Config with this UUID already exists").into_response());
   }
 
+  payload.version = Some(CURRENT_VERSION);
   fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Config created successfully").into_response())
@@ -164,6 +168,7 @@ pub async fn create_config(
 pub struct ConfigListDto {
   pub uuid: String,
   pub name: String,
+  pub version: Option<u64>,
   pub log: String,
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
@@ -189,6 +194,7 @@ pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
         configs.push(ConfigListDto {
           uuid: config_dto.uuid,
           name: config_dto.name,
+          version: config_dto.version,
           log: config_dto.log,
           dns: config_dto.dns,
           inbounds: config_dto.inbounds,
@@ -229,6 +235,7 @@ pub async fn update_config(
   let storage_dto = ConfigCreateDto {
     uuid: payload.uuid,
     name: payload.name,
+    version: Some(CURRENT_VERSION),
     log: payload.log,
     dns: payload.dns,
     inbounds: payload.inbounds,
