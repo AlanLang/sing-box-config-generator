@@ -70,9 +70,19 @@ export function ConfigManagementCard({
 			transition={{ delay: index * 0.05 }}
 		>
 			<motion.div
-				className="relative rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 overflow-hidden w-full group"
+				className="relative rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-md shadow-black/5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 transition-all duration-150 overflow-hidden w-full group cursor-pointer"
 				whileHover={{ scale: 1.002, y: -2 }}
 				transition={{ duration: 0.15 }}
+				onClick={onClick}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onClick();
+					}
+				}}
+				// biome-ignore lint/a11y/useSemanticElements: motion.div with onClick is intentional for animation
+				role="button"
+				tabIndex={0}
 			>
 				{/* Gradient overlay */}
 				<div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none" />
