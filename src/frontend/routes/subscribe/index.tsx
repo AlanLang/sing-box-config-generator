@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   parseSubscriptionJson,
   stringifySubscriptionJson,
+  extractNodeNames,
 } from "@/types/subscribe";
 import type { SubscriptionMetadata } from "@/types/subscribe";
 import { formatTimeAgo } from "@/lib/time";
@@ -283,12 +284,17 @@ function RouteComponent() {
                 const metadata = parseSubscriptionJson(subscribe.json);
                 const timeAgo = formatTimeAgo(metadata.last_updated);
                 const isEnabled = metadata.enabled !== false;
+                const nodeNames = extractNodeNames(metadata.content);
+                const nodesPreview =
+                  nodeNames.length > 0
+                    ? `${nodeNames.slice(0, 2).join("\n")}${nodeNames.length > 2 ? `\n... +${nodeNames.length - 2} more` : ""}`
+                    : "Not fetched yet";
                 return (
                   <ConfigCard
                     key={subscribe.uuid}
                     name={subscribe.name}
                     disabled={!isEnabled}
-                    jsonPreview={`URL: ${metadata.subscription_url}\n${metadata.last_updated ? `Updated: ${timeAgo}` : "Not fetched yet"}`}
+                    jsonPreview={`${nodesPreview}\n${metadata.last_updated ? `Updated: ${timeAgo}` : ""}`}
                     onClick={() => {
                       setSelectedUuid(subscribe.uuid);
                       setIsCreating(false);

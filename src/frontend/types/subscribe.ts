@@ -32,3 +32,28 @@ export function stringifySubscriptionJson(
 ): string {
   return JSON.stringify(metadata, null, 2);
 }
+
+/**
+ * Extract node names from base64-encoded subscription content.
+ * Skips metadata lines (REMARKS=, STATUS=, Traffic:, Expire:, etc.)
+ * and extracts names from the URI fragment (#NodeName).
+ */
+export function extractNodeNames(content: string): string[] {
+  if (!content) return [];
+  try {
+    const decoded = atob(content);
+    const lines = decoded.split("\n").filter((line) => line.trim());
+    const names: string[] = [];
+    for (const line of lines) {
+      const hashIndex = line.indexOf("#");
+      if (hashIndex === -1) continue;
+      // Must look like a proxy URI (contains ://)
+      if (!line.includes("://")) continue;
+      const name = decodeURIComponent(line.substring(hashIndex + 1).trim());
+      if (name) names.push(name);
+    }
+    return names;
+  } catch {
+    return [];
+  }
+}
