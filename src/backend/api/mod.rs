@@ -15,4 +15,6 @@ pub mod ruleset;
 pub mod subscribe;
 
 #[cfg(test)]
+mod config_generator_test;
+#[cfg(test)]
 mod outbound_group_test;

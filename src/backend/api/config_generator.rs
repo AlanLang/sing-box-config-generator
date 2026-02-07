@@ -388,6 +388,23 @@ async fn load_filter(uuid: &str) -> Result<FilterCreateDto, AppError> {
   Ok(filter)
 }
 
+/// Decode base64-encoded subscription content to a UTF-8 string.
+/// Handles both padded and unpadded base64 (many subscription servers omit padding).
+pub fn decode_base64_content(content: &str) -> Option<String> {
+  let content = content.trim();
+  if content.is_empty() {
+    return None;
+  }
+  // Try standard base64 (with padding) first
+  if let Ok(decoded) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, content) {
+    return String::from_utf8(decoded).ok();
+  }
+  // Fall back to base64 without padding requirement
+  let decoded =
+    base64::Engine::decode(&base64::engine::general_purpose::STANDARD_NO_PAD, content).ok()?;
+  String::from_utf8(decoded).ok()
+}
+
 /// Get all subscription outbounds
 async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
   let dir_path = Path::new("./data/subscribes");
@@ -414,28 +431,24 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
 
             if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
               // Decode base64 content
-              if let Ok(decoded) =
-                base64::Engine::decode(&base64::engine::general_purpose::STANDARD, content_str)
-              {
-                if let Ok(decoded_str) = String::from_utf8(decoded) {
-                  // Parse subscription format (ss://, trojan://, etc.)
-                  for line in decoded_str.lines() {
-                    let line = line.trim();
-                    if line.is_empty() {
-                      continue;
-                    }
+              if let Some(decoded_str) = decode_base64_content(content_str) {
+                // Parse subscription format (ss://, trojan://, etc.)
+                for line in decoded_str.lines() {
+                  let line = line.trim();
+                  if line.is_empty() {
+                    continue;
+                  }
 
-                    // Parse different formats and convert to sing-box outbound
-                    if let Ok(mut outbound) = parse_subscription_line(line) {
-                      // Rename tag to "original-name-subscription-name" format
-                      if let Some(obj) = outbound.as_object_mut() {
-                        if let Some(original_tag) = obj.get("tag").and_then(|t| t.as_str()) {
-                          let new_tag = format!("{}-{}", original_tag, subscribe_name);
-                          obj.insert("tag".to_string(), Value::String(new_tag));
-                        }
+                  // Parse different formats and convert to sing-box outbound
+                  if let Ok(mut outbound) = parse_subscription_line(line) {
+                    // Rename tag to "original-name-subscription-name" format
+                    if let Some(obj) = outbound.as_object_mut() {
+                      if let Some(original_tag) = obj.get("tag").and_then(|t| t.as_str()) {
+                        let new_tag = format!("{}-{}", original_tag, subscribe_name);
+                        obj.insert("tag".to_string(), Value::String(new_tag));
                       }
-                      all_outbounds.push(outbound);
                     }
+                    all_outbounds.push(outbound);
                   }
                 }
               }
@@ -450,7 +463,7 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
 }
 
 /// Parse a single subscription line to sing-box outbound format
-fn parse_subscription_line(line: &str) -> Result<Value, AppError> {
+pub fn parse_subscription_line(line: &str) -> Result<Value, AppError> {
   let line = line.trim();
 
   // Extract tag/name from URL fragment

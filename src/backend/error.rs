@@ -4,6 +4,7 @@ use axum::{
 };
 
 // Make our own error that wraps different error types
+#[derive(Debug)]
 pub enum AppError {
   BadRequest(String),
   NotFound(String),

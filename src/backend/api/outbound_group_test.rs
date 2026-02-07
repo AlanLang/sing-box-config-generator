@@ -11,7 +11,6 @@ mod tests {
       name: "test-selector".to_string(),
       group_type: "selector".to_string(),
       outbounds: vec!["out1".to_string(), "out2".to_string()],
-      default: Some("out1".to_string()),
       url: None,
       interval: None,
       tolerance: None,
@@ -29,7 +28,6 @@ mod tests {
     assert!(!json.contains("\"idle_timeout\""));
 
     // Verify Some fields are serialized
-    assert!(json.contains("\"default\""));
     assert!(json.contains("\"interrupt_exist_connections\""));
   }
 
@@ -41,7 +39,6 @@ mod tests {
       name: "test-urltest".to_string(),
       group_type: "urltest".to_string(),
       outbounds: vec!["out1".to_string(), "out2".to_string()],
-      default: None,
       url: Some("https://www.gstatic.com/generate_204".to_string()),
       interval: Some("3m".to_string()),
       tolerance: Some(50),
@@ -51,9 +48,6 @@ mod tests {
 
     let json = serde_json::to_string_pretty(&urltest).unwrap();
     println!("URLTest JSON:\n{}", json);
-
-    // Verify None fields are not serialized
-    assert!(!json.contains("\"default\""));
 
     // Verify Some fields are serialized
     assert!(json.contains("\"url\""));
@@ -70,7 +64,6 @@ mod tests {
       name: "minimal".to_string(),
       group_type: "selector".to_string(),
       outbounds: vec!["out1".to_string()],
-      default: None,
       url: None,
       interval: None,
       tolerance: None,
@@ -82,7 +75,6 @@ mod tests {
     println!("Minimal JSON:\n{}", json);
 
     // Verify no optional fields are serialized
-    assert!(!json.contains("\"default\""));
     assert!(!json.contains("\"url\""));
     assert!(!json.contains("\"interval\""));
     assert!(!json.contains("\"tolerance\""));
