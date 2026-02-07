@@ -29,9 +29,14 @@ export interface SingBoxConfig {
 		 */
 		config?: string;
 		/**
-		 * dns-server 的 uuid 列表
+		 * dns-server 列表，每项包含 uuid 和可选的 detour
 		 */
-		servers: string[];
+		servers: {
+			/** dns-server 的 uuid */
+			uuid: string;
+			/** detour outbound 或 outbound_group 的 uuid（可选） */
+			detour?: string;
+		}[];
 		rules?: {
 			/**
 			 * ruleset 的 uuid 列表
@@ -134,9 +139,11 @@ export function ConfigForm({
 	const [dnsConfig, setDnsConfig] = useState<string | undefined>(
 		initialData?.dns?.config,
 	);
-	const [dnsServers, setDnsServers] = useState<string[]>(
+	const [dnsServers, setDnsServers] = useState<SingBoxConfig["dns"]["servers"]>(
 		initialData?.dns?.servers || [],
 	);
+	// 提取 server uuid 列表，用于验证和传递给子组件
+	const dnsServerUuids = dnsServers.map((s) => s.uuid);
 	const [dnsRules, setDnsRules] = useState<SingBoxConfig["dns"]["rules"]>(
 		initialData?.dns?.rules || [],
 	);
@@ -192,10 +199,10 @@ export function ConfigForm({
 
 	// 当选中的 DNS server 变化时，清除不在列表中的 default domain resolver
 	useEffect(() => {
-		if (routeDefaultDomainResolver && !dnsServers.includes(routeDefaultDomainResolver)) {
+		if (routeDefaultDomainResolver && !dnsServerUuids.includes(routeDefaultDomainResolver)) {
 			setRouteDefaultDomainResolver(undefined);
 		}
-	}, [dnsServers, routeDefaultDomainResolver]);
+	}, [dnsServerUuids, routeDefaultDomainResolver]);
 
 	// 判断是否为编辑模式
 	const isEditMode = !!initialData?.name;
@@ -204,13 +211,13 @@ export function ConfigForm({
 	const isDnsValid =
 		dnsServers.length > 0 &&
 		!!dnsFinal &&
-		dnsServers.includes(dnsFinal) &&
+		dnsServerUuids.includes(dnsFinal) &&
 		(!dnsRules ||
 			dnsRules.every(
 				(rule) =>
 					rule.rule_set.length > 0 &&
 					rule.server &&
-					dnsServers.includes(rule.server),
+					dnsServerUuids.includes(rule.server),
 			));
 
 	const isRouteValid =
@@ -224,7 +231,7 @@ export function ConfigForm({
 				return rule.rulesets.length > 0 && !!rule.outbound;
 			})) &&
 		// 如果选择了多个 DNS server，default_domain_resolver 必填，且必须是已选中的 DNS server
-		(dnsServers.length <= 1 || (!!routeDefaultDomainResolver && dnsServers.includes(routeDefaultDomainResolver)));
+		(dnsServerUuids.length <= 1 || (!!routeDefaultDomainResolver && dnsServerUuids.includes(routeDefaultDomainResolver)));
 
 	const isValid =
 		name.trim().length >= 2 && log && isDnsValid && inbounds.length > 0 && isRouteValid && !!experimental && !!downloadDetour;
@@ -377,7 +384,7 @@ export function ConfigForm({
 												onFinalChange={setRouteFinal}
 												defaultDomainResolver={routeDefaultDomainResolver}
 												onDefaultDomainResolverChange={setRouteDefaultDomainResolver}
-												dnsServers={dnsServers}
+												dnsServers={dnsServerUuids}
 												isValid={isRouteValid}
 											/>
 

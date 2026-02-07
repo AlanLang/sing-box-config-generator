@@ -205,8 +205,17 @@ async fn resolve_dns(dns: &crate::backend::api::config::DnsConfigDto) -> Result<
 
   // Resolve DNS servers
   let mut servers = Vec::new();
-  for server_uuid in &dns.servers {
-    let server = load_module_json("dns-server", server_uuid).await?;
+  for server_entry in &dns.servers {
+    let mut server = load_module_json("dns-server", &server_entry.uuid).await?;
+    // Inject detour if configured
+    if let Some(detour_uuid) = &server_entry.detour {
+      let detour_tag = resolve_outbound_uuid_to_tag(detour_uuid).await?;
+      if !detour_tag.is_empty() {
+        if let Some(obj) = server.as_object_mut() {
+          obj.insert("detour".to_string(), Value::String(detour_tag));
+        }
+      }
+    }
     servers.push(server);
   }
   dns_config.insert("servers".to_string(), Value::Array(servers));

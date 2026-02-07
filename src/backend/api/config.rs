@@ -12,9 +12,15 @@ pub struct DnsRuleDto {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct DnsServerEntry {
+  pub uuid: String,
+  pub detour: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DnsConfigDto {
   pub config: Option<String>,
-  pub servers: Vec<String>,
+  pub servers: Vec<DnsServerEntry>,
   pub rules: Option<Vec<DnsRuleDto>>,
   #[serde(rename = "final")]
   pub final_server: String,

@@ -6,9 +6,14 @@ export interface DnsRule {
   server: string;
 }
 
+export interface DnsServerEntry {
+  uuid: string;
+  detour?: string;
+}
+
 export interface DnsConfig {
   config?: string;
-  servers: string[];
+  servers: DnsServerEntry[];
   rules?: DnsRule[];
   final: string;
 }

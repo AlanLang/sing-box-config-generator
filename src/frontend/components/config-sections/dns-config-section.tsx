@@ -1,10 +1,12 @@
 import { useDnsConfigList } from "@/api/dns-config/list";
 import { useDnsList } from "@/api/dns/list";
+import { useOutboundGroupOptions } from "@/api/outbound-group/options";
 import { useRulesetList } from "@/api/ruleset/list";
 import type { SingBoxConfig } from "@/components/config-form";
 import {
 	MultiSelectorDrawer,
 	SelectorDrawer,
+	type SelectorDrawerItem,
 } from "@/components/selector-drawer";
 import {
 	AccordionContent,
@@ -21,12 +23,15 @@ import {
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
+import { useMemo } from "react";
+
+type DnsServer = SingBoxConfig["dns"]["servers"][number];
 
 interface DnsConfigSectionProps {
 	config: string | undefined;
 	onConfigChange: (value: string | undefined) => void;
-	servers: string[];
-	onServersChange: (value: string[]) => void;
+	servers: DnsServer[];
+	onServersChange: (value: DnsServer[]) => void;
 	rules: SingBoxConfig["dns"]["rules"];
 	onRulesChange: (value: SingBoxConfig["dns"]["rules"]) => void;
 	final: string;
@@ -41,7 +46,7 @@ export function DnsConfigSection({
 	onServersChange,
 	rules,
 	onRulesChange,
-	final,
+	final: finalServer,
 	onFinalChange,
 	isValid,
 }: DnsConfigSectionProps) {
@@ -49,20 +54,56 @@ export function DnsConfigSection({
 		useDnsConfigList();
 	const { data: dnsServerList, isLoading: dnsServersLoading } = useDnsList();
 	const { data: rulesets, isLoading: rulesetsLoading } = useRulesetList();
+	const { data: outboundOptions, isLoading: outboundsLoading } =
+		useOutboundGroupOptions();
 
-	const handleServersChange = (newServers: string[]) => {
-		const removed = servers.filter((s) => !newServers.includes(s));
+	// 提取 server uuid 列表
+	const serverUuids = useMemo(() => servers.map((s) => s.uuid), [servers]);
+
+	// 过滤掉 filter 类型，构建 outbound SelectorDrawer items（带分组）
+	const outboundDrawerItems: SelectorDrawerItem[] = useMemo(() => {
+		if (!outboundOptions) return [];
+		return outboundOptions
+			.filter((option) => option.source !== "filter")
+			.map((o) => ({
+				value: o.uuid,
+				title: o.label,
+				description: o.type ? `(${o.type})` : undefined,
+				group:
+					o.source === "outbound_group" ? "Outbound Groups" : "Outbounds",
+			}));
+	}, [outboundOptions]);
+
+	const handleServersChange = (newServerUuids: string[]) => {
+		const removedUuids = serverUuids.filter(
+			(s) => !newServerUuids.includes(s),
+		);
+		// 保留已有 server 的 detour 配置，新增的 server 默认无 detour
+		const newServers: DnsServer[] = newServerUuids.map((uuid) => {
+			const existing = servers.find((s) => s.uuid === uuid);
+			return existing || { uuid };
+		});
 		onServersChange(newServers);
-		for (const serverUuid of removed) {
-			// 如果被取消的 server 是 final，清空 final
-			if (final === serverUuid) {
+		for (const serverUuid of removedUuids) {
+			if (finalServer === serverUuid) {
 				onFinalChange("");
 			}
 		}
-		// 清理 rules 中使用了被移除 server 的规则
-		if (rules && removed.length > 0) {
-			onRulesChange(rules.filter((rule) => !removed.includes(rule.server)));
+		if (rules && removedUuids.length > 0) {
+			onRulesChange(
+				rules.filter((rule) => !removedUuids.includes(rule.server)),
+			);
 		}
+	};
+
+	const handleServerDetourChange = (
+		serverUuid: string,
+		detour: string | undefined,
+	) => {
+		const newServers = servers.map((s) =>
+			s.uuid === serverUuid ? { ...s, detour } : s,
+		);
+		onServersChange(newServers);
 	};
 
 	const handleMoveRule = (index: number, direction: "up" | "down") => {
@@ -83,7 +124,10 @@ export function DnsConfigSection({
 
 	const handleAddRule = () => {
 		const newRules = rules || [];
-		onRulesChange([...newRules, { rule_set: [], server: servers[0] || "" }]);
+		onRulesChange([
+			...newRules,
+			{ rule_set: [], server: serverUuids[0] || "" },
+		]);
 	};
 
 	const handleUpdateRule = (
@@ -103,7 +147,7 @@ export function DnsConfigSection({
 
 	// 已选中的 server 列表，用于 rules 和 final
 	const selectedServerItems =
-		dnsServerList?.filter((s) => servers.includes(s.uuid)) || [];
+		dnsServerList?.filter((s) => serverUuids.includes(s.uuid)) || [];
 
 	return (
 		<AccordionItem value="dns">
@@ -179,8 +223,8 @@ export function DnsConfigSection({
 								DNS Servers <span className="text-destructive">*</span>
 							</Label>
 							<p className="text-sm text-muted-foreground mt-1">
-								Select at least one DNS server. These will be available for
-								rules and final configuration.
+								Select at least one DNS server. You can optionally configure a
+								detour for each server.
 							</p>
 						</div>
 
@@ -204,7 +248,7 @@ export function DnsConfigSection({
 									title: s.name,
 									description: s.json,
 								}))}
-								value={servers}
+								value={serverUuids}
 								onChange={handleServersChange}
 							/>
 						)}
@@ -215,6 +259,52 @@ export function DnsConfigSection({
 									Please select at least one DNS server
 								</p>
 							)}
+
+						{/* 每个选中 server 的 detour 配置 */}
+						{servers.length > 0 && (
+							<div className="space-y-2">
+								{servers.map((server) => {
+									const serverInfo = dnsServerList?.find(
+										(s) => s.uuid === server.uuid,
+									);
+									return (
+										<div
+											key={server.uuid}
+											className="flex items-center gap-3 p-3 border rounded-lg"
+										>
+											<span className="text-sm font-medium min-w-0 truncate flex-1">
+												{serverInfo?.name || server.uuid}
+											</span>
+											<div className="w-48 sm:w-56 shrink-0">
+												{outboundsLoading ? (
+													<div className="text-sm text-muted-foreground">
+														Loading...
+													</div>
+												) : (
+													<SelectorDrawer
+														drawerTitle={`Detour for ${serverInfo?.name || "DNS Server"}`}
+														placeholder="No detour"
+														items={outboundDrawerItems}
+														value={server.detour || ""}
+														onSelect={(val) =>
+															handleServerDetourChange(
+																server.uuid,
+																val || undefined,
+															)
+														}
+														noneOption={{
+															title: "No detour",
+															description:
+																"DNS server will use direct connection",
+														}}
+													/>
+												)}
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						)}
 					</div>
 
 					{/* 3. Rules 配置（可选） */}
@@ -381,11 +471,11 @@ export function DnsConfigSection({
 									title: s.name,
 									description: s.json,
 								}))}
-								value={final}
+								value={finalServer}
 								onSelect={onFinalChange}
 							/>
 						)}
-						{!final && servers.length > 0 && (
+						{!finalServer && servers.length > 0 && (
 							<p className="text-sm text-destructive">
 								Please select a final DNS server
 							</p>
