@@ -1,11 +1,15 @@
 import { IconCode } from "@tabler/icons-react";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import type { DnsConfig, RouteConfig } from "@/api/config/create";
 
 interface ConfigManagementCardProps {
 	name: string;
-	uuid: string;
+	description?: string;
 	updatedAt?: number;
+	dns: DnsConfig;
+	inbounds: string[];
+	route: RouteConfig;
 	onClick: () => void;
 	index: number;
 	actions?: ReactNode;
@@ -27,17 +31,37 @@ function formatUpdatedAt(timestamp?: number): string {
 }
 
 /**
+ * Calculate metadata statistics for display
+ */
+function calculateMetadata(dns: DnsConfig, inbounds: string[], route: RouteConfig) {
+	const dnsServers = dns.servers?.length || 0;
+	const dnsRules = dns.rules?.length || 0;
+	const inboundCount = inbounds.length;
+	const routeRules = route.rules?.length || 0;
+
+	return {
+		dns: `${dnsServers} servers, ${dnsRules} rules`,
+		inbounds: `${inboundCount} selected`,
+		route: `${routeRules} rules`,
+	};
+}
+
+/**
  * Specialized card component for Config Management page
- * Displays UUID and last updated time instead of full JSON preview
+ * Displays description and useful metadata instead of UUID
  */
 export function ConfigManagementCard({
 	name,
-	uuid,
+	description,
 	updatedAt,
+	dns,
+	inbounds,
+	route,
 	onClick,
 	index,
 	actions,
 }: ConfigManagementCardProps) {
+	const metadata = calculateMetadata(dns, inbounds, route);
 
 	return (
 		<motion.div
@@ -85,7 +109,7 @@ export function ConfigManagementCard({
 								{name}
 							</h3>
 							<p className="text-xs sm:text-sm text-muted-foreground">
-								SingBox Configuration
+								{description || "SingBox Configuration"}
 							</p>
 						</div>
 					</button>
@@ -133,10 +157,26 @@ export function ConfigManagementCard({
 						<div className="p-4 space-y-2">
 							<div className="flex items-start gap-2">
 								<span className="text-xs font-medium text-muted-foreground/60 min-w-[80px]">
-									UUID:
+									DNS:
 								</span>
-								<span className="text-xs font-mono text-muted-foreground/90 break-all">
-									{uuid}
+								<span className="text-xs text-muted-foreground/90">
+									{metadata.dns}
+								</span>
+							</div>
+							<div className="flex items-start gap-2">
+								<span className="text-xs font-medium text-muted-foreground/60 min-w-[80px]">
+									Inbounds:
+								</span>
+								<span className="text-xs text-muted-foreground/90">
+									{metadata.inbounds}
+								</span>
+							</div>
+							<div className="flex items-start gap-2">
+								<span className="text-xs font-medium text-muted-foreground/60 min-w-[80px]">
+									Route:
+								</span>
+								<span className="text-xs text-muted-foreground/90">
+									{metadata.route}
 								</span>
 							</div>
 							<div className="flex items-start gap-2">

@@ -213,9 +213,12 @@ function RouteComponent() {
           {configs.map((config, index) => (
             <ConfigManagementCard
               key={config.uuid}
-              uuid={config.uuid}
               name={config.name}
+              description={config.description}
               updatedAt={config.updated_at}
+              dns={config.dns}
+              inbounds={config.inbounds}
+              route={config.route}
               onClick={() => handleEditConfig(config)}
               index={index}
               actions={
