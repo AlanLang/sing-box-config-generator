@@ -65,6 +65,7 @@ function RouteComponent() {
     // ConfigListDto 和 SingBoxConfig 结构相同（除了 uuid），可以直接传递
     setInitialData({
       name: config.name,
+      description: config.description,
       log: config.log,
       dns: config.dns,
       inbounds: config.inbounds,
@@ -81,6 +82,7 @@ function RouteComponent() {
       const payload = {
         uuid: newUuid,
         name: `${config.name}-复制`,
+        description: config.description,
         log: config.log,
         dns: config.dns,
         inbounds: config.inbounds,
@@ -213,7 +215,7 @@ function RouteComponent() {
               key={config.uuid}
               uuid={config.uuid}
               name={config.name}
-              jsonPreview={JSON.stringify(config, null, 2)}
+              updatedAt={config.updated_at}
               onClick={() => handleEditConfig(config)}
               index={index}
               actions={

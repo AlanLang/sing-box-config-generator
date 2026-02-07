@@ -2,6 +2,7 @@ import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	IconAlertCircle,
 	IconCheck,
@@ -19,6 +20,7 @@ import { OtherConfigSection } from "./config-sections/other-config-section";
 
 export interface SingBoxConfig {
 	name: string;
+	description?: string;
 	/**
 	 * 日志配置的 uuid
 	 */
@@ -133,6 +135,7 @@ export function ConfigForm({
 	initialData,
 }: ConfigFormProps) {
 	const [name, setName] = useState(initialData?.name || "");
+	const [description, setDescription] = useState(initialData?.description || "");
 	const [log, setLog] = useState<string>(initialData?.log || "");
 
 	// DNS 配置状态
@@ -183,6 +186,7 @@ export function ConfigForm({
 	// 当 initialData 变化时，更新所有状态
 	useEffect(() => {
 		setName(initialData?.name || "");
+		setDescription(initialData?.description || "");
 		setLog(initialData?.log || "");
 		setDnsConfig(initialData?.dns?.config);
 		setDnsServers(initialData?.dns?.servers || []);
@@ -241,6 +245,7 @@ export function ConfigForm({
 
 		onSave({
 			name,
+			description: description.trim() || undefined,
 			log,
 			dns: {
 				config: dnsConfig,
@@ -345,6 +350,20 @@ export function ConfigForm({
 												Name must be at least 2 characters
 											</p>
 										)}
+									</div>
+
+									<div className="space-y-2">
+										<Label htmlFor="config-description">
+											Description
+										</Label>
+										<Textarea
+											id="config-description"
+											placeholder="Optional description for this configuration"
+											value={description}
+											onChange={(e) => setDescription(e.target.value)}
+											rows={3}
+											className="resize-none"
+										/>
 									</div>
 
 									{/* 模块配置 */}

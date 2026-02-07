@@ -5,6 +5,8 @@ import type { DnsConfig, ExtConfig, RouteConfig } from "./create";
 export interface ConfigListDto {
   uuid: string;
   name: string;
+  description?: string;
+  updated_at?: number;
   log: string;
   dns: DnsConfig;
   inbounds: string[];

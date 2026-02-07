@@ -133,7 +133,11 @@ pub struct ConfigCreateDto {
   pub uuid: String,
   pub name: String,
   #[serde(default)]
+  pub description: Option<String>,
+  #[serde(default)]
   pub version: Option<u64>,
+  #[serde(default)]
+  pub updated_at: Option<i64>,
   pub log: String,
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
@@ -159,6 +163,7 @@ pub async fn create_config(
   }
 
   payload.version = Some(CURRENT_VERSION);
+  payload.updated_at = Some(chrono::Utc::now().timestamp());
   fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
   Ok((StatusCode::CREATED, "Config created successfully").into_response())
@@ -168,7 +173,11 @@ pub async fn create_config(
 pub struct ConfigListDto {
   pub uuid: String,
   pub name: String,
+  #[serde(default)]
+  pub description: Option<String>,
   pub version: Option<u64>,
+  #[serde(default)]
+  pub updated_at: Option<i64>,
   pub log: String,
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
@@ -194,7 +203,9 @@ pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
         configs.push(ConfigListDto {
           uuid: config_dto.uuid,
           name: config_dto.name,
+          description: config_dto.description,
           version: config_dto.version,
+          updated_at: config_dto.updated_at,
           log: config_dto.log,
           dns: config_dto.dns,
           inbounds: config_dto.inbounds,
@@ -213,6 +224,8 @@ pub async fn list_configs() -> Result<impl IntoResponse, AppError> {
 pub struct ConfigUpdateDto {
   pub uuid: String,
   pub name: String,
+  #[serde(default)]
+  pub description: Option<String>,
   pub log: String,
   pub dns: DnsConfigDto,
   pub inbounds: Vec<String>,
@@ -235,7 +248,9 @@ pub async fn update_config(
   let storage_dto = ConfigCreateDto {
     uuid: payload.uuid,
     name: payload.name,
+    description: payload.description,
     version: Some(CURRENT_VERSION),
+    updated_at: Some(chrono::Utc::now().timestamp()),
     log: payload.log,
     dns: payload.dns,
     inbounds: payload.inbounds,

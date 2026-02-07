@@ -4,38 +4,40 @@ import type { ReactNode } from "react";
 
 interface ConfigManagementCardProps {
 	name: string;
-	jsonPreview: string;
+	uuid: string;
+	updatedAt?: number;
 	onClick: () => void;
 	index: number;
-	uuid: string;
 	actions?: ReactNode;
 }
 
 /**
- * Format JSON string for preview with better readability
- * - No truncation, allow scrolling for full content
- * - Preserve formatting for horizontal scroll
+ * Format timestamp to readable date string
  */
-function formatJsonPreview(jsonStr: string): string {
-	try {
-		return JSON.stringify(JSON.parse(jsonStr), null, 2);
-	} catch {
-		return jsonStr;
-	}
+function formatUpdatedAt(timestamp?: number): string {
+	if (!timestamp) return "Unknown";
+	const date = new Date(timestamp * 1000);
+	return date.toLocaleString("zh-CN", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 }
 
 /**
  * Specialized card component for Config Management page
- * Features improved JSON readability with horizontal scrolling and top-aligned action buttons
+ * Displays UUID and last updated time instead of full JSON preview
  */
 export function ConfigManagementCard({
 	name,
-	jsonPreview,
+	uuid,
+	updatedAt,
 	onClick,
 	index,
 	actions,
 }: ConfigManagementCardProps) {
-	const formattedPreview = formatJsonPreview(jsonPreview);
 
 	return (
 		<motion.div
@@ -100,7 +102,7 @@ export function ConfigManagementCard({
 					)}
 				</div>
 
-				{/* JSON Preview with Horizontal Scroll */}
+				{/* Metadata Preview */}
 				<button
 					type="button"
 					className="relative w-full text-left cursor-pointer"
@@ -112,26 +114,39 @@ export function ConfigManagementCard({
 						}
 					}}
 				>
-					{/* Code block container with editor styling */}
-					<div className="flex flex-col rounded-lg bg-muted/30 group-hover:bg-muted/40 transition-all duration-150 border-t border-border/20 m-3 sm:m-4 overflow-hidden">
-						{/* Editor header bar */}
+					{/* Info block container */}
+					<div className="flex flex-col rounded-lg bg-muted/30 group-hover:bg-muted/40 transition-all duration-150 border-t border-border/20 m-3 sm:m-4">
+						{/* Header bar */}
 						<div className="flex items-center gap-1.5 px-3 py-2 border-b border-border/30 bg-muted/40 flex-shrink-0">
 							<div className="w-2 h-2 rounded-full bg-red-500/60" />
 							<div className="w-2 h-2 rounded-full bg-yellow-500/60" />
 							<div className="w-2 h-2 rounded-full bg-green-500/60" />
 							<span className="ml-2 text-xs text-muted-foreground/70 font-medium">
-								config.json
+								Metadata
 							</span>
 							<span className="ml-auto text-[10px] text-muted-foreground/50 font-medium hidden sm:inline">
-								Click to edit · Scroll horizontally →
+								Click to edit
 							</span>
 						</div>
 
-						{/* Code content with horizontal scroll */}
-						<div className="relative overflow-x-auto overflow-y-hidden max-h-64 scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent hover:scrollbar-thumb-border/60">
-							<pre className="text-xs font-mono text-muted-foreground/80 group-hover:text-muted-foreground leading-relaxed transition-all duration-150 p-4 min-w-max">
-								{formattedPreview}
-							</pre>
+						{/* Metadata content */}
+						<div className="p-4 space-y-2">
+							<div className="flex items-start gap-2">
+								<span className="text-xs font-medium text-muted-foreground/60 min-w-[80px]">
+									UUID:
+								</span>
+								<span className="text-xs font-mono text-muted-foreground/90 break-all">
+									{uuid}
+								</span>
+							</div>
+							<div className="flex items-start gap-2">
+								<span className="text-xs font-medium text-muted-foreground/60 min-w-[80px]">
+									Updated:
+								</span>
+								<span className="text-xs text-muted-foreground/90">
+									{formatUpdatedAt(updatedAt)}
+								</span>
+							</div>
 						</div>
 					</div>
 

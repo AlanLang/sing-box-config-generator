@@ -36,6 +36,7 @@ export interface ExtConfig {
 export interface ConfigCreateDto {
   uuid: string;
   name: string;
+  description?: string;
   log: string;
   dns: DnsConfig;
   inbounds: string[];
