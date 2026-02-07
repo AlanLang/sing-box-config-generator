@@ -3,7 +3,7 @@ import { useConfigDelete } from "@/api/config/delete";
 import { useConfigList, type ConfigListDto } from "@/api/config/list";
 import { useConfigUpdate } from "@/api/config/update";
 import { AppPage } from "@/components/app-page";
-import { ConfigCard } from "@/components/config-card";
+import { ConfigManagementCard } from "@/components/config-management-card";
 import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
@@ -209,7 +209,7 @@ function RouteComponent() {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {configs.map((config, index) => (
-            <ConfigCard
+            <ConfigManagementCard
               key={config.uuid}
               uuid={config.uuid}
               name={config.name}
