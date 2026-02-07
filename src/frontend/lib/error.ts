@@ -5,14 +5,16 @@
  * @returns 错误信息字符串
  */
 export async function extractErrorMessage(
-  error: any,
+  error: unknown,
   defaultMessage = "操作失败，请稍后重试",
 ): Promise<string> {
+  const err = error as Record<string, unknown> | null | undefined;
+
   // 如果错误有 response 属性（ky 错误）
-  if (error?.response) {
+  if (err?.response) {
     try {
       // 尝试读取响应文本
-      const text = await error.response.text();
+      const text = await (err.response as Response).text();
       if (text) {
         return text;
       }
@@ -22,8 +24,8 @@ export async function extractErrorMessage(
   }
 
   // 如果错误有 message 属性
-  if (error?.message) {
-    return error.message;
+  if (err?.message && typeof err.message === "string") {
+    return err.message;
   }
 
   // 如果错误是字符串

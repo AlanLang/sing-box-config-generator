@@ -32,7 +32,7 @@ if (!rootElement.innerHTML) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: {
-        onError: async (error: any) => {
+        onError: async (error: unknown) => {
           const errorMessage = await extractErrorMessage(error);
           toast.error(errorMessage);
         },

@@ -90,7 +90,7 @@ function RouteComponent() {
       }
 
       setFormOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to save config:", error);
       const errorMessage = await extractErrorMessage(
         error,
@@ -106,7 +106,7 @@ function RouteComponent() {
       await deleteMutation.mutateAsync(deleteTarget.uuid);
       toast.success("Config deleted successfully");
       setDeleteTarget(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete config:", error);
       const errorMessage = await extractErrorMessage(
         error,

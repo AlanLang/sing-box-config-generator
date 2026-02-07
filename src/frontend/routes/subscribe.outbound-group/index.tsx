@@ -135,7 +135,7 @@ function RouteComponent() {
 
       await refetch();
       setFocusMode(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to save outbound group:", error);
       const errorMessage = await extractErrorMessage(
         error,
@@ -151,7 +151,7 @@ function RouteComponent() {
       toast.success("Outbound group deleted successfully");
       setFocusMode(false);
       setDeleteDialogOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete outbound group:", error);
       const errorMessage = await extractErrorMessage(
         error,
@@ -166,7 +166,7 @@ function RouteComponent() {
       const uuids = reorderedGroups.map((g) => g.uuid);
       await reorderMutation.mutateAsync(uuids);
       toast.success("Order saved successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to reorder outbound groups:", error);
       const errorMessage = await extractErrorMessage(
         error,
