@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { extractErrorMessage } from "@/lib/error";
 import {
   IconCubePlus,
-  IconEdit,
   IconLink,
   IconCheck,
   IconTrash,
@@ -246,16 +245,6 @@ function RouteComponent() {
                     }}
                   >
                     <IconCopy className="size-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditConfig(config);
-                    }}
-                  >
-                    <IconEdit className="size-4" />
                   </Button>
                   <Button
                     variant="ghost"
