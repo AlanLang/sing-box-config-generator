@@ -18,6 +18,8 @@ interface FilterEditorProps {
   onFilterTypeChange: (type: "simple" | "regex") => void;
   pattern: string;
   onPatternChange: (pattern: string) => void;
+  except: string;
+  onExceptChange: (except: string) => void;
   uuid: string;
   onClose: () => void;
   onSave: () => void;
@@ -43,6 +45,8 @@ export function FilterEditor({
   onFilterTypeChange,
   pattern,
   onPatternChange,
+  except,
+  onExceptChange,
   uuid,
   onClose,
   onSave,
@@ -110,6 +114,22 @@ export function FilterEditor({
               : "Enter a valid regular expression pattern"}
           </p>
         </div>
+
+        {filterType === "simple" && (
+          <div className="space-y-2">
+            <Label htmlFor="except">Except (Optional)</Label>
+            <Textarea
+              id="except"
+              value={except}
+              onChange={(e) => onExceptChange(e.target.value)}
+              placeholder="测试|test|trial"
+              className="font-mono text-sm min-h-[100px] dark:bg-background"
+            />
+            <p className="text-sm text-muted-foreground">
+              Exclude outbounds that contain these keywords (separated by | character)
+            </p>
+          </div>
+        )}
       </div>
     </FormEditor>
   );

@@ -11,6 +11,7 @@ export const filterCreateSchema = z.object({
   pattern: z.string().min(1, {
     message: "Pattern cannot be empty.",
   }),
+  except: z.string().optional(),
 });
 
 export type FilterCreateDto = z.infer<typeof filterCreateSchema>;

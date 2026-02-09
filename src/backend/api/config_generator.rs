@@ -828,13 +828,28 @@ async fn apply_filter(filter: &FilterCreateDto) -> Result<Vec<Value>, AppError> 
       let matches = match filter.filter_type.as_str() {
         "simple" => {
           // Simple contains match for any pattern part
-          filter
+          let pattern_match = filter
             .pattern
             .split('|')
-            .any(|pattern| tag.contains(pattern.trim()))
+            .any(|pattern| tag.contains(pattern.trim()));
+
+          // If pattern matches and except is configured, check if should be excluded
+          if pattern_match {
+            if let Some(except_pattern) = &filter.except {
+              // Exclude if any except pattern matches
+              !except_pattern
+                .split('|')
+                .any(|pattern| tag.contains(pattern.trim()))
+            } else {
+              // No except pattern, include the match
+              true
+            }
+          } else {
+            false
+          }
         }
         "regex" => {
-          // Regex match
+          // Regex match (except not supported for regex type)
           if let Ok(re) = regex::Regex::new(&filter.pattern) {
             re.is_match(tag)
           } else {

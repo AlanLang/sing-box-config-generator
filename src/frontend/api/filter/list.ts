@@ -6,6 +6,7 @@ export interface FilterListDto {
   name: string;
   filter_type: "simple" | "regex";
   pattern: string;
+  except?: string;
 }
 
 async function listFilters() {

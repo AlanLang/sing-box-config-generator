@@ -37,6 +37,7 @@ function RouteComponent() {
     "simple",
   );
   const [editPattern, setEditPattern] = useState("");
+  const [editExcept, setEditExcept] = useState("");
   const [editUuid, setEditUuid] = useState("");
 
   useEffect(() => {
@@ -44,6 +45,7 @@ function RouteComponent() {
       setEditName(selectedFilter.name);
       setEditFilterType(selectedFilter.filter_type);
       setEditPattern(selectedFilter.pattern);
+      setEditExcept(selectedFilter.except || "");
       setEditUuid(selectedFilter.uuid);
     }
   }, [selectedFilter, isCreating]);
@@ -76,6 +78,7 @@ function RouteComponent() {
     setEditName("");
     setEditFilterType("simple");
     setEditPattern("");
+    setEditExcept("");
     setEditUuid(uuidv4());
     setFocusMode(true);
   };
@@ -103,6 +106,7 @@ function RouteComponent() {
           name: editName,
           filter_type: editFilterType,
           pattern: editPattern,
+          except: editExcept.trim() || undefined,
         });
         toast.success("Filter created successfully");
         setIsCreating(false);
@@ -115,6 +119,7 @@ function RouteComponent() {
           name: editName,
           filter_type: editFilterType,
           pattern: editPattern,
+          except: editExcept.trim() || undefined,
         });
         toast.success("Filter updated successfully");
         await refetchList();
@@ -222,6 +227,8 @@ function RouteComponent() {
         }
         pattern={editPattern}
         onPatternChange={setEditPattern}
+        except={editExcept}
+        onExceptChange={setEditExcept}
         uuid={isCreating ? editUuid : selectedFilter?.uuid || ""}
         onClose={handleExitFocus}
         onSave={handleSave}

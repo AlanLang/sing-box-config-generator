@@ -11,6 +11,8 @@ pub struct FilterCreateDto {
   pub name: String,
   pub filter_type: String, // "simple" or "regex"
   pub pattern: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub except: Option<String>, // Optional except pattern (only for "simple" type)
 }
 
 pub async fn create_filter(
@@ -40,6 +42,8 @@ pub struct FilterListDto {
   pub name: String,
   pub filter_type: String,
   pub pattern: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub except: Option<String>,
 }
 
 pub async fn list_filters() -> Result<impl IntoResponse, AppError> {
@@ -61,6 +65,7 @@ pub async fn list_filters() -> Result<impl IntoResponse, AppError> {
           name: filter_dto.name,
           filter_type: filter_dto.filter_type,
           pattern: filter_dto.pattern,
+          except: filter_dto.except,
         });
       }
     }
@@ -75,6 +80,8 @@ pub struct FilterUpdateDto {
   pub name: String,
   pub filter_type: String,
   pub pattern: String,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub except: Option<String>,
 }
 
 pub async fn update_filter(
@@ -94,6 +101,7 @@ pub async fn update_filter(
     name: payload.name,
     filter_type: payload.filter_type,
     pattern: payload.pattern,
+    except: payload.except,
   };
 
   fs::write(file_path, serde_json::to_string(&storage_dto)?.as_bytes()).await?;

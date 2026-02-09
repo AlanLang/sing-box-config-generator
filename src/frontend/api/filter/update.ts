@@ -6,6 +6,7 @@ interface FilterUpdateDto {
   name: string;
   filter_type: "simple" | "regex";
   pattern: string;
+  except?: string;
 }
 
 async function updateFilter(filterData: FilterUpdateDto) {
