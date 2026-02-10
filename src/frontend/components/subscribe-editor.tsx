@@ -22,7 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { IconDeviceFloppy, IconTrash, IconRefresh } from "@tabler/icons-react";
+import { IconDeviceFloppy, IconTrash, IconRefresh, IconEye } from "@tabler/icons-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTimeAgo, formatDateTime } from "@/lib/time";
 
@@ -44,6 +44,7 @@ interface SubscribeEditorProps {
   onSave: () => void;
   onDelete?: () => void;
   onRefresh?: () => void;
+  onViewOutbounds?: () => void;
   isSaving: boolean;
   isDeleting?: boolean;
   isRefreshing?: boolean;
@@ -69,6 +70,7 @@ export function SubscribeEditor({
   onSave,
   onDelete,
   onRefresh,
+  onViewOutbounds,
   isSaving,
   isDeleting,
   isRefreshing,
@@ -106,6 +108,22 @@ export function SubscribeEditor({
               onNameChange={onNameChange}
               desktopActions={
                 <>
+                  {!isCreating && onViewOutbounds && lastUpdated && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onViewOutbounds}
+                          className="shrink-0"
+                        >
+                          <IconEye className="size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>View Outbounds</TooltipContent>
+                    </Tooltip>
+                  )}
+
                   {!isCreating && onRefresh && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -238,16 +256,27 @@ export function SubscribeEditor({
               onDeleteDialogChange={onDeleteDialogChange}
               itemName={name}
               additionalMenuItems={
-                !isCreating && onRefresh ? (
-                  <DropdownMenuItem
-                    onClick={onRefresh}
-                    disabled={isRefreshing}
-                    className="gap-2"
-                  >
-                    <IconRefresh className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    <span>Refresh</span>
-                  </DropdownMenuItem>
-                ) : undefined
+                <>
+                  {!isCreating && onViewOutbounds && lastUpdated && (
+                    <DropdownMenuItem
+                      onClick={onViewOutbounds}
+                      className="gap-2"
+                    >
+                      <IconEye className="size-4" />
+                      <span>View Outbounds</span>
+                    </DropdownMenuItem>
+                  )}
+                  {!isCreating && onRefresh && (
+                    <DropdownMenuItem
+                      onClick={onRefresh}
+                      disabled={isRefreshing}
+                      className="gap-2"
+                    >
+                      <IconRefresh className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                      <span>Refresh</span>
+                    </DropdownMenuItem>
+                  )}
+                </>
               }
             />
 

@@ -2,12 +2,14 @@ import { useSubscribeDelete } from "@/api/subscribe/delete";
 import { useSubscribeList } from "@/api/subscribe/list";
 import { useSubscribeUpdate } from "@/api/subscribe/update";
 import { useSubscribeRefresh } from "@/api/subscribe/refresh";
+import { useSubscribeOutbounds } from "@/api/subscribe/outbounds";
 import { createSubscribe } from "@/api/subscribe/create";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import { SubscribeEditor } from "@/components/subscribe-editor";
+import { OutboundsViewer } from "@/components/outbounds-viewer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -37,6 +39,7 @@ function RouteComponent() {
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [outboundsViewerOpen, setOutboundsViewerOpen] = useState(false);
 
   const {
     data: subscribes,
@@ -49,6 +52,9 @@ function RouteComponent() {
   const updateSubscribeMutation = useSubscribeUpdate();
   const deleteSubscribeMutation = useSubscribeDelete();
   const refreshSubscribeMutation = useSubscribeRefresh();
+
+  const { data: outbounds = [], isLoading: isLoadingOutbounds } =
+    useSubscribeOutbounds(outboundsViewerOpen ? selectedUuid : null);
 
   const [editName, setEditName] = useState("");
   const [editMetadata, setEditMetadata] = useState<SubscriptionMetadata>({
@@ -242,6 +248,10 @@ function RouteComponent() {
     }
   };
 
+  const handleViewOutbounds = () => {
+    setOutboundsViewerOpen(true);
+  };
+
   return (
     <AppPage
       title="Subscribe Configuration"
@@ -373,11 +383,21 @@ function RouteComponent() {
         onSave={handleSave}
         onDelete={handleDelete}
         onRefresh={handleRefreshInEditor}
+        onViewOutbounds={handleViewOutbounds}
         isSaving={updateSubscribeMutation.isPending}
         isDeleting={deleteSubscribeMutation.isPending}
         isRefreshing={refreshSubscribeMutation.isPending}
         deleteDialogOpen={deleteDialogOpen}
         onDeleteDialogChange={setDeleteDialogOpen}
+      />
+
+      {/* Outbounds Viewer */}
+      <OutboundsViewer
+        isOpen={outboundsViewerOpen}
+        onClose={() => setOutboundsViewerOpen(false)}
+        outbounds={outbounds}
+        isLoading={isLoadingOutbounds}
+        subscribeName={selectedSubscribe?.name || ""}
       />
     </AppPage>
   );

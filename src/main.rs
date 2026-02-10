@@ -86,6 +86,10 @@ async fn main() -> anyhow::Result<()> {
       axum::routing::post(backend::api::subscribe::refresh_subscribe),
     )
     .route(
+      "/api/subscribe/outbounds",
+      axum::routing::get(backend::api::subscribe::get_subscribe_outbounds),
+    )
+    .route(
       "/api/dns-server",
       axum::routing::post(backend::api::dns::create_dns)
         .get(backend::api::dns::list_dns)
