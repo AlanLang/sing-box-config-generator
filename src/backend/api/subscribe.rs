@@ -515,7 +515,13 @@ fn parse_vless(url: &str, tag: String) -> Result<serde_json::Value, AppError> {
 
   // Split into user@server:port and query parameters
   let (main_part, query_part) = if let Some(pos) = url.find('?') {
-    (&url[..pos], Some(&url[pos + 1..]))
+    let query_with_fragment = &url[pos + 1..];
+    // Remove fragment (#...) from query string
+    let query_only = query_with_fragment
+      .split('#')
+      .next()
+      .unwrap_or(query_with_fragment);
+    (&url[..pos], Some(query_only))
   } else {
     (url, None)
   };
@@ -549,11 +555,72 @@ fn parse_vless(url: &str, tag: String) -> Result<serde_json::Value, AppError> {
       outbound.insert("flow".to_string(), Value::String(flow.clone()));
     }
 
-    // Handle network/type parameter
+    // Handle network/type parameter (transport)
     if let Some(network) = params.get("type") {
       if network != "tcp" {
         let mut transport = Map::new();
-        transport.insert("type".to_string(), Value::String(network.clone()));
+        // Map V2Ray transport types to sing-box transport types
+        // V2Ray uses "h2" for HTTP/2, but sing-box uses "http"
+        let transport_type = if network == "h2" {
+          "http"
+        } else {
+          network.as_str()
+        };
+        transport.insert(
+          "type".to_string(),
+          Value::String(transport_type.to_string()),
+        );
+
+        // WebSocket specific fields
+        if network == "ws" {
+          if let Some(path) = params.get("path") {
+            if !path.is_empty() {
+              transport.insert("path".to_string(), Value::String(path.clone()));
+            }
+          }
+          if let Some(host) = params.get("host") {
+            if !host.is_empty() {
+              let mut headers = Map::new();
+              headers.insert("Host".to_string(), Value::String(host.clone()));
+              transport.insert("headers".to_string(), Value::Object(headers));
+            }
+          }
+        }
+        // HTTP/2 specific fields
+        else if network == "h2" {
+          if let Some(path) = params.get("path") {
+            if !path.is_empty() {
+              transport.insert("path".to_string(), Value::String(path.clone()));
+            }
+          }
+          if let Some(host) = params.get("host") {
+            if !host.is_empty() {
+              let hosts: Vec<Value> = host
+                .split(',')
+                .map(|s| Value::String(s.trim().to_string()))
+                .collect();
+              transport.insert("host".to_string(), Value::Array(hosts));
+            }
+          }
+        }
+        // gRPC specific fields
+        else if network == "grpc" {
+          if let Some(service_name) = params.get("serviceName") {
+            if !service_name.is_empty() {
+              transport.insert(
+                "service_name".to_string(),
+                Value::String(service_name.clone()),
+              );
+            }
+          }
+          // Some VLESS URLs use "path" instead of "serviceName" for gRPC
+          else if let Some(path) = params.get("path") {
+            if !path.is_empty() {
+              transport.insert("service_name".to_string(), Value::String(path.clone()));
+            }
+          }
+        }
+
         outbound.insert("transport".to_string(), Value::Object(transport));
       }
     }
@@ -851,5 +918,108 @@ mod tests {
     assert_eq!(outbound["password"], "mypassword");
     assert_eq!(outbound["server"], "ss.example.com");
     assert_eq!(outbound["server_port"], 8388);
+  }
+
+  #[test]
+  fn test_parse_vless_with_websocket() {
+    // VLESS with WebSocket transport
+    let url = "vless://uuid-ws@example.com:443?security=tls&sni=example.com&type=ws&path=/ws&host=example.com#VLESS-WS";
+    let result = parse_vless(url, "VLESS-WS".to_string());
+
+    assert!(result.is_ok());
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "vless");
+    assert_eq!(outbound["uuid"], "uuid-ws");
+    assert_eq!(outbound["server"], "example.com");
+    assert_eq!(outbound["server_port"], 443);
+
+    // Verify TLS
+    let tls = &outbound["tls"];
+    assert_eq!(tls["enabled"], true);
+    assert_eq!(tls["server_name"], "example.com");
+
+    // Verify WebSocket transport
+    assert!(
+      outbound.get("transport").is_some(),
+      "WebSocket transport missing"
+    );
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "ws");
+    assert_eq!(transport["path"], "/ws");
+
+    // Verify WebSocket headers
+    assert!(
+      transport.get("headers").is_some(),
+      "WebSocket headers missing"
+    );
+    let headers = &transport["headers"];
+    assert_eq!(headers["Host"], "example.com");
+  }
+
+  #[test]
+  fn test_parse_vless_with_http2() {
+    // VLESS with HTTP/2 transport
+    let url = "vless://uuid-h2@example.com:443?security=tls&type=h2&path=/h2path&host=host1.com,host2.com#VLESS-H2";
+    let result = parse_vless(url, "VLESS-H2".to_string());
+
+    assert!(result.is_ok());
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "vless");
+
+    // Verify HTTP/2 transport
+    assert!(
+      outbound.get("transport").is_some(),
+      "HTTP/2 transport missing"
+    );
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "http"); // sing-box uses "http" for HTTP/2, not "h2"
+    assert_eq!(transport["path"], "/h2path");
+
+    // Verify hosts array
+    assert!(transport.get("host").is_some(), "HTTP/2 host missing");
+    let hosts = transport["host"].as_array().unwrap();
+    assert_eq!(hosts.len(), 2);
+    assert_eq!(hosts[0], "host1.com");
+    assert_eq!(hosts[1], "host2.com");
+  }
+
+  #[test]
+  fn test_parse_vless_with_grpc() {
+    // VLESS with gRPC transport
+    let url =
+      "vless://uuid-grpc@example.com:443?security=tls&type=grpc&serviceName=GunService#VLESS-gRPC";
+    let result = parse_vless(url, "VLESS-gRPC".to_string());
+
+    assert!(result.is_ok());
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "vless");
+
+    // Verify gRPC transport
+    assert!(
+      outbound.get("transport").is_some(),
+      "gRPC transport missing"
+    );
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "grpc");
+    assert_eq!(transport["service_name"], "GunService");
+  }
+
+  #[test]
+  fn test_parse_vless_with_grpc_path_fallback() {
+    // Some VLESS URLs use "path" instead of "serviceName" for gRPC
+    let url =
+      "vless://uuid-grpc@example.com:443?security=tls&type=grpc&path=GunService#VLESS-gRPC-Path";
+    let result = parse_vless(url, "VLESS-gRPC-Path".to_string());
+
+    assert!(result.is_ok());
+    let outbound = result.unwrap();
+
+    // Verify gRPC uses path as service_name
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "grpc");
+    assert_eq!(transport["service_name"], "GunService");
   }
 }
