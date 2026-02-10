@@ -16,6 +16,7 @@ import {
   IconCubePlus,
   IconExternalLink,
   IconRefresh,
+  IconEye,
 } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
@@ -252,6 +253,11 @@ function RouteComponent() {
     setOutboundsViewerOpen(true);
   };
 
+  const handleViewOutboundsFromCard = (uuid: string) => {
+    setSelectedUuid(uuid);
+    setOutboundsViewerOpen(true);
+  };
+
   return (
     <AppPage
       title="Subscribe Configuration"
@@ -333,6 +339,19 @@ function RouteComponent() {
                           >
                             <IconExternalLink className="size-4" />
                           </a>
+                        )}
+                        {metadata.last_updated && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewOutboundsFromCard(subscribe.uuid);
+                            }}
+                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
+                            title="View outbounds"
+                          >
+                            <IconEye className="size-4" />
+                          </button>
                         )}
                         <button
                           type="button"
