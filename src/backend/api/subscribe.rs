@@ -446,7 +446,13 @@ fn parse_vmess(url: &str, tag: String) -> Result<serde_json::Value, AppError> {
   if let Some(net) = vmess_data.get("net").and_then(|v| v.as_str()) {
     if net != "tcp" {
       let mut transport = Map::new();
-      transport.insert("type".to_string(), Value::String(net.to_string()));
+      // Map V2Ray transport types to sing-box transport types
+      // V2Ray uses "h2" for HTTP/2, but sing-box uses "http"
+      let transport_type = if net == "h2" { "http" } else { net };
+      transport.insert(
+        "type".to_string(),
+        Value::String(transport_type.to_string()),
+      );
 
       // WebSocket specific fields
       if net == "ws" {
@@ -776,7 +782,7 @@ mod tests {
 
     // Verify HTTP/2 transport
     let transport = &outbound["transport"];
-    assert_eq!(transport["type"], "h2");
+    assert_eq!(transport["type"], "http"); // sing-box uses "http" for HTTP/2, not "h2"
     assert_eq!(transport["path"], "/h2path");
 
     let hosts = transport["host"].as_array().unwrap();
