@@ -687,31 +687,34 @@ fn parse_vmess(url: &str, tag: String) -> Result<Value, AppError> {
           }
         }
 
-        // Handle transport
+        // Handle transport (skip "tcp" as it's the default and not a valid transport type in sing-box)
         if let Some(net) = config.get("net").and_then(|v| v.as_str()) {
-          let mut transport_obj = Map::new();
-          transport_obj.insert("type".to_string(), Value::String(net.to_string()));
+          // Only add transport for non-default types (not "tcp")
+          if net != "tcp" {
+            let mut transport_obj = Map::new();
+            transport_obj.insert("type".to_string(), Value::String(net.to_string()));
 
-          match net {
-            "ws" => {
-              if let Some(path) = config.get("path").and_then(|v| v.as_str()) {
-                transport_obj.insert("path".to_string(), Value::String(path.to_string()));
+            match net {
+              "ws" => {
+                if let Some(path) = config.get("path").and_then(|v| v.as_str()) {
+                  transport_obj.insert("path".to_string(), Value::String(path.to_string()));
+                }
+                if let Some(host) = config.get("host").and_then(|v| v.as_str()) {
+                  let mut headers = Map::new();
+                  headers.insert("Host".to_string(), Value::String(host.to_string()));
+                  transport_obj.insert("headers".to_string(), Value::Object(headers));
+                }
               }
-              if let Some(host) = config.get("host").and_then(|v| v.as_str()) {
-                let mut headers = Map::new();
-                headers.insert("Host".to_string(), Value::String(host.to_string()));
-                transport_obj.insert("headers".to_string(), Value::Object(headers));
+              "grpc" => {
+                if let Some(path) = config.get("path").and_then(|v| v.as_str()) {
+                  transport_obj.insert("service_name".to_string(), Value::String(path.to_string()));
+                }
               }
+              _ => {}
             }
-            "grpc" => {
-              if let Some(path) = config.get("path").and_then(|v| v.as_str()) {
-                transport_obj.insert("service_name".to_string(), Value::String(path.to_string()));
-              }
-            }
-            _ => {}
+
+            outbound.insert("transport".to_string(), Value::Object(transport_obj));
           }
-
-          outbound.insert("transport".to_string(), Value::Object(transport_obj));
         }
 
         return Ok(Value::Object(outbound));
@@ -783,7 +786,10 @@ fn parse_vless(url: &str, tag: String) -> Result<Value, AppError> {
                 tls_obj.insert("alpn".to_string(), Value::Array(alpn_list));
               }
               "type" => {
-                transport_obj.insert("type".to_string(), Value::String(value));
+                // Only add transport type if it's not "tcp" (tcp is the default)
+                if value != "tcp" {
+                  transport_obj.insert("type".to_string(), Value::String(value));
+                }
               }
               "path" => {
                 transport_obj.insert("path".to_string(), Value::String(value));
