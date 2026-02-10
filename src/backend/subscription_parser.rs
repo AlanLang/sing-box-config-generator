@@ -129,33 +129,31 @@ fn parse_trojan(url: &str, tag: String) -> Result<Value, AppError> {
           .collect();
 
         // Handle TLS configuration
-        if let Some(security) = params.get("security") {
-          if security == "tls" {
-            let mut tls = Map::new();
-            tls.insert("enabled".to_string(), Value::Bool(true));
+        // Trojan always uses TLS, so we always enable it
+        let mut tls = Map::new();
+        tls.insert("enabled".to_string(), Value::Bool(true));
 
-            // Add SNI if provided
-            if let Some(sni) = params.get("sni") {
-              if !sni.is_empty() {
-                tls.insert("server_name".to_string(), Value::String(sni.clone()));
-              }
-            }
+        // Default to insecure=true for compatibility with self-signed certificates
+        // This matches the behavior of the original config_generator.rs
+        tls.insert("insecure".to_string(), Value::Bool(true));
 
-            // Handle allowInsecure parameter
-            if let Some(allow_insecure) = params.get("allowInsecure") {
-              if allow_insecure == "1" {
-                tls.insert("insecure".to_string(), Value::Bool(true));
-              }
-            }
-
-            outbound.insert("tls".to_string(), Value::Object(tls));
+        // Add SNI if provided
+        if let Some(sni) = params.get("sni") {
+          if !sni.is_empty() {
+            tls.insert("server_name".to_string(), Value::String(sni.clone()));
           }
-        } else {
-          // If no security parameter, default to TLS enabled (Trojan always uses TLS)
-          let mut tls = Map::new();
-          tls.insert("enabled".to_string(), Value::Bool(true));
-          outbound.insert("tls".to_string(), Value::Object(tls));
         }
+
+        // Handle alpn parameter
+        if let Some(alpn) = params.get("alpn") {
+          let alpn_list: Vec<Value> = alpn
+            .split(',')
+            .map(|s| Value::String(s.trim().to_string()))
+            .collect();
+          tls.insert("alpn".to_string(), Value::Array(alpn_list));
+        }
+
+        outbound.insert("tls".to_string(), Value::Object(tls));
 
         // Handle transport type (ws, grpc, h2, etc.)
         if let Some(network) = params.get("type") {
@@ -227,6 +225,8 @@ fn parse_trojan(url: &str, tag: String) -> Result<Value, AppError> {
         // No query parameters, default to TLS enabled (Trojan always uses TLS)
         let mut tls = Map::new();
         tls.insert("enabled".to_string(), Value::Bool(true));
+        // Default to insecure=true for compatibility with self-signed certificates
+        tls.insert("insecure".to_string(), Value::Bool(true));
         outbound.insert("tls".to_string(), Value::Object(tls));
       }
 
@@ -731,7 +731,7 @@ mod tests {
 
   #[test]
   fn test_parse_trojan_with_tls() {
-    let url = "trojan://password123@trojan.example.com:443?security=tls#Trojan%20Test";
+    let url = "trojan://password123@trojan.example.com:443?security=tls&sni=example.com&alpn=h2,http/1.1#Trojan%20Test";
     let result = parse_trojan(url, "Trojan Test".to_string());
 
     assert!(result.is_ok());
@@ -742,9 +742,17 @@ mod tests {
     assert_eq!(outbound["server"], "trojan.example.com");
     assert_eq!(outbound["server_port"], 443);
 
-    // Verify TLS is enabled
+    // Verify TLS is enabled with insecure=true and alpn
     let tls = &outbound["tls"];
     assert_eq!(tls["enabled"], true);
+    assert_eq!(tls["insecure"], true);
+    assert_eq!(tls["server_name"], "example.com");
+
+    // Verify alpn parameter
+    let alpn = tls["alpn"].as_array().unwrap();
+    assert_eq!(alpn.len(), 2);
+    assert_eq!(alpn[0], "h2");
+    assert_eq!(alpn[1], "http/1.1");
   }
 
   #[test]
@@ -787,9 +795,10 @@ mod tests {
     assert_eq!(outbound["server"], "server.example.com");
     assert_eq!(outbound["server_port"], 443);
 
-    // TLS should be enabled by default
+    // TLS should be enabled by default with insecure=true
     let tls = &outbound["tls"];
     assert_eq!(tls["enabled"], true);
+    assert_eq!(tls["insecure"], true);
   }
 
   #[test]
