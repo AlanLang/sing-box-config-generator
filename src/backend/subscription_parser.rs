@@ -91,18 +91,144 @@ fn parse_trojan(url: &str, tag: String) -> Result<Value, AppError> {
 
   let url = url.strip_prefix("trojan://").unwrap_or(url);
 
-  if let Some((password, server_part)) = url.split_once('@') {
+  // Split into password@server:port and query parameters (removing fragment first)
+  let (main_part, query_part) = if let Some(pos) = url.find('?') {
+    let query_with_fragment = &url[pos + 1..];
+    // Remove fragment (#...) from query string
+    let query_only = query_with_fragment
+      .split('#')
+      .next()
+      .unwrap_or(query_with_fragment);
+    (&url[..pos], Some(query_only))
+  } else {
+    // No query parameters, but might have fragment after server:port
+    let without_fragment = url.split('#').next().unwrap_or(url);
+    (without_fragment, None)
+  };
+
+  // Parse password@server:port
+  if let Some((password, server_part)) = main_part.split_once('@') {
     outbound.insert("password".to_string(), Value::String(password.to_string()));
 
-    let server_part = server_part.split('?').next().unwrap_or(server_part);
     if let Some((server, port_str)) = server_part.split_once(':') {
       let port = port_str.parse::<u16>().unwrap_or(443);
       outbound.insert("server".to_string(), Value::String(server.to_string()));
       outbound.insert("server_port".to_string(), Value::Number(port.into()));
 
-      let mut tls = Map::new();
-      tls.insert("enabled".to_string(), Value::Bool(true));
-      outbound.insert("tls".to_string(), Value::Object(tls));
+      // Parse query parameters
+      if let Some(query) = query_part {
+        let params: HashMap<String, String> = query
+          .split('&')
+          .filter_map(|pair| {
+            let mut parts = pair.splitn(2, '=');
+            Some((
+              parts.next()?.to_string(),
+              urlencoding::decode(parts.next()?).ok()?.to_string(),
+            ))
+          })
+          .collect();
+
+        // Handle TLS configuration
+        if let Some(security) = params.get("security") {
+          if security == "tls" {
+            let mut tls = Map::new();
+            tls.insert("enabled".to_string(), Value::Bool(true));
+
+            // Add SNI if provided
+            if let Some(sni) = params.get("sni") {
+              if !sni.is_empty() {
+                tls.insert("server_name".to_string(), Value::String(sni.clone()));
+              }
+            }
+
+            // Handle allowInsecure parameter
+            if let Some(allow_insecure) = params.get("allowInsecure") {
+              if allow_insecure == "1" {
+                tls.insert("insecure".to_string(), Value::Bool(true));
+              }
+            }
+
+            outbound.insert("tls".to_string(), Value::Object(tls));
+          }
+        } else {
+          // If no security parameter, default to TLS enabled (Trojan always uses TLS)
+          let mut tls = Map::new();
+          tls.insert("enabled".to_string(), Value::Bool(true));
+          outbound.insert("tls".to_string(), Value::Object(tls));
+        }
+
+        // Handle transport type (ws, grpc, h2, etc.)
+        if let Some(network) = params.get("type") {
+          if network != "tcp" {
+            let mut transport = Map::new();
+            // Map V2Ray transport types to sing-box transport types
+            let transport_type = if network == "h2" {
+              "http"
+            } else {
+              network.as_str()
+            };
+            transport.insert(
+              "type".to_string(),
+              Value::String(transport_type.to_string()),
+            );
+
+            // WebSocket specific fields
+            if network == "ws" {
+              if let Some(path) = params.get("path") {
+                if !path.is_empty() {
+                  transport.insert("path".to_string(), Value::String(path.clone()));
+                }
+              }
+              if let Some(host) = params.get("host") {
+                if !host.is_empty() {
+                  let mut headers = Map::new();
+                  headers.insert("Host".to_string(), Value::String(host.clone()));
+                  transport.insert("headers".to_string(), Value::Object(headers));
+                }
+              }
+            }
+            // HTTP/2 specific fields
+            else if network == "h2" {
+              if let Some(path) = params.get("path") {
+                if !path.is_empty() {
+                  transport.insert("path".to_string(), Value::String(path.clone()));
+                }
+              }
+              if let Some(host) = params.get("host") {
+                if !host.is_empty() {
+                  let hosts: Vec<Value> = host
+                    .split(',')
+                    .map(|s| Value::String(s.trim().to_string()))
+                    .collect();
+                  transport.insert("host".to_string(), Value::Array(hosts));
+                }
+              }
+            }
+            // gRPC specific fields
+            else if network == "grpc" {
+              if let Some(service_name) = params.get("serviceName") {
+                if !service_name.is_empty() {
+                  transport.insert(
+                    "service_name".to_string(),
+                    Value::String(service_name.clone()),
+                  );
+                }
+              } else if let Some(path) = params.get("path") {
+                if !path.is_empty() {
+                  transport.insert("service_name".to_string(), Value::String(path.clone()));
+                }
+              }
+            }
+
+            outbound.insert("transport".to_string(), Value::Object(transport));
+          }
+        }
+      } else {
+        // No query parameters, default to TLS enabled (Trojan always uses TLS)
+        let mut tls = Map::new();
+        tls.insert("enabled".to_string(), Value::Bool(true));
+        outbound.insert("tls".to_string(), Value::Object(tls));
+      }
 
       return Ok(Value::Object(outbound));
     }
@@ -619,6 +745,101 @@ mod tests {
     // Verify TLS is enabled
     let tls = &outbound["tls"];
     assert_eq!(tls["enabled"], true);
+  }
+
+  #[test]
+  fn test_parse_trojan_with_full_params() {
+    // Trojan URL with full query parameters including sni, type, allowInsecure
+    let url = "trojan://test-password@proxy.example.com:10114?security=tls&sni=proxy.example.com&type=tcp&allowInsecure=1#TestNode-HK";
+    let result = parse_trojan(url, "TestNode-HK".to_string());
+
+    assert!(
+      result.is_ok(),
+      "Failed to parse Trojan URL with full params"
+    );
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "trojan");
+    assert_eq!(outbound["tag"], "TestNode-HK");
+    assert_eq!(outbound["password"], "test-password");
+    assert_eq!(outbound["server"], "proxy.example.com");
+    assert_eq!(outbound["server_port"], 10114);
+
+    // Verify TLS configuration with SNI and allowInsecure
+    assert!(outbound.get("tls").is_some(), "TLS configuration missing");
+    let tls = &outbound["tls"];
+    assert_eq!(tls["enabled"], true);
+    assert_eq!(tls["server_name"], "proxy.example.com");
+    assert_eq!(tls["insecure"], true);
+  }
+
+  #[test]
+  fn test_parse_trojan_without_query_params() {
+    // Trojan URL without query parameters (minimal format)
+    let url = "trojan://mypassword@server.example.com:443#SimpleNode";
+    let result = parse_trojan(url, "SimpleNode".to_string());
+
+    assert!(result.is_ok(), "Failed to parse minimal Trojan URL");
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "trojan");
+    assert_eq!(outbound["password"], "mypassword");
+    assert_eq!(outbound["server"], "server.example.com");
+    assert_eq!(outbound["server_port"], 443);
+
+    // TLS should be enabled by default
+    let tls = &outbound["tls"];
+    assert_eq!(tls["enabled"], true);
+  }
+
+  #[test]
+  fn test_parse_trojan_with_websocket() {
+    // Trojan with WebSocket transport
+    let url = "trojan://password@ws.example.com:443?security=tls&type=ws&path=/trojan&host=ws.example.com#Trojan-WS";
+    let result = parse_trojan(url, "Trojan-WS".to_string());
+
+    assert!(result.is_ok(), "Failed to parse Trojan with WebSocket");
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "trojan");
+    assert_eq!(outbound["server"], "ws.example.com");
+
+    // Verify TLS
+    let tls = &outbound["tls"];
+    assert_eq!(tls["enabled"], true);
+
+    // Verify WebSocket transport
+    assert!(
+      outbound.get("transport").is_some(),
+      "WebSocket transport missing"
+    );
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "ws");
+    assert_eq!(transport["path"], "/trojan");
+
+    let headers = &transport["headers"];
+    assert_eq!(headers["Host"], "ws.example.com");
+  }
+
+  #[test]
+  fn test_parse_trojan_with_grpc() {
+    // Trojan with gRPC transport
+    let url = "trojan://password@grpc.example.com:443?security=tls&type=grpc&serviceName=TrojanService#Trojan-gRPC";
+    let result = parse_trojan(url, "Trojan-gRPC".to_string());
+
+    assert!(result.is_ok(), "Failed to parse Trojan with gRPC");
+    let outbound = result.unwrap();
+
+    assert_eq!(outbound["type"], "trojan");
+
+    // Verify gRPC transport
+    assert!(
+      outbound.get("transport").is_some(),
+      "gRPC transport missing"
+    );
+    let transport = &outbound["transport"];
+    assert_eq!(transport["type"], "grpc");
+    assert_eq!(transport["service_name"], "TrojanService");
   }
 
   #[test]
