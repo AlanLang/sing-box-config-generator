@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-  use super::super::config_generator::{decode_base64_content, parse_subscription_line};
+  use super::super::config_generator::decode_base64_content;
+  use crate::backend::subscription_parser::parse_subscription_line;
   use base64::Engine;
 
   /// Create test subscription content as base64 (with proper padding)
