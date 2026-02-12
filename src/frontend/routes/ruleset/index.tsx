@@ -34,6 +34,9 @@ export const Route = createFileRoute("/ruleset/")({
 function RouteComponent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [usageWarningOpen, setUsageWarningOpen] = useState(false);
+  const [usedByConfigs, setUsedByConfigs] = useState<
+    Array<{ uuid: string; name: string }>
+  >([]);
   const [pendingDeleteUuid, setPendingDeleteUuid] = useState<string | null>(
     null,
   );
@@ -163,7 +166,8 @@ function RouteComponent() {
     // 只有当有待删除的UUID、不在加载中、且有数据时才处理
     if (pendingDeleteUuid && !isCheckingUsage && usageData) {
       if (usageData.is_used) {
-        // 被使用，显示警告对话框
+        // 被使用，缓存使用信息并显示警告对话框
+        setUsedByConfigs(usageData.used_by_configs);
         setUsageWarningOpen(true);
         setPendingDeleteUuid(null);
       } else {
@@ -294,7 +298,7 @@ function RouteComponent() {
         onOpenChange={setUsageWarningOpen}
         itemName={selectedRuleset?.name || ""}
         itemType="Ruleset"
-        usedByConfigs={usageData?.used_by_configs || []}
+        usedByConfigs={usedByConfigs}
       />
     </AppPage>
   );
