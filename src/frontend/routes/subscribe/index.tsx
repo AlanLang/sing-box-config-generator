@@ -3,15 +3,18 @@ import { useSubscribeList } from "@/api/subscribe/list";
 import { useSubscribeUpdate } from "@/api/subscribe/update";
 import { useSubscribeRefresh } from "@/api/subscribe/refresh";
 import { useSubscribeOutbounds } from "@/api/subscribe/outbounds";
+import { useSubscribeReorder } from "@/api/subscribe/reorder";
 import { createSubscribe } from "@/api/subscribe/create";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
 import { SkeletonGrid } from "@/components/skeleton-grid";
+import { SortableGrid } from "@/components/sortable-grid";
 import { SubscribeEditor } from "@/components/subscribe-editor";
 import { OutboundsViewer } from "@/components/outbounds-viewer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { extractErrorMessage } from "@/lib/error";
 import {
   IconCubePlus,
   IconExternalLink,
@@ -22,7 +25,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   parseSubscriptionJson,
   stringifySubscriptionJson,
@@ -53,6 +55,7 @@ function RouteComponent() {
   const updateSubscribeMutation = useSubscribeUpdate();
   const deleteSubscribeMutation = useSubscribeDelete();
   const refreshSubscribeMutation = useSubscribeRefresh();
+  const reorderMutation = useSubscribeReorder();
 
   const { data: outbounds = [], isLoading: isLoadingOutbounds } =
     useSubscribeOutbounds(outboundsViewerOpen ? selectedUuid : null);
@@ -258,6 +261,23 @@ function RouteComponent() {
     setOutboundsViewerOpen(true);
   };
 
+  const handleReorder = async (
+    reorderedSubscribes: Array<{ uuid: string; name: string; json: string }>,
+  ) => {
+    try {
+      const uuids = reorderedSubscribes.map((s) => s.uuid);
+      await reorderMutation.mutateAsync(uuids);
+      toast.success("Order saved successfully");
+    } catch (error: unknown) {
+      console.error("Failed to reorder subscribes:", error);
+      const errorMessage = await extractErrorMessage(
+        error,
+        "Failed to save order",
+      );
+      toast.error(errorMessage);
+    }
+  };
+
   return (
     <AppPage
       title="Subscribe Configuration"
@@ -287,94 +307,86 @@ function RouteComponent() {
         />
       ) : (
         /* Grid View */
-        <AnimatePresence mode="wait">
-          {!focusMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-6"
-            >
-              {subscribes.map((subscribe, index) => {
-                const metadata = parseSubscriptionJson(subscribe.json);
-                const timeAgo = formatTimeAgo(metadata.last_updated);
-                const isEnabled = metadata.enabled !== false;
-                const nodeNames = extractNodeNames(metadata.content);
-                const nodesPreview =
-                  nodeNames.length > 0
-                    ? `${nodeNames.slice(0, 2).join("\n")}${nodeNames.length > 2 ? `\n... +${nodeNames.length - 2} more` : ""}`
-                    : "Not fetched yet";
-                return (
-                  <ConfigCard
-                    key={subscribe.uuid}
-                    name={subscribe.name}
-                    disabled={!isEnabled}
-                    jsonPreview={`${nodesPreview}\n${metadata.last_updated ? `Updated: ${timeAgo}` : ""}`}
-                    onClick={() => {
-                      setSelectedUuid(subscribe.uuid);
-                      setIsCreating(false);
-                      setFocusMode(true);
-                    }}
-                    index={index}
-                    uuid={subscribe.uuid}
-                    actions={
-                      <>
-                        <Switch
-                          checked={metadata.enabled !== false}
-                          onCheckedChange={(checked) =>
-                            handleToggleEnabled(subscribe, checked)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className="scale-75"
-                        />
-                        {metadata.website_url && (
-                          <a
-                            href={metadata.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
-                            title="Visit website"
-                          >
-                            <IconExternalLink className="size-4" />
-                          </a>
-                        )}
-                        {metadata.last_updated && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewOutboundsFromCard(subscribe.uuid);
-                            }}
-                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
-                            title="View outbounds"
-                          >
-                            <IconEye className="size-4" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRefresh(subscribe.uuid);
-                          }}
-                          disabled={refreshSubscribeMutation.isPending}
-                          className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Refresh subscription"
-                        >
-                          <IconRefresh
-                            className={`size-4 ${refreshSubscribeMutation.isPending ? "animate-spin" : ""}`}
-                          />
-                        </button>
-                      </>
-                    }
-                  />
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <SortableGrid
+          items={subscribes || []}
+          onReorder={handleReorder}
+          renderItem={(subscribe, index, dragHandleProps) => {
+            const metadata = parseSubscriptionJson(subscribe.json);
+            const timeAgo = formatTimeAgo(metadata.last_updated);
+            const isEnabled = metadata.enabled !== false;
+            const nodeNames = extractNodeNames(metadata.content);
+            const nodesPreview =
+              nodeNames.length > 0
+                ? `${nodeNames.slice(0, 2).join("\n")}${nodeNames.length > 2 ? `\n... +${nodeNames.length - 2} more` : ""}`
+                : "Not fetched yet";
+            return (
+              <ConfigCard
+                name={subscribe.name}
+                disabled={!isEnabled}
+                jsonPreview={`${nodesPreview}\n${metadata.last_updated ? `Updated: ${timeAgo}` : ""}`}
+                onClick={() => {
+                  setSelectedUuid(subscribe.uuid);
+                  setIsCreating(false);
+                  setFocusMode(true);
+                }}
+                index={index}
+                uuid={subscribe.uuid}
+                dragHandleProps={dragHandleProps}
+                actions={
+                  <>
+                    <Switch
+                      checked={metadata.enabled !== false}
+                      onCheckedChange={(checked) =>
+                        handleToggleEnabled(subscribe, checked)
+                      }
+                      onClick={(e) => e.stopPropagation()}
+                      className="scale-75"
+                    />
+                    {metadata.website_url && (
+                      <a
+                        href={metadata.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
+                        title="Visit website"
+                      >
+                        <IconExternalLink className="size-4" />
+                      </a>
+                    )}
+                    {metadata.last_updated && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewOutboundsFromCard(subscribe.uuid);
+                        }}
+                        className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150"
+                        title="View outbounds"
+                      >
+                        <IconEye className="size-4" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRefresh(subscribe.uuid);
+                      }}
+                      disabled={refreshSubscribeMutation.isPending}
+                      className="p-1.5 rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Refresh subscription"
+                    >
+                      <IconRefresh
+                        className={`size-4 ${refreshSubscribeMutation.isPending ? "animate-spin" : ""}`}
+                      />
+                    </button>
+                  </>
+                }
+              />
+            );
+          }}
+        />
       )}
 
       {/* Subscribe Editor - Outside conditional to fix empty state creation bug */}

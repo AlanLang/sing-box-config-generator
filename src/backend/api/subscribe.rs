@@ -1,5 +1,6 @@
 use axum::{Json, http::StatusCode, response::IntoResponse};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::Path;
 use tokio::fs;
 
@@ -46,6 +47,37 @@ pub struct SubscribeListDto {
   pub json: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct SubscribeOrder {
+  uuids: Vec<String>,
+}
+
+/// Read subscribe order from file
+async fn read_subscribe_order() -> Result<Vec<String>, AppError> {
+  let order_path = Path::new("./data/subscribes/.order.json");
+  if !order_path.exists() {
+    return Ok(Vec::new());
+  }
+
+  let content = fs::read_to_string(order_path).await?;
+  let order: SubscribeOrder = serde_json::from_str(&content)?;
+  Ok(order.uuids)
+}
+
+/// Write subscribe order to file
+async fn write_subscribe_order(uuids: Vec<String>) -> Result<(), AppError> {
+  let dir_path = Path::new("./data/subscribes");
+  if !dir_path.exists() {
+    fs::create_dir_all(dir_path).await?;
+  }
+
+  let order_path = dir_path.join(".order.json");
+  let order = SubscribeOrder { uuids };
+  let content = serde_json::to_string_pretty(&order)?;
+  fs::write(order_path, content.as_bytes()).await?;
+  Ok(())
+}
+
 pub async fn list_subscribes() -> Result<impl IntoResponse, AppError> {
   let dir_path = Path::new("./data/subscribes");
   if !dir_path.exists() {
@@ -53,20 +85,39 @@ pub async fn list_subscribes() -> Result<impl IntoResponse, AppError> {
   }
 
   let mut entries = fs::read_dir(dir_path).await?;
-  let mut subscribes = Vec::new();
+  let mut subscribes_map: HashMap<String, SubscribeListDto> = HashMap::new();
 
   while let Some(entry) = entries.next_entry().await? {
     let path = entry.path();
     if path.extension().and_then(|s| s.to_str()) == Some("json") {
       let content = fs::read_to_string(&path).await?;
       if let Ok(subscribe_dto) = serde_json::from_str::<SubscribeCreateDto>(&content) {
-        subscribes.push(SubscribeListDto {
-          uuid: subscribe_dto.uuid,
-          name: subscribe_dto.name,
-          json: subscribe_dto.json,
-        });
+        subscribes_map.insert(
+          subscribe_dto.uuid.clone(),
+          SubscribeListDto {
+            uuid: subscribe_dto.uuid,
+            name: subscribe_dto.name,
+            json: subscribe_dto.json,
+          },
+        );
       }
     }
+  }
+
+  // Read order and sort subscribes
+  let order = read_subscribe_order().await?;
+  let mut subscribes = Vec::new();
+
+  // First, add subscribes in the specified order
+  for uuid in &order {
+    if let Some(subscribe) = subscribes_map.remove(uuid) {
+      subscribes.push(subscribe);
+    }
+  }
+
+  // Then add any remaining subscribes (new ones not in order yet)
+  for (_, subscribe) in subscribes_map {
+    subscribes.push(subscribe);
   }
 
   Ok(Json(subscribes))
@@ -279,3 +330,22 @@ fn parse_subscription_content(decoded_str: &str) -> Result<Vec<serde_json::Value
 
 // Use subscription parser from shared module
 use crate::backend::subscription_parser::parse_subscription_line;
+
+#[derive(Debug, Deserialize)]
+pub struct ReorderDto {
+  pub uuids: Vec<String>,
+}
+
+pub async fn reorder_subscribes(Json(payload): Json<ReorderDto>) -> impl IntoResponse {
+  match write_subscribe_order(payload.uuids).await {
+    Ok(()) => (StatusCode::OK, "Reordered successfully").into_response(),
+    Err(e) => {
+      log::error!("Failed to reorder subscribes: {:?}", e);
+      (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Failed to reorder subscribes",
+      )
+        .into_response()
+    }
+  }
+}
