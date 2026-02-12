@@ -13,7 +13,7 @@ use crate::backend::api::outbound_group::OutboundGroupCreateDto;
 use crate::backend::api::subscribe::SubscribeCreateDto;
 use crate::backend::error::AppError;
 
-const OUTBOUND_GROUP_FILE: &str = "./data/outbound_groups.json";
+const OUTBOUND_GROUP_DIR: &str = "./data/outbound-group";
 
 /// Main handler for generating and downloading a complete sing-box config
 pub async fn generate_config(
@@ -277,54 +277,25 @@ async fn resolve_experimental(uuid: &str) -> Result<Value, AppError> {
 
 /// Check if UUID is an outbound group
 async fn is_outbound_group(uuid: &str) -> Result<bool, AppError> {
-  let file_path = Path::new(OUTBOUND_GROUP_FILE);
-  if !file_path.exists() {
-    return Ok(false);
-  }
-
-  let content = fs::read_to_string(file_path).await?;
-  let groups: Value = serde_json::from_str(&content)?;
-
-  if let Some(groups_array) = groups.get("groups").and_then(|g| g.as_array()) {
-    for group in groups_array {
-      if let Some(group_uuid) = group.get("uuid").and_then(|u| u.as_str())
-        && group_uuid == uuid
-      {
-        return Ok(true);
-      }
-    }
-  }
-
-  Ok(false)
+  let file_path = Path::new(OUTBOUND_GROUP_DIR).join(format!("{}.json", uuid));
+  Ok(file_path.exists())
 }
 
 /// Load outbound group
 async fn load_outbound_group(uuid: &str) -> Result<OutboundGroupCreateDto, AppError> {
-  let file_path = Path::new(OUTBOUND_GROUP_FILE);
+  let file_path = Path::new(OUTBOUND_GROUP_DIR).join(format!("{}.json", uuid));
+
   if !file_path.exists() {
-    return Err(AppError::NotFound(
-      "Outbound groups file not found".to_string(),
-    ));
+    return Err(AppError::NotFound(format!(
+      "Outbound group not found: {}",
+      uuid
+    )));
   }
 
-  let content = fs::read_to_string(file_path).await?;
-  let groups: Value = serde_json::from_str(&content)?;
+  let content = fs::read_to_string(&file_path).await?;
+  let group: OutboundGroupCreateDto = serde_json::from_str(&content)?;
 
-  if let Some(groups_array) = groups.get("groups").and_then(|g| g.as_array()) {
-    for group in groups_array {
-      if let Some(group_uuid) = group.get("uuid").and_then(|u| u.as_str())
-        && group_uuid == uuid
-      {
-        let group_dto: OutboundGroupCreateDto = serde_json::from_value(group.clone())?;
-        return Ok(group_dto);
-      }
-    }
-  }
-
-  Err(AppError::NotFound(format!(
-    "Outbound group not found: {}",
-    uuid
-  )))
+  Ok(group)
 }
 
 /// Convert outbound group to sing-box format
