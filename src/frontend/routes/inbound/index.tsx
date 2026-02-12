@@ -49,11 +49,12 @@ function RouteComponent() {
   const deleteInboundMutation = useInboundDelete();
 
   // 检查资源使用情况
-  const { data: usageData } = useResourceUsageCheck(
-    pendingDeleteUuid || "",
-    "inbound",
-    !!pendingDeleteUuid,
-  );
+  const { data: usageData, isFetching: isCheckingUsage } =
+    useResourceUsageCheck(
+      pendingDeleteUuid || "",
+      "inbound",
+      !!pendingDeleteUuid,
+    );
 
   const [editName, setEditName] = useState("");
   const [editJson, setEditJson] = useState<string | undefined>(undefined);
@@ -159,7 +160,8 @@ function RouteComponent() {
 
   // 监听使用情况检查结果
   useEffect(() => {
-    if (pendingDeleteUuid && usageData) {
+    // 只有当有待删除的UUID、不在加载中、且有数据时才处理
+    if (pendingDeleteUuid && !isCheckingUsage && usageData) {
       if (usageData.is_used) {
         // 被使用，显示警告对话框
         setUsageWarningOpen(true);
@@ -170,7 +172,7 @@ function RouteComponent() {
         setPendingDeleteUuid(null);
       }
     }
-  }, [pendingDeleteUuid, usageData]);
+  }, [pendingDeleteUuid, usageData, isCheckingUsage]);
 
   const handleConfirmDelete = async () => {
     if (!selectedUuid) return;
