@@ -29,5 +29,8 @@ export const useResourceUsageCheck = (
         .json<UsageCheckResponse>();
     },
     enabled,
+    // 禁用缓存，确保每次删除都重新请求
+    staleTime: 0,
+    gcTime: 0,
   });
 };
