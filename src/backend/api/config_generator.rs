@@ -2,6 +2,7 @@ use axum::{
   Json,
   response::{IntoResponse, Response},
 };
+use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::collections::HashSet;
 use std::path::Path;
@@ -376,6 +377,23 @@ pub fn decode_base64_content(content: &str) -> Option<String> {
   String::from_utf8(decoded).ok()
 }
 
+/// Read subscribe order from file
+async fn read_subscribe_order() -> Result<Vec<String>, AppError> {
+  let order_path = Path::new("./data/subscribes/.order.json");
+  if !order_path.exists() {
+    return Ok(Vec::new());
+  }
+
+  #[derive(Deserialize)]
+  struct SubscribeOrder {
+    uuids: Vec<String>,
+  }
+
+  let content = fs::read_to_string(order_path).await?;
+  let order: SubscribeOrder = serde_json::from_str(&content)?;
+  Ok(order.uuids)
+}
+
 /// Get all subscription outbounds
 async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
   let dir_path = Path::new("./data/subscribes");
@@ -383,47 +401,40 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
     return Ok(Vec::new());
   }
 
+  // Read subscription order
+  let order = read_subscribe_order().await?;
   let mut all_outbounds = Vec::new();
-  let mut entries = fs::read_dir(dir_path).await?;
 
+  // First, process subscriptions in order
+  for uuid in &order {
+    let file_path = dir_path.join(format!("{}.json", uuid));
+    if !file_path.exists() {
+      continue;
+    }
+
+    if let Ok(content) = fs::read_to_string(&file_path).await {
+      if let Ok(subscribe) = serde_json::from_str::<SubscribeCreateDto>(&content) {
+        let outbounds = process_subscription(&subscribe).await?;
+        all_outbounds.extend(outbounds);
+      }
+    }
+  }
+
+  // Then, process any subscriptions not in order (new ones)
+  let mut entries = fs::read_dir(dir_path).await?;
   while let Some(entry) = entries.next_entry().await? {
     let path = entry.path();
     if path.extension().and_then(|s| s.to_str()) == Some("json") {
-      if let Ok(content) = fs::read_to_string(&path).await {
-        if let Ok(subscribe) = serde_json::from_str::<SubscribeCreateDto>(&content) {
-          let subscribe_name = subscribe.name.clone();
+      if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+        // Skip if already processed
+        if order.contains(&file_name.to_string()) {
+          continue;
+        }
 
-          // Parse subscription metadata
-          if let Ok(metadata) = serde_json::from_str::<Value>(&subscribe.json) {
-            // Skip disabled subscriptions (enabled defaults to true if not set)
-            if metadata.get("enabled").and_then(|e| e.as_bool()) == Some(false) {
-              continue;
-            }
-
-            if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
-              // Decode base64 content
-              if let Some(decoded_str) = decode_base64_content(content_str) {
-                // Parse subscription format (ss://, trojan://, etc.)
-                for line in decoded_str.lines() {
-                  let line = line.trim();
-                  if line.is_empty() {
-                    continue;
-                  }
-
-                  // Parse different formats and convert to sing-box outbound
-                  if let Ok(mut outbound) = parse_subscription_line(line) {
-                    // Rename tag to "original-name-subscription-name" format
-                    if let Some(obj) = outbound.as_object_mut() {
-                      if let Some(original_tag) = obj.get("tag").and_then(|t| t.as_str()) {
-                        let new_tag = format!("{}-{}", original_tag, subscribe_name);
-                        obj.insert("tag".to_string(), Value::String(new_tag));
-                      }
-                    }
-                    all_outbounds.push(outbound);
-                  }
-                }
-              }
-            }
+        if let Ok(content) = fs::read_to_string(&path).await {
+          if let Ok(subscribe) = serde_json::from_str::<SubscribeCreateDto>(&content) {
+            let outbounds = process_subscription(&subscribe).await?;
+            all_outbounds.extend(outbounds);
           }
         }
       }
@@ -431,6 +442,47 @@ async fn get_subscription_outbounds() -> Result<Vec<Value>, AppError> {
   }
 
   Ok(all_outbounds)
+}
+
+/// Process a single subscription and return its outbounds
+async fn process_subscription(subscribe: &SubscribeCreateDto) -> Result<Vec<Value>, AppError> {
+  let subscribe_name = subscribe.name.clone();
+  let mut outbounds = Vec::new();
+
+  // Parse subscription metadata
+  if let Ok(metadata) = serde_json::from_str::<Value>(&subscribe.json) {
+    // Skip disabled subscriptions (enabled defaults to true if not set)
+    if metadata.get("enabled").and_then(|e| e.as_bool()) == Some(false) {
+      return Ok(outbounds);
+    }
+
+    if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
+      // Decode base64 content
+      if let Some(decoded_str) = decode_base64_content(content_str) {
+        // Parse subscription format (ss://, trojan://, etc.)
+        for line in decoded_str.lines() {
+          let line = line.trim();
+          if line.is_empty() {
+            continue;
+          }
+
+          // Parse different formats and convert to sing-box outbound
+          if let Ok(mut outbound) = parse_subscription_line(line) {
+            // Rename tag to "original-name-subscription-name" format
+            if let Some(obj) = outbound.as_object_mut() {
+              if let Some(original_tag) = obj.get("tag").and_then(|t| t.as_str()) {
+                let new_tag = format!("{}-{}", original_tag, subscribe_name);
+                obj.insert("tag".to_string(), Value::String(new_tag));
+              }
+            }
+            outbounds.push(outbound);
+          }
+        }
+      }
+    }
+  }
+
+  Ok(outbounds)
 }
 
 // Re-export subscription parser from shared module
