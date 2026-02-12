@@ -137,6 +137,10 @@ async fn main() -> anyhow::Result<()> {
         .delete(backend::api::config::delete_config),
     )
     .route(
+      "/api/usage-check",
+      axum::routing::get(backend::api::usage_check::check_resource_usage),
+    )
+    .route(
       "/api/backup",
       axum::routing::post(backend::api::backup::create_backup)
         .get(backend::api::backup::list_backups)

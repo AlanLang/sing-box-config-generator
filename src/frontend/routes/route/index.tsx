@@ -1,19 +1,31 @@
+import { createRoute } from "@/api/route/create";
 import { useRouteDelete } from "@/api/route/delete";
 import { useRouteList } from "@/api/route/list";
 import { useRouteUpdate } from "@/api/route/update";
-import { createRoute } from "@/api/route/create";
 import { AppPage } from "@/components/app-page";
 import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
-import { SkeletonGrid } from "@/components/skeleton-grid";
 import { FocusEditor } from "@/components/focus-editor";
+import { SkeletonGrid } from "@/components/skeleton-grid";
+import { UsageWarningDialog } from "@/components/usage-warning-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useResourceUsageCheck } from "@/api/usage-check";
 import { IconCubePlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/route/")({
   component: RouteComponent,
@@ -21,6 +33,10 @@ export const Route = createFileRoute("/route/")({
 
 function RouteComponent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [usageWarningOpen, setUsageWarningOpen] = useState(false);
+  const [pendingDeleteUuid, setPendingDeleteUuid] = useState<string | null>(
+    null,
+  );
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -29,6 +45,13 @@ function RouteComponent() {
   const selectedRoute = routes?.find((route) => route.uuid === selectedUuid);
   const updateRouteMutation = useRouteUpdate();
   const deleteRouteMutation = useRouteDelete();
+
+  // 检查资源使用情况
+  const { data: usageData } = useResourceUsageCheck(
+    pendingDeleteUuid || "",
+    "route",
+    !!pendingDeleteUuid,
+  );
 
   const [editName, setEditName] = useState("");
   const [editJson, setEditJson] = useState<string | undefined>(undefined);
@@ -122,6 +145,28 @@ function RouteComponent() {
 
   const handleDelete = async () => {
     if (!selectedUuid) return;
+
+    // 触发使用情况检查
+    setPendingDeleteUuid(selectedUuid);
+  };
+
+  // 监听使用情况检查结果
+  useEffect(() => {
+    if (pendingDeleteUuid && usageData) {
+      if (usageData.is_used) {
+        // 被使用，显示警告对话框
+        setUsageWarningOpen(true);
+        setPendingDeleteUuid(null);
+      } else {
+        // 未被使用，显示确认删除对话框
+        setDeleteDialogOpen(true);
+        setPendingDeleteUuid(null);
+      }
+    }
+  }, [pendingDeleteUuid, usageData]);
+
+  const handleConfirmDelete = async () => {
+    if (!selectedUuid) return;
     try {
       await deleteRouteMutation.mutateAsync({
         uuid: selectedUuid,
@@ -211,8 +256,39 @@ function RouteComponent() {
         isSaving={updateRouteMutation.isPending}
         isDeleting={deleteRouteMutation.isPending}
         entityType="Route"
-        deleteDialogOpen={deleteDialogOpen}
-        onDeleteDialogChange={setDeleteDialogOpen}
+        deleteDialogOpen={false}
+        onDeleteDialogChange={() => {}}
+      />
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除 Route</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除 "{selectedRoute?.name}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteRouteMutation.isPending}
+            >
+              {deleteRouteMutation.isPending ? "删除中..." : "确认删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 使用警告对话框 */}
+      <UsageWarningDialog
+        open={usageWarningOpen}
+        onOpenChange={setUsageWarningOpen}
+        itemName={selectedRoute?.name || ""}
+        itemType="Route"
+        usedByConfigs={usageData?.used_by_configs || []}
       />
     </AppPage>
   );

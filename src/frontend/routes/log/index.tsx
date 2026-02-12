@@ -7,7 +7,19 @@ import { ConfigCard } from "@/components/config-card";
 import { EmptyState } from "@/components/empty-state";
 import { FocusEditor } from "@/components/focus-editor";
 import { SkeletonGrid } from "@/components/skeleton-grid";
+import { UsageWarningDialog } from "@/components/usage-warning-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useResourceUsageCheck } from "@/api/usage-check";
 import { IconCubePlus } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
@@ -21,6 +33,10 @@ export const Route = createFileRoute("/log/")({
 
 function RouteComponent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [usageWarningOpen, setUsageWarningOpen] = useState(false);
+  const [pendingDeleteUuid, setPendingDeleteUuid] = useState<string | null>(
+    null,
+  );
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -29,6 +45,13 @@ function RouteComponent() {
   const selectedLog = logs?.find((log) => log.uuid === selectedUuid);
   const updateLogMutation = useLogUpdate();
   const deleteLogMutation = useLogDelete();
+
+  // 检查资源使用情况
+  const { data: usageData } = useResourceUsageCheck(
+    pendingDeleteUuid || "",
+    "log",
+    !!pendingDeleteUuid,
+  );
 
   const [editName, setEditName] = useState("");
   const [editJson, setEditJson] = useState<string | undefined>(undefined);
@@ -122,6 +145,28 @@ function RouteComponent() {
 
   const handleDelete = async () => {
     if (!selectedUuid) return;
+
+    // 触发使用情况检查
+    setPendingDeleteUuid(selectedUuid);
+  };
+
+  // 监听使用情况检查结果
+  useEffect(() => {
+    if (pendingDeleteUuid && usageData) {
+      if (usageData.is_used) {
+        // 被使用，显示警告对话框
+        setUsageWarningOpen(true);
+        setPendingDeleteUuid(null);
+      } else {
+        // 未被使用，显示确认删除对话框
+        setDeleteDialogOpen(true);
+        setPendingDeleteUuid(null);
+      }
+    }
+  }, [pendingDeleteUuid, usageData]);
+
+  const handleConfirmDelete = async () => {
+    if (!selectedUuid) return;
     try {
       await deleteLogMutation.mutateAsync({
         uuid: selectedUuid,
@@ -211,8 +256,39 @@ function RouteComponent() {
         isSaving={updateLogMutation.isPending}
         isDeleting={deleteLogMutation.isPending}
         entityType="Log"
-        deleteDialogOpen={deleteDialogOpen}
-        onDeleteDialogChange={setDeleteDialogOpen}
+        deleteDialogOpen={false}
+        onDeleteDialogChange={() => {}}
+      />
+
+      {/* 删除确认对话框 */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除 Log</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除 "{selectedLog?.name}" 吗？此操作无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteLogMutation.isPending}
+            >
+              {deleteLogMutation.isPending ? "删除中..." : "确认删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 使用警告对话框 */}
+      <UsageWarningDialog
+        open={usageWarningOpen}
+        onOpenChange={setUsageWarningOpen}
+        itemName={selectedLog?.name || ""}
+        itemType="Log"
+        usedByConfigs={usageData?.used_by_configs || []}
       />
     </AppPage>
   );

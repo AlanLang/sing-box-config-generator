@@ -13,6 +13,7 @@ pub mod route;
 pub mod rule;
 pub mod ruleset;
 pub mod subscribe;
+pub mod usage_check;
 
 #[cfg(test)]
 mod config_generator_test;
