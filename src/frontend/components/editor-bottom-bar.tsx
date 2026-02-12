@@ -1,15 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -32,14 +22,6 @@ interface EditorBottomBarProps {
   isCreating: boolean;
   /** Delete button handler (if not creating) */
   onDelete?: () => void;
-  /** Whether delete is in progress */
-  isDeleting?: boolean;
-  /** Delete dialog open state */
-  deleteDialogOpen: boolean;
-  /** Delete dialog state handler */
-  onDeleteDialogChange: (open: boolean) => void;
-  /** Name of the item being edited (for delete confirmation) */
-  itemName: string;
   /** Additional menu items to show in dropdown */
   additionalMenuItems?: ReactNode;
 }
@@ -57,10 +39,6 @@ export function EditorBottomBar({
   entityType,
   isCreating,
   onDelete,
-  isDeleting,
-  deleteDialogOpen,
-  onDeleteDialogChange,
-  itemName,
   additionalMenuItems,
 }: EditorBottomBarProps) {
   return (
@@ -90,55 +68,29 @@ export function EditorBottomBar({
 
         {/* More Menu */}
         {!isCreating && (onDelete || additionalMenuItems) && (
-          <Dialog
-            open={deleteDialogOpen}
-            onOpenChange={onDeleteDialogChange}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="shrink-0 h-12 w-12 p-0"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="lg"
+                className="shrink-0 h-12 w-12 p-0"
+              >
+                <IconDotsVertical className="size-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {additionalMenuItems}
+              {onDelete && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive gap-2"
+                  onClick={onDelete}
                 >
-                  <IconDotsVertical className="size-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {additionalMenuItems}
-                {onDelete && (
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem className="text-destructive focus:text-destructive gap-2">
-                      <IconTrash className="size-4" />
-                      <span>删除配置</span>
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {onDelete && (
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>删除 {entityType}</DialogTitle>
-                  <DialogDescription>
-                    确定要删除 "{itemName}" 吗？此操作无法撤销。
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">取消</Button>
-                  </DialogClose>
-                  <Button
-                    variant="destructive"
-                    onClick={onDelete}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? "删除中..." : "确认删除"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            )}
-          </Dialog>
+                  <IconTrash className="size-4" />
+                  <span>删除配置</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </motion.div>

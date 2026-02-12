@@ -3,16 +3,6 @@ import { EditorHeader } from "@/components/editor-header";
 import { JsonEditor } from "@/components/json-editor";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -32,10 +22,7 @@ interface FocusEditorProps {
   onSave: () => void;
   onDelete?: () => void;
   isSaving: boolean;
-  isDeleting?: boolean;
   entityType: string; // "Log", "Ruleset", etc.
-  deleteDialogOpen: boolean;
-  onDeleteDialogChange: (open: boolean) => void;
 }
 
 export function FocusEditor({
@@ -50,10 +37,7 @@ export function FocusEditor({
   onSave,
   onDelete,
   isSaving,
-  isDeleting,
   entityType,
-  deleteDialogOpen,
-  onDeleteDialogChange,
 }: FocusEditorProps) {
   return (
     <AnimatePresence>
@@ -89,41 +73,14 @@ export function FocusEditor({
                   {!isCreating && onDelete && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Dialog
-                          open={deleteDialogOpen}
-                          onOpenChange={onDeleteDialogChange}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0"
+                          onClick={onDelete}
                         >
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="shrink-0"
-                            >
-                              <IconTrash className="size-4 text-destructive" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Delete {entityType}</DialogTitle>
-                              <DialogDescription>
-                                Are you sure you want to delete "{name}"? This
-                                action cannot be undone.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                              </DialogClose>
-                              <Button
-                                variant="destructive"
-                                onClick={onDelete}
-                                disabled={isDeleting}
-                              >
-                                {isDeleting ? "Deleting..." : "Delete"}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                          <IconTrash className="size-4 text-destructive" />
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent>Delete {entityType}</TooltipContent>
                     </Tooltip>
@@ -170,10 +127,6 @@ export function FocusEditor({
               entityType={entityType}
               isCreating={isCreating}
               onDelete={onDelete}
-              isDeleting={isDeleting}
-              deleteDialogOpen={deleteDialogOpen}
-              onDeleteDialogChange={onDeleteDialogChange}
-              itemName={name}
             />
 
             {/* Desktop Footer Info */}

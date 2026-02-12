@@ -251,10 +251,6 @@ export function SubscribeEditor({
               entityType="Subscribe"
               isCreating={isCreating}
               onDelete={onDelete}
-              isDeleting={isDeleting}
-              deleteDialogOpen={deleteDialogOpen}
-              onDeleteDialogChange={onDeleteDialogChange}
-              itemName={name}
               additionalMenuItems={
                 <>
                   {!isCreating && onViewOutbounds && lastUpdated && (

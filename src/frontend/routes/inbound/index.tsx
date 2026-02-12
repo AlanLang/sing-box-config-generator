@@ -261,10 +261,7 @@ function RouteComponent() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={updateInboundMutation.isPending}
-        isDeleting={deleteInboundMutation.isPending}
         entityType="Inbound"
-        deleteDialogOpen={false}
-        onDeleteDialogChange={() => {}}
       />
 
       {/* 删除确认对话框 */}

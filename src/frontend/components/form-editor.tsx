@@ -182,10 +182,6 @@ export function FormEditor({
               entityType={entityType}
               isCreating={isCreating}
               onDelete={onDelete}
-              isDeleting={isDeleting}
-              deleteDialogOpen={deleteDialogOpen}
-              onDeleteDialogChange={onDeleteDialogChange}
-              itemName={name}
               additionalMenuItems={additionalMenuItems}
             />
 

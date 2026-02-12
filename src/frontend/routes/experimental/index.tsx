@@ -267,10 +267,7 @@ function RouteComponent() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={updateExperimentalMutation.isPending}
-        isDeleting={deleteExperimentalMutation.isPending}
         entityType="Experimental"
-        deleteDialogOpen={false}
-        onDeleteDialogChange={() => {}}
       />
 
       {/* 删除确认对话框 */}

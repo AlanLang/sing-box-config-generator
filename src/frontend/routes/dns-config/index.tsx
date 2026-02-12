@@ -267,10 +267,7 @@ function RouteComponent() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={updateDnsConfigMutation.isPending}
-        isDeleting={deleteDnsConfigMutation.isPending}
         entityType="DNS Config"
-        deleteDialogOpen={false}
-        onDeleteDialogChange={() => {}}
       />
 
       {/* 删除确认对话框 */}

@@ -261,10 +261,7 @@ function RouteComponent() {
         onSave={handleSave}
         onDelete={handleDelete}
         isSaving={updateRulesetMutation.isPending}
-        isDeleting={deleteRulesetMutation.isPending}
         entityType="Ruleset"
-        deleteDialogOpen={false}
-        onDeleteDialogChange={() => {}}
       />
 
       {/* 删除确认对话框 */}
