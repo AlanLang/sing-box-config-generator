@@ -10,20 +10,20 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.100"
 axum = { version = "0.8.7", features = ["multipart"] }
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
 env_logger = "0.11.8"
+flate2 = "1.1"
 log = "0.4.28"
+regex = "1.11"
+reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.145", features = ["preserve_order"] }
-tokio = {version = "1.48.0", features = ["full"]}
-tower = { version = "0.5.2", features = ["util"] }
-tower-http = { version = "0.6.6", features = ["fs", "trace", "cors"] }
-reqwest = { version = "0.12", features = ["json"] }
-chrono = { version = "0.4", features = ["serde"] }
-base64 = "0.22"
-urlencoding = "2.1"
-regex = "1.11"
-tar = "0.4"
-flate2 = "1.1"
 sha2 = "0.10.9"
+tar = "0.4"
 tempfile = "3"
+tokio = { version = "1.48.0", features = ["full"] }
+tower = { version = "0.5.2", features = ["util"] }
+tower-http = { version = "0.6.6", features = ["cors", "fs", "trace"] }
+urlencoding = "2.1"
 uuid = { version = "1", features = ["v4"] }

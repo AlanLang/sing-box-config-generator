@@ -98,19 +98,19 @@ const SubscribeFilterIndexRoute = SubscribeFilterIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/backup': typeof BackupIndexRoute
-  '/dns-config': typeof DnsConfigIndexRoute
-  '/dns-server': typeof DnsServerIndexRoute
-  '/experimental': typeof ExperimentalIndexRoute
-  '/inbound': typeof InboundIndexRoute
-  '/log': typeof LogIndexRoute
-  '/outbound': typeof OutboundIndexRoute
-  '/route': typeof RouteIndexRoute
-  '/rule': typeof RuleIndexRoute
-  '/ruleset': typeof RulesetIndexRoute
-  '/subscribe': typeof SubscribeIndexRoute
-  '/subscribe/filter': typeof SubscribeFilterIndexRoute
-  '/subscribe/outbound-group': typeof SubscribeOutboundGroupIndexRoute
+  '/backup/': typeof BackupIndexRoute
+  '/dns-config/': typeof DnsConfigIndexRoute
+  '/dns-server/': typeof DnsServerIndexRoute
+  '/experimental/': typeof ExperimentalIndexRoute
+  '/inbound/': typeof InboundIndexRoute
+  '/log/': typeof LogIndexRoute
+  '/outbound/': typeof OutboundIndexRoute
+  '/route/': typeof RouteIndexRoute
+  '/rule/': typeof RuleIndexRoute
+  '/ruleset/': typeof RulesetIndexRoute
+  '/subscribe/': typeof SubscribeIndexRoute
+  '/subscribe/filter/': typeof SubscribeFilterIndexRoute
+  '/subscribe/outbound-group/': typeof SubscribeOutboundGroupIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,19 +149,19 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/backup'
-    | '/dns-config'
-    | '/dns-server'
-    | '/experimental'
-    | '/inbound'
-    | '/log'
-    | '/outbound'
-    | '/route'
-    | '/rule'
-    | '/ruleset'
-    | '/subscribe'
-    | '/subscribe/filter'
-    | '/subscribe/outbound-group'
+    | '/backup/'
+    | '/dns-config/'
+    | '/dns-server/'
+    | '/experimental/'
+    | '/inbound/'
+    | '/log/'
+    | '/outbound/'
+    | '/route/'
+    | '/rule/'
+    | '/ruleset/'
+    | '/subscribe/'
+    | '/subscribe/filter/'
+    | '/subscribe/outbound-group/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -225,91 +225,91 @@ declare module '@tanstack/react-router' {
     '/subscribe/': {
       id: '/subscribe/'
       path: '/subscribe'
-      fullPath: '/subscribe'
+      fullPath: '/subscribe/'
       preLoaderRoute: typeof SubscribeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ruleset/': {
       id: '/ruleset/'
       path: '/ruleset'
-      fullPath: '/ruleset'
+      fullPath: '/ruleset/'
       preLoaderRoute: typeof RulesetIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rule/': {
       id: '/rule/'
       path: '/rule'
-      fullPath: '/rule'
+      fullPath: '/rule/'
       preLoaderRoute: typeof RuleIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/route/': {
       id: '/route/'
       path: '/route'
-      fullPath: '/route'
+      fullPath: '/route/'
       preLoaderRoute: typeof RouteIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/outbound/': {
       id: '/outbound/'
       path: '/outbound'
-      fullPath: '/outbound'
+      fullPath: '/outbound/'
       preLoaderRoute: typeof OutboundIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/log/': {
       id: '/log/'
       path: '/log'
-      fullPath: '/log'
+      fullPath: '/log/'
       preLoaderRoute: typeof LogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbound/': {
       id: '/inbound/'
       path: '/inbound'
-      fullPath: '/inbound'
+      fullPath: '/inbound/'
       preLoaderRoute: typeof InboundIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/experimental/': {
       id: '/experimental/'
       path: '/experimental'
-      fullPath: '/experimental'
+      fullPath: '/experimental/'
       preLoaderRoute: typeof ExperimentalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dns-server/': {
       id: '/dns-server/'
       path: '/dns-server'
-      fullPath: '/dns-server'
+      fullPath: '/dns-server/'
       preLoaderRoute: typeof DnsServerIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dns-config/': {
       id: '/dns-config/'
       path: '/dns-config'
-      fullPath: '/dns-config'
+      fullPath: '/dns-config/'
       preLoaderRoute: typeof DnsConfigIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/backup/': {
       id: '/backup/'
       path: '/backup'
-      fullPath: '/backup'
+      fullPath: '/backup/'
       preLoaderRoute: typeof BackupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe/outbound-group/': {
       id: '/subscribe/outbound-group/'
       path: '/subscribe/outbound-group'
-      fullPath: '/subscribe/outbound-group'
+      fullPath: '/subscribe/outbound-group/'
       preLoaderRoute: typeof SubscribeOutboundGroupIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscribe/filter/': {
       id: '/subscribe/filter/'
       path: '/subscribe/filter'
-      fullPath: '/subscribe/filter'
+      fullPath: '/subscribe/filter/'
       preLoaderRoute: typeof SubscribeFilterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
