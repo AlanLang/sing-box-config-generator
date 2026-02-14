@@ -1,7 +1,7 @@
 {
   "name": "sing-box-config-generator",
   "description": "SingBox 配置文件可视化生成器 - 基于 React + Rust (Axum) 的全栈应用，提供模块化配置管理、订阅管理、备份恢复等功能",
-  "version": "1.0.0",
+  "version": "1.12.0",
   "private": true,
   "type": "module",
   "license": "MIT",

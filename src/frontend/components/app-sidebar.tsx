@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar"
 import { IconBrandMinecraft, IconWorldCog } from "@tabler/icons-react"
 import { ThemeSwitch } from "./ui/theme-switch-button"
+import packageJson from "../../../package.json"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
@@ -45,7 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild>
               <a href="https://sing-box.sagernet.org/zh/configuration/" target="_blank">
                 <IconBrandMinecraft />
-                <span>SingBox</span>
+                <span>SingBox {packageJson.version}</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
