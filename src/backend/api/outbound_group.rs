@@ -142,7 +142,7 @@ pub async fn update_outbound_group(
 
   fs::write(file_path, serde_json::to_string(&payload)?.as_bytes()).await?;
 
-  Ok((StatusCode::OK, "Outbound group updated successfully").into_response())
+  Ok((StatusCode::OK, Json(payload)).into_response())
 }
 
 #[derive(Debug, Deserialize)]
