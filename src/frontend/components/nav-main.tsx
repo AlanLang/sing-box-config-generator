@@ -111,9 +111,10 @@ export function NavMain({
               size="icon"
               className="size-8 group-data-[collapsible=icon]:opacity-0"
               variant="outline"
+              onClick={() => window.open("https://github.com/AlanLang/sing-box-config-generator", "_blank")}
             >
               <IconMoodHeart />
-              <span className="sr-only">Inbox</span>
+              <span className="sr-only">GitHub</span>
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>
