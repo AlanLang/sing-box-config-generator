@@ -687,9 +687,40 @@ async fn resolve_outbounds_and_route(
     }
   }
 
-  // Add all groups to outbounds array (after their members)
+  // Remove empty groups: if a group's effective member_tags is empty, skip it.
+  // Use fixpoint iteration because removing a group can cascade: a parent group
+  // that only referenced the now-removed group also becomes empty.
+  let mut removed_group_tags: HashSet<String> = HashSet::new();
+  loop {
+    let newly_empty: Vec<String> = groups_to_add
+      .iter()
+      .filter(|(group, member_tags)| {
+        !removed_group_tags.contains(&group.name)
+          && member_tags.iter().all(|t| removed_group_tags.contains(t))
+      })
+      .map(|(group, _)| group.name.clone())
+      .collect();
+
+    if newly_empty.is_empty() {
+      break;
+    }
+    for tag in &newly_empty {
+      log::warn!("Skipping empty outbound group: {}", tag);
+    }
+    removed_group_tags.extend(newly_empty);
+  }
+
+  // Add all non-empty groups to outbounds array (after their members),
+  // filtering out any references to removed empty groups.
   for (group, member_tags) in groups_to_add {
-    outbounds.push(convert_group_to_singbox(&group, &member_tags));
+    if removed_group_tags.contains(&group.name) {
+      continue;
+    }
+    let filtered_tags: Vec<String> = member_tags
+      .into_iter()
+      .filter(|t| !removed_group_tags.contains(t))
+      .collect();
+    outbounds.push(convert_group_to_singbox(&group, &filtered_tags));
   }
 
   Ok((Value::Array(outbounds), final_tag))
