@@ -21,6 +21,8 @@ import {
 	IconAlertCircle,
 	IconArrowDown,
 	IconArrowUp,
+	IconArrowBarToUp,
+	IconArrowBarToDown,
 	IconCheck,
 	IconPlus,
 	IconTrash,
@@ -130,6 +132,18 @@ export function RouteConfigSection({
 			newRules[targetIndex],
 			newRules[index],
 		];
+		onRulesChange(newRules);
+	};
+
+	const handleMoveRuleToEdge = (index: number, edge: "top" | "bottom") => {
+		if (!rules) return;
+		const newRules = [...rules];
+		const [item] = newRules.splice(index, 1);
+		if (edge === "top") {
+			newRules.unshift(item);
+		} else {
+			newRules.push(item);
+		}
 		onRulesChange(newRules);
 	};
 
@@ -298,6 +312,15 @@ export function RouteConfigSection({
 													variant="ghost"
 													size="sm"
 													disabled={index === 0}
+													onClick={() => handleMoveRuleToEdge(index, "top")}
+													title="Move to top"
+												>
+													<IconArrowBarToUp className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={index === 0}
 													onClick={() => handleMoveRule(index, "up")}
 													title="Move up"
 												>
@@ -311,6 +334,15 @@ export function RouteConfigSection({
 													title="Move down"
 												>
 													<IconArrowDown className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="sm"
+													disabled={index === rules.length - 1}
+													onClick={() => handleMoveRuleToEdge(index, "bottom")}
+													title="Move to bottom"
+												>
+													<IconArrowBarToDown className="size-4" />
 												</Button>
 												<Button
 													variant="ghost"
