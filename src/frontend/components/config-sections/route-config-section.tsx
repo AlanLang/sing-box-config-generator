@@ -39,6 +39,7 @@ interface RouteConfigSectionProps {
 	defaultDomainResolver: string | undefined;
 	onDefaultDomainResolverChange: (value: string | undefined) => void;
 	dnsServers: string[]; // DNS Configuration 中选中的 DNS servers
+	selectedInbounds: string[]; // Inbounds Configuration 中选中的 inbound UUIDs
 	isValid: boolean;
 }
 
@@ -52,6 +53,7 @@ export function RouteConfigSection({
 	defaultDomainResolver,
 	onDefaultDomainResolverChange,
 	dnsServers,
+	selectedInbounds,
 	isValid,
 }: RouteConfigSectionProps) {
 	const { data: routes, isLoading: routesLoading } = useRouteList();
@@ -99,24 +101,26 @@ export function RouteConfigSection({
 		}));
 	}, [ruleModules]);
 
-	// 构建 inbound SelectorDrawer items（从 JSON 中提取 tag）
+	// 构建 inbound SelectorDrawer items（只显示 Inbounds Configuration 中已选中的）
 	const inboundDrawerItems: SelectorDrawerItem[] = useMemo(() => {
 		if (!inboundModules) return [];
-		return inboundModules.map((inbound) => {
-			let tag = inbound.name;
-			try {
-				const parsed = JSON.parse(inbound.json);
-				if (parsed.tag) tag = parsed.tag;
-			} catch {
-				// ignore parse errors, use name as tag
-			}
-			return {
-				value: inbound.uuid,
-				title: inbound.name,
-				description: `tag: ${tag}`,
-			};
-		});
-	}, [inboundModules]);
+		return inboundModules
+			.filter((inbound) => selectedInbounds.includes(inbound.uuid))
+			.map((inbound) => {
+				let tag = inbound.name;
+				try {
+					const parsed = JSON.parse(inbound.json);
+					if (parsed.tag) tag = parsed.tag;
+				} catch {
+					// ignore parse errors, use name as tag
+				}
+				return {
+					value: inbound.uuid,
+					title: inbound.name,
+					description: `tag: ${tag}`,
+				};
+			});
+	}, [inboundModules, selectedInbounds]);
 
 	const handleMoveRule = (index: number, direction: "up" | "down") => {
 		if (!rules) return;

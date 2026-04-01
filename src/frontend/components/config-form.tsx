@@ -406,6 +406,7 @@ export function ConfigForm({
 												defaultDomainResolver={routeDefaultDomainResolver}
 												onDefaultDomainResolverChange={setRouteDefaultDomainResolver}
 												dnsServers={dnsServerUuids}
+												selectedInbounds={inbounds}
 												isValid={isRouteValid}
 											/>
 

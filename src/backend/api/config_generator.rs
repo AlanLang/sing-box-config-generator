@@ -37,7 +37,7 @@ pub async fn generate_config(
   );
 
   let (outbounds, route_final_tag) = resolve_outbounds_and_route(&config).await?;
-  let route_value = resolve_route(&config.route, &route_final_tag).await?;
+  let route_value = resolve_route(&config.route, &route_final_tag, &config.inbounds).await?;
 
   // Filter out unused outbounds
   let outbounds = filter_unused_outbounds(outbounds, &route_value, &route_final_tag);
@@ -812,6 +812,7 @@ async fn resolve_inbound_uuid_to_tag(uuid: &str) -> Result<String, AppError> {
 async fn resolve_route(
   route: &crate::backend::api::config::RouteConfigDto,
   final_tag: &str,
+  selected_inbounds: &[String],
 ) -> Result<Value, AppError> {
   let mut route_config = Map::new();
 
@@ -886,13 +887,20 @@ async fn resolve_route(
               }
             }
 
-            // If inbound UUID is specified, resolve and inject inbound tag into the rule
+            // If inbound UUID is specified and still in selected inbounds, inject its tag
             if let Some(inbound_uuid) = inbound {
-              let inbound_tag = resolve_inbound_uuid_to_tag(inbound_uuid).await?;
-              if !inbound_tag.is_empty() {
-                if let Some(obj) = rule_obj_value.as_object_mut() {
-                  obj.insert("inbound".to_string(), Value::String(inbound_tag));
+              if selected_inbounds.contains(inbound_uuid) {
+                let inbound_tag = resolve_inbound_uuid_to_tag(inbound_uuid).await?;
+                if !inbound_tag.is_empty() {
+                  if let Some(obj) = rule_obj_value.as_object_mut() {
+                    obj.insert("inbound".to_string(), Value::String(inbound_tag));
+                  }
                 }
+              } else {
+                log::warn!(
+                  "Inbound UUID {} not in selected inbounds, skipping inbound injection for rule",
+                  inbound_uuid
+                );
               }
             }
 
