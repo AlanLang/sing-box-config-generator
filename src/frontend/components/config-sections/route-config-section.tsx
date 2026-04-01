@@ -25,7 +25,7 @@ import {
 	IconPlus,
 	IconTrash,
 } from "@tabler/icons-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 type RouteRule = NonNullable<SingBoxConfig["route"]["rules"]>[number];
 
@@ -586,13 +586,19 @@ function RuleContent({
 	inboundDrawerItems,
 	onUpdate,
 }: RuleContentProps) {
-	// Determine current target type
-	const targetType = rule.inbound ? "inbound" : rule.outbound ? "outbound" : "none";
+	// Local state for UI mode — independent of whether a value is actually selected.
+	// Initialized from rule data (e.g. when editing an existing config).
+	const [targetMode, setTargetMode] = useState<"none" | "outbound" | "inbound">(
+		rule.inbound ? "inbound" : rule.outbound ? "outbound" : "none",
+	);
 
-	const handleTargetTypeChange = (type: "none" | "outbound" | "inbound") => {
-		if (type === "none") {
+	const handleTargetModeChange = (mode: "none" | "outbound" | "inbound") => {
+		if (mode === targetMode) return;
+		setTargetMode(mode);
+		// Clear the field that no longer applies
+		if (mode === "none") {
 			onUpdate({ ...rule, outbound: undefined, inbound: undefined });
-		} else if (type === "outbound") {
+		} else if (mode === "outbound") {
 			onUpdate({ ...rule, inbound: undefined });
 		} else {
 			onUpdate({ ...rule, outbound: undefined });
@@ -644,9 +650,9 @@ function RuleContent({
 					<div className="inline-flex rounded-md border text-xs">
 						<button
 							type="button"
-							onClick={() => targetType !== "none" && handleTargetTypeChange("none")}
+							onClick={() => handleTargetModeChange("none")}
 							className={`px-2.5 py-1 rounded-l-md transition-colors ${
-								targetType === "none"
+								targetMode === "none"
 									? "bg-primary text-primary-foreground"
 									: "hover:bg-muted"
 							}`}
@@ -655,9 +661,9 @@ function RuleContent({
 						</button>
 						<button
 							type="button"
-							onClick={() => targetType !== "outbound" && handleTargetTypeChange("outbound")}
+							onClick={() => handleTargetModeChange("outbound")}
 							className={`px-2.5 py-1 transition-colors ${
-								targetType === "outbound"
+								targetMode === "outbound"
 									? "bg-primary text-primary-foreground"
 									: "hover:bg-muted"
 							}`}
@@ -666,9 +672,9 @@ function RuleContent({
 						</button>
 						<button
 							type="button"
-							onClick={() => targetType !== "inbound" && handleTargetTypeChange("inbound")}
+							onClick={() => handleTargetModeChange("inbound")}
 							className={`px-2.5 py-1 rounded-r-md transition-colors ${
-								targetType === "inbound"
+								targetMode === "inbound"
 									? "bg-primary text-primary-foreground"
 									: "hover:bg-muted"
 							}`}
@@ -678,7 +684,7 @@ function RuleContent({
 					</div>
 				</div>
 
-				{targetType === "outbound" && (
+				{targetMode === "outbound" && (
 					outboundsLoading ? (
 						<div className="text-sm text-muted-foreground">
 							Loading outbounds...
@@ -700,7 +706,7 @@ function RuleContent({
 					)
 				)}
 
-				{targetType === "inbound" && (
+				{targetMode === "inbound" && (
 					inboundsLoading ? (
 						<div className="text-sm text-muted-foreground">
 							Loading inbounds...
