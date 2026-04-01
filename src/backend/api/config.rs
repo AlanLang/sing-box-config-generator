@@ -39,6 +39,7 @@ pub enum RouteRuleDto {
   Rule {
     rule: String,
     outbound: Option<String>,
+    inbound: Option<String>,
   },
 }
 
@@ -80,7 +81,15 @@ impl<'de> Deserialize<'de> for RouteRuleDto {
             .get("outbound")
             .and_then(|v| v.as_str())
             .map(String::from);
-          Ok(RouteRuleDto::Rule { rule, outbound })
+          let inbound = obj
+            .get("inbound")
+            .and_then(|v| v.as_str())
+            .map(String::from);
+          Ok(RouteRuleDto::Rule {
+            rule,
+            outbound,
+            inbound,
+          })
         }
         // No "type" field → backward-compatible: treat as old Ruleset format
         None => {

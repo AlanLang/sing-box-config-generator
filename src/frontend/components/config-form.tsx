@@ -77,6 +77,8 @@ export interface SingBoxConfig {
 					rule: string;
 					/** outbound 的 uuid（可选，覆盖 rule 中的 outbound） */
 					outbound?: string;
+					/** inbound 的 uuid（可选，与 outbound 互斥） */
+					inbound?: string;
 			  }
 		)[];
 		/**

@@ -796,6 +796,18 @@ async fn resolve_outbound_uuid_to_tag(uuid: &str) -> Result<String, AppError> {
   }
 }
 
+/// Resolve inbound UUID to its tag
+async fn resolve_inbound_uuid_to_tag(uuid: &str) -> Result<String, AppError> {
+  let inbound = load_module_json_with_tag("inbounds", uuid).await?;
+  Ok(
+    inbound
+      .get("tag")
+      .and_then(|t| t.as_str())
+      .unwrap_or("")
+      .to_string(),
+  )
+}
+
 /// Resolve route configuration
 async fn resolve_route(
   route: &crate::backend::api::config::RouteConfigDto,
@@ -859,6 +871,7 @@ async fn resolve_route(
           crate::backend::api::config::RouteRuleDto::Rule {
             rule: rule_uuid,
             outbound,
+            inbound,
           } => {
             // Load rule module JSON - it's a complete SingBox rule object
             let mut rule_obj_value = load_module_json("rules", rule_uuid).await?;
@@ -869,6 +882,16 @@ async fn resolve_route(
               if !outbound_tag.is_empty() {
                 if let Some(obj) = rule_obj_value.as_object_mut() {
                   obj.insert("outbound".to_string(), Value::String(outbound_tag));
+                }
+              }
+            }
+
+            // If inbound UUID is specified, resolve and inject inbound tag into the rule
+            if let Some(inbound_uuid) = inbound {
+              let inbound_tag = resolve_inbound_uuid_to_tag(inbound_uuid).await?;
+              if !inbound_tag.is_empty() {
+                if let Some(obj) = rule_obj_value.as_object_mut() {
+                  obj.insert("inbound".to_string(), Value::String(inbound_tag));
                 }
               }
             }

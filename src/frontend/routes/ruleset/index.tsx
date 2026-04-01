@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useResourceUsageCheck } from "@/api/usage-check";
-import { IconCubePlus } from "@tabler/icons-react";
+import { IconCubePlus, IconCopy } from "@tabler/icons-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
@@ -109,6 +109,19 @@ function RouteComponent() {
     setSelectedUuid(null);
     setEditName("");
     setEditJson("{}");
+    setEditUuid(uuidv4());
+    setFocusMode(true);
+  };
+
+  const handleCopy = (ruleset: {
+    uuid: string;
+    name: string;
+    json: string;
+  }) => {
+    setIsCreating(true);
+    setSelectedUuid(null);
+    setEditName(`${ruleset.name}-复制`);
+    setEditJson(ruleset.json);
     setEditUuid(uuidv4());
     setFocusMode(true);
   };
@@ -246,6 +259,20 @@ function RouteComponent() {
                     }}
                     index={index}
                     uuid={ruleset.uuid}
+                    actions={
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-7"
+                        title="复制"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopy(ruleset);
+                        }}
+                      >
+                        <IconCopy className="size-3.5" />
+                      </Button>
+                    }
                   />
                 );
               })}

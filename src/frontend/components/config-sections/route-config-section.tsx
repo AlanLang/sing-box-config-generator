@@ -2,6 +2,7 @@ import { useRuleList } from "@/api/rule/list";
 import { useRouteList } from "@/api/route/list";
 import { useRulesetOptions } from "@/api/ruleset/options";
 import { useOutboundGroupOptions } from "@/api/outbound-group/options";
+import { useInboundList } from "@/api/inbound/list";
 import { useDnsList } from "@/api/dns/list";
 import type { SingBoxConfig } from "@/components/config-form";
 import {
@@ -60,6 +61,7 @@ export function RouteConfigSection({
 		useOutboundGroupOptions();
 	const { data: allDnsServers, isLoading: dnsServersLoading } = useDnsList();
 	const { data: ruleModules, isLoading: ruleModulesLoading } = useRuleList();
+	const { data: inboundModules, isLoading: inboundsListLoading } = useInboundList();
 
 	// 只显示在 DNS Configuration 中选中的 DNS servers
 	const selectedDnsServerItems = useMemo(() => {
@@ -96,6 +98,25 @@ export function RouteConfigSection({
 			description: r.json,
 		}));
 	}, [ruleModules]);
+
+	// 构建 inbound SelectorDrawer items（从 JSON 中提取 tag）
+	const inboundDrawerItems: SelectorDrawerItem[] = useMemo(() => {
+		if (!inboundModules) return [];
+		return inboundModules.map((inbound) => {
+			let tag = inbound.name;
+			try {
+				const parsed = JSON.parse(inbound.json);
+				if (parsed.tag) tag = parsed.tag;
+			} catch {
+				// ignore parse errors, use name as tag
+			}
+			return {
+				value: inbound.uuid,
+				title: inbound.name,
+				description: `tag: ${tag}`,
+			};
+		});
+	}, [inboundModules]);
 
 	const handleMoveRule = (index: number, direction: "up" | "down") => {
 		if (!rules) return;
@@ -320,6 +341,8 @@ export function RouteConfigSection({
 												ruleDrawerItems={ruleDrawerItems}
 												outboundsLoading={outboundsLoading}
 												outboundDrawerItems={outboundDrawerItems}
+												inboundsLoading={inboundsListLoading}
+												inboundDrawerItems={inboundDrawerItems}
 												onUpdate={(updated) =>
 													handleUpdateRule(index, updated)
 												}
@@ -547,6 +570,8 @@ interface RuleContentProps {
 	ruleDrawerItems: SelectorDrawerItem[];
 	outboundsLoading: boolean;
 	outboundDrawerItems: SelectorDrawerItem[];
+	inboundsLoading: boolean;
+	inboundDrawerItems: SelectorDrawerItem[];
 	onUpdate: (rule: RouteRule) => void;
 }
 
@@ -557,8 +582,23 @@ function RuleContent({
 	ruleDrawerItems,
 	outboundsLoading,
 	outboundDrawerItems,
+	inboundsLoading,
+	inboundDrawerItems,
 	onUpdate,
 }: RuleContentProps) {
+	// Determine current target type
+	const targetType = rule.inbound ? "inbound" : rule.outbound ? "outbound" : "none";
+
+	const handleTargetTypeChange = (type: "none" | "outbound" | "inbound") => {
+		if (type === "none") {
+			onUpdate({ ...rule, outbound: undefined, inbound: undefined });
+		} else if (type === "outbound") {
+			onUpdate({ ...rule, inbound: undefined });
+		} else {
+			onUpdate({ ...rule, outbound: undefined });
+		}
+	};
+
 	return (
 		<>
 			{/* Rule 选择 */}
@@ -592,36 +632,98 @@ function RuleContent({
 				)}
 			</div>
 
-			{/* Outbound 选择（可选，覆盖 rule 中的 outbound） */}
+			{/* Target 选择（可选：None / Outbound / Inbound） */}
 			<div className="space-y-2">
-				<Label className="text-sm">
-					Target Outbound{" "}
-					<span className="text-muted-foreground text-xs font-normal">
-						(Optional, overrides rule's outbound)
-					</span>
-				</Label>
-				{outboundsLoading ? (
-					<div className="text-sm text-muted-foreground">
-						Loading outbounds...
+				<div className="flex items-center gap-3">
+					<Label className="text-sm">
+						Target{" "}
+						<span className="text-muted-foreground text-xs font-normal">
+							(Optional)
+						</span>
+					</Label>
+					<div className="inline-flex rounded-md border text-xs">
+						<button
+							type="button"
+							onClick={() => targetType !== "none" && handleTargetTypeChange("none")}
+							className={`px-2.5 py-1 rounded-l-md transition-colors ${
+								targetType === "none"
+									? "bg-primary text-primary-foreground"
+									: "hover:bg-muted"
+							}`}
+						>
+							None
+						</button>
+						<button
+							type="button"
+							onClick={() => targetType !== "outbound" && handleTargetTypeChange("outbound")}
+							className={`px-2.5 py-1 transition-colors ${
+								targetType === "outbound"
+									? "bg-primary text-primary-foreground"
+									: "hover:bg-muted"
+							}`}
+						>
+							Outbound
+						</button>
+						<button
+							type="button"
+							onClick={() => targetType !== "inbound" && handleTargetTypeChange("inbound")}
+							className={`px-2.5 py-1 rounded-r-md transition-colors ${
+								targetType === "inbound"
+									? "bg-primary text-primary-foreground"
+									: "hover:bg-muted"
+							}`}
+						>
+							Inbound
+						</button>
 					</div>
-				) : (
-					<SelectorDrawer
-						drawerTitle={`Rule #${index + 1} - Target Outbound`}
-						placeholder="Use rule's built-in outbound"
-						items={outboundDrawerItems}
-						value={rule.outbound || ""}
-						onSelect={(val) =>
-							onUpdate({
-								...rule,
-								outbound: val || undefined,
-							})
-						}
-						noneOption={{
-							title: "Use rule's built-in outbound",
-							description:
-								"Don't override, use the outbound defined in the rule",
-						}}
-					/>
+				</div>
+
+				{targetType === "outbound" && (
+					outboundsLoading ? (
+						<div className="text-sm text-muted-foreground">
+							Loading outbounds...
+						</div>
+					) : (
+						<SelectorDrawer
+							drawerTitle={`Rule #${index + 1} - Target Outbound`}
+							placeholder="Select an outbound"
+							items={outboundDrawerItems}
+							value={rule.outbound || ""}
+							onSelect={(val) =>
+								onUpdate({
+									...rule,
+									outbound: val || undefined,
+									inbound: undefined,
+								})
+							}
+						/>
+					)
+				)}
+
+				{targetType === "inbound" && (
+					inboundsLoading ? (
+						<div className="text-sm text-muted-foreground">
+							Loading inbounds...
+						</div>
+					) : inboundDrawerItems.length === 0 ? (
+						<div className="text-sm text-muted-foreground">
+							No inbounds available
+						</div>
+					) : (
+						<SelectorDrawer
+							drawerTitle={`Rule #${index + 1} - Target Inbound`}
+							placeholder="Select an inbound"
+							items={inboundDrawerItems}
+							value={rule.inbound || ""}
+							onSelect={(val) =>
+								onUpdate({
+									...rule,
+									inbound: val || undefined,
+									outbound: undefined,
+								})
+							}
+						/>
+					)
 				)}
 			</div>
 		</>
