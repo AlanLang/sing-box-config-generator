@@ -6,6 +6,7 @@ import { AppPage } from "@/components/app-page";
 import { ConfigManagementCard } from "@/components/config-management-card";
 import { ConfigForm, type SingBoxConfig } from "@/components/config-form";
 import { EmptyState } from "@/components/empty-state";
+import { JsonEditor } from "@/components/json-editor";
 import { SkeletonGrid } from "@/components/skeleton-grid";
 import {
   AlertDialog,
@@ -25,9 +26,12 @@ import {
   IconCheck,
   IconTrash,
   IconCopy,
+  IconEye,
+  IconX,
 } from "@tabler/icons-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -50,6 +54,27 @@ function RouteComponent() {
     uuid: string;
     name: string;
   } | null>(null);
+  const [viewTarget, setViewTarget] = useState<{
+    uuid: string;
+    name: string;
+  } | null>(null);
+  const [viewJson, setViewJson] = useState<string>("");
+  const [viewLoading, setViewLoading] = useState(false);
+
+  useEffect(() => {
+    if (!viewTarget) return;
+    setViewLoading(true);
+    setViewJson("");
+    fetch(`/download/${viewTarget.uuid}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setViewJson(JSON.stringify(data, null, 2));
+      })
+      .catch(() => {
+        setViewJson("");
+      })
+      .finally(() => setViewLoading(false));
+  }, [viewTarget]);
 
   const handleNewConfig = () => {
     setIsCreating(true);
@@ -227,6 +252,16 @@ function RouteComponent() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setViewTarget({ uuid: config.uuid, name: config.name });
+                    }}
+                  >
+                    <IconEye className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       copyDownloadLink(config.uuid);
                     }}
                   >
@@ -272,6 +307,40 @@ function RouteComponent() {
         onSave={handleSaveConfig}
         initialData={initialData}
       />
+
+      <AnimatePresence>
+        {viewTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b bg-background/80 shrink-0">
+              <h2 className="text-lg font-semibold truncate">
+                {viewTarget.name}
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewTarget(null)}
+              >
+                <IconX className="size-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {viewLoading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Loading...
+                </div>
+              ) : (
+                <JsonEditor value={viewJson} className="h-full" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AlertDialog
         open={!!deleteTarget}
