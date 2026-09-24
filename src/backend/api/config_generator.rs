@@ -70,7 +70,10 @@ pub async fn generate_config(
 
   singbox_config.insert("experimental".to_string(), experimental_value);
 
-  // 4. Return as downloadable JSON
+  // 4. Apply 1.14.0 migrations to the assembled config
+  migrate_to_v1_14(&mut singbox_config);
+
+  // 5. Return as downloadable JSON
   let safe_name = sanitize_filename(&config.name);
   let filename = format!("{}.json", safe_name);
 
@@ -968,6 +971,88 @@ fn inject_download_detour_to_rule_sets(obj: &mut Map<String, Value>, download_de
         }
       }
     }
+  }
+}
+
+/// Post-process assembled config to conform to sing-box 1.14.0 format.
+/// Handles deprecated field removal and renames that are transparent to the user.
+fn migrate_to_v1_14(config: &mut Map<String, Value>) {
+  // 1. Remove dns.independent_cache — always independent since 1.14.0
+  if let Some(dns) = config.get_mut("dns").and_then(|v| v.as_object_mut()) {
+    if dns.remove("independent_cache").is_some() {
+      log::info!("migrate_to_v1_14: removed deprecated dns.independent_cache");
+    }
+
+    // 2. DNS rules: warn if ip_cidr / ip_is_private is used without match_response
+    if let Some(rules) = dns.get("rules").and_then(|v| v.as_array()) {
+      for (i, rule) in rules.iter().enumerate() {
+        if let Some(obj) = rule.as_object() {
+          let has_addr_filter = obj.contains_key("ip_cidr") || obj.contains_key("ip_is_private");
+          let has_match_response = obj.contains_key("match_response");
+          if has_addr_filter && !has_match_response {
+            log::warn!(
+              "migrate_to_v1_14: dns.rules[{}] uses ip_cidr/ip_is_private without match_response \
+               — deprecated in 1.14.0; migrate to evaluate + match_response",
+              i
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Rename experimental.cache_file.store_rdrc → store_dns
+  if let Some(exp) = config
+    .get_mut("experimental")
+    .and_then(|v| v.as_object_mut())
+  {
+    if let Some(cache_file) = exp.get_mut("cache_file").and_then(|v| v.as_object_mut()) {
+      if let Some(value) = cache_file.remove("store_rdrc") {
+        log::info!("migrate_to_v1_14: renamed experimental.cache_file.store_rdrc → store_dns");
+        cache_file.entry("store_dns".to_string()).or_insert(value);
+      }
+    }
+  }
+
+  // 4. Migrate tls.acme in inbounds → top-level certificate_providers
+  let mut certificate_providers: Vec<Value> = Vec::new();
+  if let Some(inbounds) = config.get_mut("inbounds").and_then(|v| v.as_array_mut()) {
+    for inbound in inbounds.iter_mut() {
+      if let Some(obj) = inbound.as_object_mut() {
+        if let Some(tls) = obj.get_mut("tls").and_then(|v| v.as_object_mut()) {
+          if let Some(acme_value) = tls.remove("acme") {
+            let provider_tag = if certificate_providers.is_empty() {
+              "acme".to_string()
+            } else {
+              format!("acme-{}", certificate_providers.len())
+            };
+            let mut provider = Map::new();
+            provider.insert("type".to_string(), Value::String("acme".to_string()));
+            provider.insert("tag".to_string(), Value::String(provider_tag.clone()));
+            if let Value::Object(acme_obj) = acme_value {
+              for (k, v) in acme_obj {
+                provider.insert(k, v);
+              }
+            }
+            log::info!(
+              "migrate_to_v1_14: extracted tls.acme → certificate_providers[\"{}\"]",
+              provider_tag
+            );
+            certificate_providers.push(Value::Object(provider));
+            tls.insert(
+              "certificate_provider".to_string(),
+              Value::String(provider_tag),
+            );
+          }
+        }
+      }
+    }
+  }
+  if !certificate_providers.is_empty() {
+    config.insert(
+      "certificate_providers".to_string(),
+      Value::Array(certificate_providers),
+    );
   }
 }
 

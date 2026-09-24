@@ -587,7 +587,10 @@ fn parse_anytls(url: &str, tag: String) -> Result<Value, AppError> {
           }
         }
 
-        let insecure = params.get("allowInsecure").map(|v| v == "1").unwrap_or(false);
+        let insecure = params
+          .get("allowInsecure")
+          .map(|v| v == "1")
+          .unwrap_or(false);
         tls.insert("insecure".to_string(), Value::Bool(insecure));
 
         if params.get("tfo").map(|v| v == "1").unwrap_or(false) {

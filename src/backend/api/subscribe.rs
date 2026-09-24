@@ -215,7 +215,10 @@ pub async fn refresh_subscribe(
 
   let response = client
     .get(&metadata.subscription_url)
-    .header("User-Agent", "Shadowrocket/2.2.50 CFNetwork/1568.300.101 Darwin/24.2.0")
+    .header(
+      "User-Agent",
+      "Shadowrocket/2.2.50 CFNetwork/1568.300.101 Darwin/24.2.0",
+    )
     .header("Accept", "*/*")
     .send()
     .await
@@ -281,7 +284,8 @@ pub async fn get_subscribe_outbounds(
 
   // Get content and decode
   let outbounds = if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
-    let content_to_parse = decode_base64_content(content_str).unwrap_or_else(|| content_str.to_string());
+    let content_to_parse =
+      decode_base64_content(content_str).unwrap_or_else(|| content_str.to_string());
     parse_subscription_content(&content_to_parse)?
   } else {
     Vec::new()
