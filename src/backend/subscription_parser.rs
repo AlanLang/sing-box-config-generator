@@ -29,6 +29,8 @@ pub fn parse_subscription_line(line: &str) -> Result<Value, AppError> {
     parse_vmess(url_part, tag)
   } else if url_part.starts_with("vless://") {
     parse_vless(url_part, tag)
+  } else if url_part.starts_with("anytls://") {
+    parse_anytls(url_part, tag)
   } else {
     Err(AppError::InternalServerError(format!(
       "Unsupported protocol: {}",
@@ -533,6 +535,76 @@ fn parse_vless(url: &str, tag: String) -> Result<Value, AppError> {
       "Failed to parse VLESS URL".to_string(),
     ))
   }
+}
+
+/// Parse AnyTLS URL
+/// Format: anytls://password@server:port?sni=...&allowInsecure=...&tfo=...#tag
+fn parse_anytls(url: &str, tag: String) -> Result<Value, AppError> {
+  let mut outbound = Map::new();
+  outbound.insert("tag".to_string(), Value::String(tag));
+  outbound.insert("type".to_string(), Value::String("anytls".to_string()));
+
+  let url = url.strip_prefix("anytls://").unwrap_or(url);
+
+  let (main_part, query_part) = if let Some(pos) = url.find('?') {
+    let query_with_fragment = &url[pos + 1..];
+    let query_only = query_with_fragment
+      .split('#')
+      .next()
+      .unwrap_or(query_with_fragment);
+    (&url[..pos], Some(query_only))
+  } else {
+    let without_fragment = url.split('#').next().unwrap_or(url);
+    (without_fragment, None)
+  };
+
+  if let Some((password, server_part)) = main_part.split_once('@') {
+    outbound.insert("password".to_string(), Value::String(password.to_string()));
+
+    if let Some((server, port_str)) = server_part.split_once(':') {
+      let port = port_str.parse::<u16>().unwrap_or(443);
+      outbound.insert("server".to_string(), Value::String(server.to_string()));
+      outbound.insert("server_port".to_string(), Value::Number(port.into()));
+
+      let mut tls = Map::new();
+      tls.insert("enabled".to_string(), Value::Bool(true));
+
+      if let Some(query) = query_part {
+        let params: HashMap<String, String> = query
+          .split('&')
+          .filter_map(|pair| {
+            let mut parts = pair.splitn(2, '=');
+            Some((
+              parts.next()?.to_string(),
+              urlencoding::decode(parts.next()?).ok()?.to_string(),
+            ))
+          })
+          .collect();
+
+        if let Some(sni) = params.get("sni") {
+          if !sni.is_empty() {
+            tls.insert("server_name".to_string(), Value::String(sni.clone()));
+          }
+        }
+
+        let insecure = params.get("allowInsecure").map(|v| v == "1").unwrap_or(false);
+        tls.insert("insecure".to_string(), Value::Bool(insecure));
+
+        if params.get("tfo").map(|v| v == "1").unwrap_or(false) {
+          outbound.insert("tcp_fast_open".to_string(), Value::Bool(true));
+        }
+      } else {
+        tls.insert("insecure".to_string(), Value::Bool(false));
+      }
+
+      outbound.insert("tls".to_string(), Value::Object(tls));
+      return Ok(Value::Object(outbound));
+    }
+  }
+
+  Err(AppError::InternalServerError(
+    "Failed to parse AnyTLS URL".to_string(),
+  ))
 }
 
 #[cfg(test)]

@@ -215,7 +215,7 @@ pub async fn refresh_subscribe(
 
   let response = client
     .get(&metadata.subscription_url)
-    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    .header("User-Agent", "Shadowrocket/2.2.50 CFNetwork/1568.300.101 Darwin/24.2.0")
     .header("Accept", "*/*")
     .send()
     .await
@@ -281,11 +281,8 @@ pub async fn get_subscribe_outbounds(
 
   // Get content and decode
   let outbounds = if let Some(content_str) = metadata.get("content").and_then(|c| c.as_str()) {
-    if let Some(decoded_str) = decode_base64_content(content_str) {
-      parse_subscription_content(&decoded_str)?
-    } else {
-      Vec::new()
-    }
+    let content_to_parse = decode_base64_content(content_str).unwrap_or_else(|| content_str.to_string());
+    parse_subscription_content(&content_to_parse)?
   } else {
     Vec::new()
   };
@@ -293,20 +290,40 @@ pub async fn get_subscribe_outbounds(
   Ok((StatusCode::OK, Json(outbounds)).into_response())
 }
 
-/// Decode base64-encoded subscription content (handles padded and unpadded base64)
+/// Decode base64-encoded subscription content (handles padded, unpadded, and URL-safe base64)
 fn decode_base64_content(content: &str) -> Option<String> {
   let content = content.trim();
   if content.is_empty() {
     return None;
   }
-  // Try standard base64 (with padding) first
-  if let Ok(decoded) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, content) {
-    return String::from_utf8(decoded).ok();
+
+  use base64::engine::general_purpose;
+
+  // Try standard base64 with padding
+  if let Ok(decoded) = base64::Engine::decode(&general_purpose::STANDARD, content) {
+    if let Ok(s) = String::from_utf8(decoded) {
+      return Some(s);
+    }
   }
-  // Fall back to base64 without padding requirement
-  let decoded =
-    base64::Engine::decode(&base64::engine::general_purpose::STANDARD_NO_PAD, content).ok()?;
-  String::from_utf8(decoded).ok()
+  // Try URL-safe base64 without padding (DlerCloud and many providers use this)
+  if let Ok(decoded) = base64::Engine::decode(&general_purpose::URL_SAFE_NO_PAD, content) {
+    if let Ok(s) = String::from_utf8(decoded) {
+      return Some(s);
+    }
+  }
+  // Try URL-safe base64 with padding
+  if let Ok(decoded) = base64::Engine::decode(&general_purpose::URL_SAFE, content) {
+    if let Ok(s) = String::from_utf8(decoded) {
+      return Some(s);
+    }
+  }
+  // Try standard base64 without padding
+  if let Ok(decoded) = base64::Engine::decode(&general_purpose::STANDARD_NO_PAD, content) {
+    if let Ok(s) = String::from_utf8(decoded) {
+      return Some(s);
+    }
+  }
+  None
 }
 
 /// Parse subscription content to outbound objects
